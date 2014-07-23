@@ -15,12 +15,40 @@ _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 
+class XMPPAccess(object):
+    """
+    Description of an XMPP access
+    """
+    def __init__(self, jid):
+        """
+        Sets up the access
+
+        :param jid: JID of the associated peer
+        """
+        self.__jid = jid
+
+    @property
+    def access_id(self):
+        """
+        Retrieves the access ID associated to this kind of access
+        """
+        return "xmpp"
+
+    @property
+    def jid(self):
+        """
+        Retrieves the JID of the associated peer
+        """
+        return self.__jid
+
+# ------------------------------------------------------------------------------
+
 @ComponentFactory("herald-xmpp-directory")
 @Requires('_directory', 'herald.core.directory')
 @Provides('herald.xmpp.directory')
-class XmppTransport(object):
+class XMPPDirectory(object):
     """
-    XMPP Messenger for Herald.
+    XMPP Directory for Herald
     """
     def __init__(self):
         """
@@ -29,11 +57,11 @@ class XmppTransport(object):
         # Herald Core Directory
         self._directory = None
 
-        # Multi-User Chat JID -> Peer UID
+        # JID -> Peer UID
         self._jid_uid = {}
 
-        # Peer UID -> Real JID
-        self._peer_jid = {}
+        # Group name -> XMPP room JID
+        self._groups = {}
 
     @Validate
     def _validate(self, context):
@@ -41,7 +69,7 @@ class XmppTransport(object):
         Component validated
         """
         self._jid_uid.clear()
-        self._peer_jid.clear()
+        self._groups.clear()
 
     @Invalidate
     def _invalidate(self, context):
@@ -49,7 +77,7 @@ class XmppTransport(object):
         Component invalidated
         """
         self._jid_uid.clear()
-        self._peer_jid.clear()
+        self._groups.clear()
 
     def dump(self):
         """
@@ -83,16 +111,6 @@ class XmppTransport(object):
 
         # Core Directory clean up
         self._directory.unregister(uid)
-
-    def get_jid(self, peer):
-        """
-        Retrieves the JID associated to the given peer
-
-        :param peer: A peer UID
-        :return: The JID of the peer
-        :raise KeyError: Unknown peer
-        """
-        return self._peer_jid[peer]
 
     def from_jid(self, jid):
         """
