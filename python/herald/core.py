@@ -1,57 +1,107 @@
 #!/usr/bin/python
 # -- Content-Encoding: UTF-8 --
 """
-Herald core service
+Herald Core service
 """
 
-from .xmpp import transport, monitor
+# Herald
+from herald.exceptions import InvalidPeerAccess, NoTransport
+import herald.beans as beans
 
+# Pelix
+from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
+    Validate, Invalidate, Instantiate, RequiresMap
+
+# Standard library
 import logging
+
+# ------------------------------------------------------------------------------
+
 _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 
+@ComponentFactory("herald-core-factory")
+@Provides('herald.core')
+@Requires('_directory', 'herald.directory')
+@RequiresMap('_transports', 'herald.transport', 'herald.access.id',
+             False, False, True)
+@Instantiate("herald-core")
 class Herald(object):
     """
-    Herald Core Service
+    Herald core service
     """
-    def __init__(self, transport):
+    def __init__(self):
         """
         Sets up members
         """
-        self._client = transport
+        # Herald core directory
+        self._directory = None
 
+        # Herald transports: access ID -> implementation
+        self._transports = {}
 
-# ------------------------------------------------------------------------------
+    @Validate
+    def _validate(self, context):
+        """
+        Component validated
+        """
+        _logger.debug("Herald core service validated")
 
-def main(host):
-    monbot = monitor.MonitorBot("bot@phenomtwo3000/monitor", "bot", "Monitor")
-    monbot.connect((host, 5222))
-    monbot.process(threaded=True)
-    monbot.create_rooms(('herald', 'cohorte', 'monitors', 'node'))
+    @Invalidate
+    def _invalidate(self, context):
+        """
+        Component invalidated
+        """
+        _logger.debug("Herald core service invalidated")
 
-    transport = transport.XMPPTransport()
-    transport.setup("bot@phenomtwo3000/transport", "bot", "Transport")
-    transport.connect((host, 5222))
-    transport.process(threaded=True)
+    def handle_message(self, message):
+        """
+        Handles a message received from a transport implementation.
 
-    herald = Herald(transport)
+        Unlocks/calls back the senders of the message this one responds to.
 
-    try:
-        try:
-            raw_input("Press enter to stop...")
-        except NameError:
-            input("Press enter to stop...")
-    except (KeyboardInterrupt, EOFError):
-        _logger.debug("Got interruption")
+        :param message: A Message bean forged by the transport
+        """
+        pass
 
-    monbot.disconnect()
-    transport.disconnect()
-    _logger.info("Bye!")
+    def fire(self, target, message):
+        """
+        Fires (and forget) the given message to the target
 
-if __name__ == '__main__':
-    import sys
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)-8s %(message)s')
-    logging.debug("Running on Python: %s", sys.version)
-    main("127.0.0.1")
+        :param target: The UID of a Peer, or a Peer object
+        :param message: A Message bean
+        :raise KeyError: Unknown peer UID
+        :raise NoTransport: No transport found to send the message
+        """
+        # Get the Peer object
+        if not isinstance(target, beans.Peer):
+            peer = self._directory.get_peer(target)
+        else:
+            peer = target
+
+        # Check if some transports are bound
+        if not self._transports:
+            raise NoTransport("No transport bound yet.")
+
+        # Get accesses
+        accesses = peer.get_accesses()
+        for access in accesses:
+            try:
+                transport = self._transports[access]
+            except KeyError:
+                # No transport for this kind of access
+                pass
+            else:
+                try:
+                    # Call it
+                    transport.fire(peer, message)
+                except InvalidPeerAccess as ex:
+                    # Transport can't read peer access data
+                    _logger.debug("Error using transport %s: %s", access, ex)
+                else:
+                    # Success
+                    break
+        else:
+            # No transport for those accesses
+            raise NoTransport("No transport found for peer {0}".format(peer))

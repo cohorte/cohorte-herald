@@ -5,17 +5,17 @@ Herald XMPP transport implementation
 """
 
 # Herald
-import herald.beans as beans
+from herald.exceptions import InvalidPeerAccess
 from .bot import HeraldBot
 
 # Pelix
 import pelix.constants
+from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
+    Property, Validate, Invalidate
 
 # Standard library
 import json
 import logging
-from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property, Validate, Invalidate
 
 # ------------------------------------------------------------------------------
 
@@ -27,6 +27,7 @@ _logger = logging.getLogger(__name__)
 @Requires('_core', 'herald.core')
 @Requires('_directory', 'herald.xmpp.directory')
 @Provides('herald.xmpp.transport', '_controller')
+@Property('_access_id', 'herald.access.id', 'xmpp')
 @Property('_host', 'xmpp.server', 'localhost')
 @Property('_port', 'xmpp.port', 5222)
 @Property('_monitor_jid', 'herald.monitor.jid', "bot@phenomtwo3000")
@@ -52,6 +53,7 @@ class XmppTransport(object):
         self._context = None
 
         # Properties
+        self._access_id = "xmpp"
         self._host = "localhost"
         self._port = 5222
         self._monitor_jid = None
@@ -196,21 +198,23 @@ class XmppTransport(object):
         """
         Fires a message to a peer
         """
-        assert isinstance(message, beans.Message)
+        try:
+            # Get the target JID
+            jid = peer.get_access('xmpp').jid
 
-        # Get the target JID
-        jid = peer.get_access('xmpp').get_jid()
+        except KeyError as ex:
+            # No XMPP access description
+            raise InvalidPeerAccess("No '{0}' access found".format(ex))
 
-        # Send the XMPP message
-        self.__send_message("chat", jid, message)
+        else:
+            # Send the XMPP message
+            self.__send_message("chat", jid, message)
 
 
     def fire_group(self, group, message):
         """
         Fires a message to a group of peers
         """
-        assert isinstance(message, beans.Message)
-
         # Get the group JID
         group_jid = self._directory.get_group_jid(group)
 

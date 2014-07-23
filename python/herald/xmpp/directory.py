@@ -7,7 +7,7 @@ Herald XMPP directory
 # Standard library
 import logging
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Validate, Invalidate
+    Property, Validate, Invalidate
 
 # ------------------------------------------------------------------------------
 
@@ -41,11 +41,18 @@ class XMPPAccess(object):
         """
         return self.__jid
 
+    def dump(self):
+        """
+        Returns the content to store in a directory dump to describe this access
+        """
+        return self.__jid
+
 # ------------------------------------------------------------------------------
 
 @ComponentFactory("herald-xmpp-directory")
-@Requires('_directory', 'herald.core.directory')
-@Provides('herald.xmpp.directory')
+@Requires('_directory', 'herald.directory')
+@Property('_access_id', 'herald.access.id', 'xmpp')
+@Provides(('herald.transport.directory', 'herald.xmpp.directory'))
 class XMPPDirectory(object):
     """
     XMPP Directory for Herald
@@ -56,6 +63,7 @@ class XMPPDirectory(object):
         """
         # Herald Core Directory
         self._directory = None
+        self._access_id = "xmpp"
 
         # JID -> Peer UID
         self._jid_uid = {}
@@ -79,38 +87,14 @@ class XMPPDirectory(object):
         self._jid_uid.clear()
         self._groups.clear()
 
-    def dump(self):
+    def load_access(self, data):
         """
-        Dumps the content of the local directory in a dictionary
+        Loads a dumped access
 
-        :return: A UID -> description dictionary
+        :param data: Result of a call to XmppAccess.dump()
+        :return: An XMPPAccess bean
         """
-        return {}
-
-    def register(self, uid, description):
-        """
-        Registers a peer
-
-        :param uid: UID of the peer
-        :param description: Description of the peer, in the format of dump()
-        """
-        pass
-
-    def unregister(self, uid):
-        """
-        Unregisters a peer from the directory
-
-        :param uid: UID of the peer
-        """
-        try:
-            # Local clean up
-            del self._jid_uid[self._peer_jid.pop(uid)]
-        except KeyError:
-            # Not an XMPP peer, not a problem
-            pass
-
-        # Core Directory clean up
-        self._directory.unregister(uid)
+        return XMPPAccess(data)
 
     def from_jid(self, jid):
         """
