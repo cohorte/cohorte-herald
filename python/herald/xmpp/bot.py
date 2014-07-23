@@ -90,28 +90,6 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
         self.__send_message("chat", monitor_jid, msg)
 
 
-    def herald_fire(self, target, message, body=None):
-        """
-        Sends a message to the given target
-
-        :param target: A Jabber ID
-        :param message: A Message bean
-        """
-        assert isinstance(message, beans.Message)
-        self.__send_message("chat", target, message, body)
-
-
-    def herald_fire_group(self, group, message, body=None):
-        """
-        Sends a message to a room
-
-        :param room: The name of a Multi-User Chat room
-        :param message: A message bean
-        """
-        assert isinstance(message, beans.Message)
-        self.__send_message("groupchat", group, message, body)
-
-
     def __send_message(self, msgtype, target, message, body=None):
         """
         Prepares and sends a message over XMPP

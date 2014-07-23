@@ -4,7 +4,8 @@
 Herald XMPP transport implementation
 """
 
-# Herald XMPP bot
+# Herald
+import herald.beans as beans
 from .bot import HeraldBot
 
 # Pelix
@@ -169,15 +170,49 @@ class XmppTransport(object):
         # Shut down the service
         self._controller = False
 
+
+    def __send_message(self, msgtype, target, message):
+        """
+        Prepares and sends a message over XMPP
+
+        :param msgtype: Kind of message (chat or groupchat)
+        :param target: Target JID or MUC room
+        :param message: Herald message bean
+        :param body: The serialized form of the message body. If not given,
+                     the content is the string form of the message.content field
+        """
+        # Prepare an XMPP message, based on the Herald message
+        xmpp_msg = self.make_message(mto=target,
+                                     mbody=json.dumps(message.content),
+                                     msubject=message.subject,
+                                     mtype=msgtype)
+        xmpp_msg['thread'] = message.uid
+
+        # Send it
+        xmpp_msg.send()
+
+
     def fire(self, peer, message):
         """
         Fires a message to a peer
         """
-        jid = self._directory.get_jid(peer)
-        self._bot.herald_fire(jid, message, json.dumps(message.content))
+        assert isinstance(message, beans.Message)
+
+        # Get the target JID
+        jid = peer.get_access('xmpp').get_jid()
+
+        # Send the XMPP message
+        self.__send_message("chat", jid, message)
+
 
     def fire_group(self, group, message):
         """
         Fires a message to a group of peers
         """
-        self._bot.herald_fire_group(group, message, json.dumps(message.content))
+        assert isinstance(message, beans.Message)
+
+        # Get the group JID
+        group_jid = self._directory.get_group_jid(group)
+
+        # Send the XMPP message
+        self.__send_message("groupchat", group_jid, message)
