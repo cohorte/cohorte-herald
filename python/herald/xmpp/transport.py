@@ -9,7 +9,6 @@ from herald.exceptions import InvalidPeerAccess
 from .bot import HeraldBot
 
 # Pelix
-import pelix.constants
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, Validate, Invalidate
 
@@ -94,11 +93,14 @@ class XmppTransport(object):
         # Log our JID
         _logger.info("Bot connected with JID: %s", self.boundjid.bare)
 
-        # Get our framework UID
-        local_uid = self._context.get_property(pelix.constants.FRAMEWORK_UID)
+        # Get our local peer description
+        peer = self._directory.get_local_peer()
 
         # Ask the monitor to invite us, using our UID as nickname
-        self._bot.herald_join(self._monitor_jid, self._key, local_uid)
+        self._bot.herald_join(self._monitor_jid, self._key, peer.uid)
+
+        # We're on line, register our local access
+        peer.set_access('xmpp', self._bot.boundjid.full)
 
     def __on_message(self, data):
         """
@@ -169,9 +171,11 @@ class XmppTransport(object):
         """
         XMPP session ended
         """
+        # Clean up our access
+        self._directory.get_local_peer().unset_access('xmpp')
+
         # Shut down the service
         self._controller = False
-
 
     def __send_message(self, msgtype, target, message):
         """
@@ -193,7 +197,6 @@ class XmppTransport(object):
         # Send it
         xmpp_msg.send()
 
-
     def fire(self, peer, message):
         """
         Fires a message to a peer
@@ -209,7 +212,6 @@ class XmppTransport(object):
         else:
             # Send the XMPP message
             self.__send_message("chat", jid, message)
-
 
     def fire_group(self, group, message):
         """
