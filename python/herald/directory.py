@@ -7,10 +7,13 @@ Herald Core directory
 # Herald
 import herald.beans as beans
 
-# Standard library
-import logging
+# Pelix
 from pelix.ipopo.decorators import ComponentFactory, RequiresMap, Provides, \
     Validate, Invalidate, Instantiate
+import pelix.constants
+
+# Standard library
+import logging
 
 # ------------------------------------------------------------------------------
 
@@ -34,6 +37,9 @@ class HeraldDirectory(object):
         # Transport-specific directories
         self._directories = {}
 
+        # Local bean description
+        self._local = None
+
         # UID -> Peer bean
         self._peers = {}
 
@@ -45,16 +51,23 @@ class HeraldDirectory(object):
         """
         Component validated
         """
+        # Clean up remaining data (if any)
         self._peers.clear()
         self._groups.clear()
+
+        # Setup the local peer description
+        uid = context.get_property(pelix.constants.FRAMEWORK_UID)
+        self._local = beans.Peer(uid, self)
 
     @Invalidate
     def _invalidate(self, context):
         """
         Component invalidated
         """
+        # Clean all up
         self._peers.clear()
         self._groups.clear()
+        self._local = None
 
     def get_peer(self, uid):
         """
@@ -66,29 +79,33 @@ class HeraldDirectory(object):
         """
         return self._peers[uid]
 
+    def get_local_peer(self):
+        """
+        Returns the description of the local peer
+
+        :return: The description of the local peer
+        """
+        return self._local
+
+    def peer_set_access(self, peer, access_id, data):
+        """
+        A new peer access is available. Called by a Peer bean.
+        """
+        pass
+
+    def peer_unset_access(self, peer, access_id):
+        """
+        A peer access has been removed. Called by  a Peer bean.
+        """
+        pass
+
     def dump(self):
         """
         Dumps the content of the local directory in a dictionary
 
         :return: A UID -> description dictionary
         """
-        dump = {}
-        for peer in self._peers.values():
-            # Properties
-            peer_dump = {getattr(peer, name)
-                         for name in ('uid', 'name',
-                                      'node_uid', 'node_name',
-                                      'groups')}
-
-            # Accesses
-            accesses = {}
-            for access in peer.get_accesses():
-                accesses[access] = peer.get_access(access).dump()
-            peer_dump['accesses'] = accesses
-
-            dump[peer.uid] = peer_dump
-
-        return dump
+        return {peer.uid: peer.dump() for peer in self._peers.values()}
 
     def load(self, dump):
         """
@@ -102,7 +119,7 @@ class HeraldDirectory(object):
                 continue
 
             # Make the peer bean
-            peer = beans.Peer(uid)
+            peer = beans.Peer(uid, self)
 
             # Setup writable properties
             for name in ('name', 'node_uid', 'node_name', 'groups'):
@@ -121,7 +138,6 @@ class HeraldDirectory(object):
 
             # Store the peer
             self._peers[uid] = peer
-
 
     def register(self, uid, description):
         """

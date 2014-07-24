@@ -16,11 +16,12 @@ class Peer(object):
     """
     Represents a peer in Herald
     """
-    def __init__(self, uid):
+    def __init__(self, uid, directory=None):
         """
         Sets up the peer
 
         :param uid: Peer Unique ID
+        :param directory: Directory to call back on access update
         :raise ValueError: Invalid UID
         """
         if not uid:
@@ -32,6 +33,7 @@ class Peer(object):
         self.__node_name = uid
         self.__groups = set()
         self.__accesses = {}
+        self.__directory = directory
 
     def __repr__(self):
         """
@@ -144,6 +146,37 @@ class Peer(object):
         if not self.__groups:
             self.__groups.update(values)
 
+    def __callback(self, method_name, *args):
+        """
+        Calls back the associated directory
+
+        :param method_name: Name of the method to call
+        :param *args: Arguments of the method to call back
+        """
+        try:
+            method = getattr(self.__directory, method_name)
+        except AttributeError:
+            # Directory not available/not fully implemented
+            pass
+        else:
+            # Always give this bean as first parameter
+            return method(self, *args)
+
+    def dump(self):
+        """
+        Dumps the content of this Peer into a dictionary
+
+        :return: A dictionary describing this peer
+        """
+        # Properties
+        dump = {getattr(self, name)
+                for name in ('uid', 'name', 'node_uid', 'node_name', 'groups')}
+
+        # Accesses
+        dump['accesses'] = {access: data.dump()
+                            for access, data in self.__accesses.items()}
+        return dump
+
     def get_access(self, access_id):
         """
         Retrieves the description of the access stored with the given ID
@@ -179,6 +212,7 @@ class Peer(object):
         :param data: The description associated to the given ID
         """
         self.__accesses[access_id] = data
+        self.__callback("peer_set_access", access_id, data)
 
     def unset_access(self, access_id):
         """
@@ -187,7 +221,17 @@ class Peer(object):
         :param access_id: An access ID (xmpp, http, ...)
         :return: The associated description, or None
         """
-        return self.__accesses.pop(access_id, None)
+        data = self.__accesses.pop(access_id, None)
+        self.__callback("peer_unset_access", access_id)
+        return data
+
+    def set_directory(self, directory):
+        """
+        Sets the directory associated to this peer
+
+        :param directory: The directory to call back on update
+        """
+        self.__directory = directory
 
 # ------------------------------------------------------------------------------
 
