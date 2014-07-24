@@ -31,32 +31,23 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
         pelixmpp.BasicBot.__init__(self, jid, password)
         pelixmpp.InviteMixIn.__init__(self, None)
 
-        # Events callbacks
+        # Message callback
         self.__cb_message = None
-        self.__cb_start = None
-        self.__cb_end = None
 
         # Register to events
-        self.add_event_handler("session_start", self.__on_session_start)
-        self.add_event_handler("session_end", self.__on_session_end)
         self.add_event_handler("message", self.__on_message)
 
-
-    def set_callbacks(self, start=None, end=None, message=None):
+    def set_message_callback(self, callback):
         """
-        Sets the methods to call back on an event.
-        Each callback takes the stanza as parameter.
+        Sets the method to call when a message is received.
 
-        :param start: Called when session starts
-        :param end: Called when session ends
-        :param message: Called when a message is received
+        The method takes the message stanza as parameter.
+
+        :param callback: Method to call when a message is received
         """
-        self.__cb_start = start
-        self.__cb_end = end
-        self.__cb_message = message
+        self.__cb_message = callback
 
-
-    def __call_back(self, method, data):
+    def __callback(self, method, data):
         """
         Safely calls back a method
 
@@ -68,7 +59,6 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
                 method(data)
             except Exception as ex:
                 _logger.exception("Error calling method: %s", ex)
-
 
     def herald_join(self, nick, monitor_jid, key, groups=None):
         """
@@ -88,7 +78,6 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
         msg = beans.Message("boostrap.invite",
                             ":".join(("invite", key, groups)))
         self.__send_message("chat", monitor_jid, msg)
-
 
     def __send_message(self, msgtype, target, message, body=None):
         """
@@ -112,13 +101,6 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
         # Send it
         xmpp_msg.send()
 
-    def __on_session_start(self, data):
-        """
-        XMPP session started
-        """
-        # Callback method
-        self.__call_back(self.__cb_start, data)
-
     def __on_message(self, msg):
         """
         XMPP message received
@@ -135,38 +117,4 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
             return
 
         # Callback
-        self.__call_back(self.__cb_message, msg)
-
-    def __on_session_end(self, data):
-        """
-        XMPP session ended
-        """
-        self.__call_back(self.__cb_end, data)
-
-# ------------------------------------------------------------------------------
-
-def main(host):
-    client = HeraldBot()
-    client.connect(host, use_tls=False)
-
-    # Use last created client
-    client.herald_join("bot@phenomtwo3000", "42")
-
-    try:
-        try:
-            raw_input("Press enter to stop...")
-        except NameError:
-            input("Press enter to stop...")
-    except (KeyboardInterrupt, EOFError):
-        _logger.debug("Got interruption")
-
-    client.disconnect()
-
-    _logger.info("Bye!")
-
-if __name__ == '__main__':
-    import sys
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)-8s %(message)s')
-    logging.debug("Running on Python: %s", sys.version)
-    main("127.0.0.1")
+        self.__callback(self.__cb_message, msg)
