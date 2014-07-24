@@ -87,16 +87,17 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         creator = RoomCreator(self)
 
         # Prepare rooms configuration
-        rooms_config = {  # ... no max users limit
-                        'muc#roomconfig_maxusers': '0',
-                        # ... accepted members only
-                        'muc#roomconfig_membersonly': '1',
-                        # ... every participant can send invites
-                        'muc#roomconfig_allowinvites': '1',
-                        # ... room can disappear
-                        'muc#roomconfig_persistentroom': '0',
-                        # ... OpenFire: Forbid nick changes
-                        'x-muc#roomconfig_canchangenick': '0'}
+        rooms_config = {
+            # ... no max users limit
+            'muc#roomconfig_maxusers': '0',
+            # ... accepted members only
+            'muc#roomconfig_membersonly': '1',
+            # ... every participant can send invites
+            'muc#roomconfig_allowinvites': '1',
+            # ... room can disappear
+            'muc#roomconfig_persistentroom': '0',
+            # ... OpenFire: Forbid nick changes
+            'x-muc#roomconfig_canchangenick': '0'}
 
         # Create rooms
         for room in rooms:
@@ -238,6 +239,9 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
 # ------------------------------------------------------------------------------
 
 def main(host):
+    """
+    Standalone  monitor entry point
+    """
     xmpp = MonitorBot("bot@phenomtwo3000/messenger", "bot", "Bender")
     xmpp.connect(host, use_tls=False)
 

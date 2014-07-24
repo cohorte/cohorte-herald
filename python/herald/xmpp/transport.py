@@ -51,9 +51,6 @@ class XmppTransport(object):
         # Service controller
         self._controller = False
 
-        # Bundle context
-        self._context = None
-
         # Properties
         self._access_id = "xmpp"
         self._host = "localhost"
@@ -72,7 +69,6 @@ class XmppTransport(object):
         """
         # Ensure we do not provide the service at first
         self._controller = False
-        self._context = context
 
         # Register to session events
         self._bot.add_event_handler("session_start", self.__on_start)
