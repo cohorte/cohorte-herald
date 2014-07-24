@@ -169,7 +169,7 @@ class Peer(object):
         :return: A dictionary describing this peer
         """
         # Properties
-        dump = {getattr(self, name)
+        dump = {name: getattr(self, name)
                 for name in ('uid', 'name', 'node_uid', 'node_name', 'groups')}
 
         # Accesses
