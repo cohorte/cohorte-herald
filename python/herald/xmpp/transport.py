@@ -6,6 +6,7 @@ Herald XMPP transport implementation
 
 # Herald
 from herald.exceptions import InvalidPeerAccess
+from .beans import XMPPAccess
 from .bot import HeraldBot
 
 # Pelix
@@ -100,7 +101,7 @@ class XmppTransport(object):
         self._bot.herald_join(self._monitor_jid, self._key, peer.uid)
 
         # We're on line, register our local access
-        peer.set_access('xmpp', self._bot.boundjid.full)
+        peer.set_access(self._access_id, XMPPAccess(self._bot.boundjid.full))
 
     def __on_message(self, data):
         """
@@ -172,7 +173,7 @@ class XmppTransport(object):
         XMPP session ended
         """
         # Clean up our access
-        self._directory.get_local_peer().unset_access('xmpp')
+        self._directory.get_local_peer().unset_access(self._access_id)
 
         # Shut down the service
         self._controller = False
