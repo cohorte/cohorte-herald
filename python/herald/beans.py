@@ -237,7 +237,7 @@ class Peer(object):
 
 class Message(object):
     """
-    Represents a message in Herald
+    Represents a message to be sent
     """
     def __init__(self, subject, content=None):
         """
@@ -246,10 +246,10 @@ class Message(object):
         :param subject: Subject of the message
         :param content: Content of the message (optional)
         """
+        self._uid = str(uuid.uuid4()).replace('-', '').upper()
+        self._timestamp = int(time.time() * 1000)
         self._subject = subject
         self._content = content
-        self._timestamp = int(time.time() * 1000)
-        self._uid = str(uuid.uuid4())
 
     @property
     def subject(self):
@@ -268,7 +268,7 @@ class Message(object):
     @property
     def timestamp(self):
         """
-        Timestamp of the message
+        Time stamp of the message
         """
         return self._timestamp
 
@@ -278,3 +278,55 @@ class Message(object):
         Message UID
         """
         return self._uid
+
+class MessageReceived(Message):
+    """
+    Represents a message received by a transport
+    """
+    def __init__(self, uid, subject, content, sender_uid, reply_to,
+                 timestamp=None, extra=None):
+        """
+        Sets up the bean
+        """
+        Message.__init__(self, subject, content)
+        self._uid = uid
+        self._sender = sender_uid
+        self._reply_to = reply_to
+        self._extra = extra
+        self._timestamp = timestamp
+
+    def __str__(self):
+        """
+        String representation
+        """
+        return "{0} from {1}".format(self._subject, self._sender)
+
+    @property
+    def reply_to(self):
+        """
+        UID of the message this one replies to
+        """
+        return self._reply_to
+
+    @property
+    def sender(self):
+        """
+        UID of the peer that sent this message
+        """
+        return self._sender
+
+    @property
+    def extra(self):
+        """
+        Extra information set by the transport that received this message
+        """
+        return self._extra
+
+    def reply(self, subject, content):
+        """
+        Send a reply to this message
+
+        :param subject: Reply subject
+        :param content: Content of the reply
+        """
+        pass

@@ -114,44 +114,48 @@ class HeraldDirectory(object):
         :param dump: The result of a call to dump()
         """
         for uid, description in dump.items():
-            if uid in self._peers:
-                # Already known peer: ignore
-                continue
+            if uid not in self._peers:
+                # Do not reload already known peer
+                self.register(description)
 
-            # Make the peer bean
-            peer = beans.Peer(uid, self)
-
-            # Setup writable properties
-            for name in ('name', 'node_uid', 'node_name', 'groups'):
-                setattr(peer, name, description[name])
-
-            # Accesses
-            for access_id, data in description['accesses']:
-                try:
-                    data = self._directories[access_id].load_access(data)
-                except KeyError:
-                    # Access not available for parsing
-                    pass
-
-                # Store the parsed data, or keep it as is
-                peer.set_access(access_id, data)
-
-            # Store the peer
-            self._peers[uid] = peer
-
-    def register(self, uid, description):
+    def register(self, description):
         """
         Registers a peer
 
-        :param uid: UID of the peer
         :param description: Description of the peer, in the format of dump()
         """
-        pass
+        uid = description['uid']
+        if uid == self._local.uid:
+            # Local peer: ignore
+            return
+
+        # Make the peer bean
+        peer = beans.Peer(uid, self)
+
+        # Setup writable properties
+        for name in ('name', 'node_uid', 'node_name', 'groups'):
+            setattr(peer, name, description[name])
+
+        # Accesses
+        for access_id, data in description['accesses'].items():
+            try:
+                data = self._directories[access_id].load_access(data)
+            except KeyError:
+                # Access not available for parsing
+                pass
+
+            # Store the parsed data, or keep it as is
+            peer.set_access(access_id, data)
+
+        # Store the peer
+        self._peers[uid] = peer
+        _logger.info("Registered peer: %s", peer)
 
     def unregister(self, uid):
         """
         Unregisters a peer from the directory
 
         :param uid: UID of the peer
+        :return: The Peer bean if it was known, else None
         """
-        pass
+        return self._peers.pop(uid, None)

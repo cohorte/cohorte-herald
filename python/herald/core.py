@@ -61,9 +61,56 @@ class Herald(object):
 
         Unlocks/calls back the senders of the message this one responds to.
 
-        :param message: A Message bean forged by the transport
+        :param message: A MessageReceived bean forged by the transport
         """
-        pass
+        # User a tuple, because list can't be compared to tuples
+        parts = tuple(part for part in message.subject.split('/') if part)
+        if parts[:2] == ('herald', 'directory'):
+            try:
+                # Directory update message
+                self._handle_directory_message(message, parts[2])
+            except IndexError:
+                # Not enough arguments for a directory update: ignore
+                pass
+
+        # Notify others of the message
+        self.__notify(message)
+
+    def _handle_directory_message(self, message, kind):
+        """
+        Handles a directory update message
+
+        :param message: Message received from another peer
+        :param kind: Kind of directory message
+        """
+        if kind == 'newcomer':
+            # A new peer appears: register it
+            self._directory.register(message.content)
+
+            # Reply to it
+            message.reply('welcome', self._directory.get_local_peer().dump())
+
+        elif kind == 'welcome':
+            # A peer replied to our 'newcomer' event
+            self._directory.register(message.content)
+
+        elif kind == 'bye':
+            # A peer is going away
+            self._directory.unregister(message.content)
+
+    def __notify(self, message):
+        """
+        Calls back message senders about responses or notifies the reception of
+        a message
+
+        :param message: The received message
+        """
+        if message.reply_to:
+            # This is an answer to a message: unlock waiting events
+            pass
+        else:
+            # This a new message: call listeners in the task thread
+            pass
 
     def fire(self, target, message):
         """

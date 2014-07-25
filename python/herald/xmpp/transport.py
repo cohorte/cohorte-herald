@@ -31,9 +31,9 @@ _logger = logging.getLogger(__name__)
 @Property('_access_id', 'herald.access.id', 'xmpp')
 @Property('_host', 'xmpp.server', 'localhost')
 @Property('_port', 'xmpp.port', 5222)
-@Property('_monitor_jid', 'herald.monitor.jid', "bot@phenomtwo3000")
-@Property('_key', 'herald.xmpp.key', "42")
-@Property('_room', 'herald.xmpp.room', 'herald')
+@Property('_monitor_jid', 'herald.monitor.jid')
+@Property('_key', 'herald.xmpp.key')
+@Property('_room', 'herald.xmpp.room')
 class XmppTransport(object):
     """
     XMPP Messenger for Herald.
@@ -56,8 +56,8 @@ class XmppTransport(object):
         self._host = "localhost"
         self._port = 5222
         self._monitor_jid = None
-        self._key = "42"
-        self._room = 'herald'
+        self._key = None
+        self._room = None
 
         # XMPP bot
         self._bot = HeraldBot()
@@ -77,9 +77,6 @@ class XmppTransport(object):
                                     self.__room_in)
         self._bot.add_event_handler("muc::{0}::got_offline".format(self._room),
                                     self.__room_out)
-
-        _logger.info("Registering to event: %s",
-                     "muc::{0}::got_offline".format(self._room))
 
         # Register to messages (loop back filtered by the bot)
         self._bot.set_message_callback(self.__on_message)
@@ -113,24 +110,17 @@ class XmppTransport(object):
         _logger.info("Requesting to join %s", self._monitor_jid)
         self._bot.herald_join(peer.uid, self._monitor_jid, self._key)
 
-        # We're on line, register our local access
-        peer.set_access(self._access_id, XMPPAccess(self._bot.boundjid.full))
-
-    def __on_message(self, data):
-        """
-        XMPP message received
-        """
-        if data['type'] == 'chat' and data['from'].bare == self._monitor_jid:
-            # Direct Message from the monitor
-            self._handle_monitor_message(data)
-
-        # In any case, do the standard handling
-        self._handle_message(data)
-
-    def _handle_message(self, msg):
+    def __on_message(self, msg):
         """
         Received an XMPP message
+
+        :param msg: A message stanza
         """
+        subject = msg['subject']
+        if not subject:
+            # No subject: not an Herald message. Abandon.
+            return
+
         sender_jid = msg['from'].full
         try:
             if msg['type'] == 'groupchat':
@@ -148,46 +138,17 @@ class XmppTransport(object):
             # Content can't be decoded, use its string representation as is
             content = msg['body']
 
-        subject = msg['subject']
         uid = msg['thread']
-        replies_to = msg['parent_thread']
+        reply_to = msg['parent_thread']
 
         # Extra parameters, for a reply
         extra = {"parent_uid": uid,
                  "sender_jid": sender_jid}
 
         # Call back the core service
-        # FIXME: Create a proper message bean with:
-        # sender_uid, subject, content, replies_to, extra
-        message = beans.Message(subject, content)
+        message = beans.MessageReceived(uid, subject, content, sender_uid,
+                                        reply_to, extra=extra)
         self._core.handle_message(message)
-
-    def _handle_monitor_message(self, msg):
-        """
-        Received an XMPP message directly from the monitor bot
-        """
-        parts = [part for part in msg['subject'].split('/') if part]
-        if parts[:3] != ('herald', 'xmpp', 'directory'):
-            # Not a directory update message
-            return
-
-        # Parse content
-        content = json.loads(msg['body'])
-
-        if parts[3] == 'register':
-            # Register peer(s)
-            for uid, descr in content.items():
-                self._directory.register(uid, descr)
-
-        elif parts[3] == 'unregister':
-            # Remove peer(s)
-            for uid, descr in content.items():
-                self._directory.unregister(uid)
-
-        elif parts[3] == 'dump':
-            # Dump peers & reply to sender
-            reply = json.dumps(self._directory.dump())
-            msg.reply(reply).send()
 
     def __on_end(self, data):
         """
@@ -206,22 +167,18 @@ class XmppTransport(object):
         :param data: MUC presence stanza
         """
         uid = data['from'].resource
-        room = data['from'].user
         room_jid = data['from'].bare
         local = self._directory.get_local_peer()
 
-        if uid == local.uid:
-            # We're into a room
-            _logger.info("I joined %s", room)
+        if uid == local.uid and room_jid == self._room:
+            # We're on line, in the main room: register our local access
+            peer = self._directory.get_local_peer()
+            peer.set_access(self._access_id,
+                            XMPPAccess(self._bot.boundjid.full))
 
-            if room_jid == self._room:
-                # TODO: maybe set up the local access here
-                _logger.info("I JOINED THE MAIN ROOM")
-                message = beans.Message('/joining', local.dump())
-                self.__send_message("groupchat", room_jid, message)
-
-        else:
-            _logger.info("%s is entering %s", data['from'].resource, room)
+            # Send the "new comer" message
+            message = beans.Message('herald/directory/newcomer', local.dump())
+            self.__send_message("groupchat", room_jid, message)
 
     def __room_out(self, data):
         """
@@ -256,8 +213,6 @@ class XmppTransport(object):
                                           msubject=message.subject,
                                           mtype=msgtype)
         xmpp_msg['thread'] = message.uid
-
-        _logger.info("Sending message: %s", xmpp_msg)
 
         # Send it
         xmpp_msg.send()
