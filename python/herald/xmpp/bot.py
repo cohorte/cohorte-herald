@@ -109,7 +109,7 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
         msgfrom = msg['from']
         if msgtype == 'groupchat':
             # MUC Room chat
-            if self.boundjid.user == msgfrom.resource:
+            if self._nick == msgfrom.resource:
                 # Loopback message
                 return
         elif msgtype not in ('normal', 'chat'):
