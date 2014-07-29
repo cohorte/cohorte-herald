@@ -21,6 +21,7 @@ _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 
+
 @ComponentFactory("herald-directory-factory")
 @Provides('herald.directory')
 @RequiresMap('_directories', 'herald.transport.directory', 'herald.access.id',

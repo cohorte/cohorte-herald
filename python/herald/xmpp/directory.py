@@ -18,6 +18,7 @@ _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 
+
 @ComponentFactory("herald-xmpp-directory")
 @Requires('_directory', 'herald.directory')
 @Property('_access_id', 'herald.access.id', 'xmpp')

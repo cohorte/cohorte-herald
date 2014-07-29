@@ -11,6 +11,7 @@ import uuid
 
 # ------------------------------------------------------------------------------
 
+
 @functools.total_ordering
 class Peer(object):
     """
@@ -235,6 +236,7 @@ class Peer(object):
 
 # ------------------------------------------------------------------------------
 
+
 class Message(object):
     """
     Represents a message to be sent
@@ -278,6 +280,7 @@ class Message(object):
         Message UID
         """
         return self._uid
+
 
 class MessageReceived(Message):
     """

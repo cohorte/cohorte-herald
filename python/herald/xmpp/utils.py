@@ -13,7 +13,7 @@ import threading
 
 try:
     # Python 2
-    from StringIO  import StringIO
+    from StringIO import StringIO
 except ImportError:
     # Python 3
     from io import StringIO
@@ -21,6 +21,9 @@ except ImportError:
 # ------------------------------------------------------------------------------
 
 _logger = logging.getLogger(__name__)
+
+# ------------------------------------------------------------------------------
+
 
 def dump_element(element):
     """
@@ -54,6 +57,7 @@ def dump_element(element):
     return output.getvalue()
 
 # ------------------------------------------------------------------------------
+
 
 class RoomData(object):
     """
@@ -101,7 +105,6 @@ class RoomCreator(object):
         # Some thread safety...
         self.__lock = threading.Lock()
 
-
     def create_room(self, room, service, nick, config=None,
                     callback=None, errback=None):
         """
@@ -139,7 +142,6 @@ class RoomCreator(object):
         # Send the presence, i.e. request creation of the room
         self.__muc.joinMUC(room_jid, nick)
 
-
     def __safe_callback(self, room_data):
         """
         Safe use of the callback method, to avoid errors propagation
@@ -152,7 +154,6 @@ class RoomCreator(object):
                 method(room_data.room, room_data.nick)
             except Exception as ex:
                 _logger.exception("Error calling back room creator: %s", ex)
-
 
     def __safe_errback(self, room_data, err_condition, err_text):
         """
@@ -168,7 +169,6 @@ class RoomCreator(object):
                 method(room_data.room, room_data.nick, err_condition, err_text)
             except Exception as ex:
                 _logger.exception("Error calling back room creator: %s", ex)
-
 
     def __on_presence(self, data):
         """
@@ -213,7 +213,8 @@ class RoomCreator(object):
             try:
                 config = self.__muc.getRoomConfig(room_jid)
             except ValueError:
-                # Can't differentiate IQ errors from a "no configuration" result
+                # Can't differentiate IQ errors from a "no configuration"
+                # result
                 pass
             else:
                 # Prepare our configuration
@@ -234,4 +235,3 @@ class RoomCreator(object):
 
                 # Call back the creator
                 self.__safe_callback(room_data)
-

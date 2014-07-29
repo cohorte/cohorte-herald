@@ -4,17 +4,20 @@
 Herald Core service
 """
 
+
 class HeraldException(Exception):
     """
     Base class for all exceptions in Herald
     """
     pass
 
+
 class NoTransport(HeraldException):
     """
     No transport has been found to contact the targeted peer
     """
     pass
+
 
 class InvalidPeerAccess(HeraldException):
     """

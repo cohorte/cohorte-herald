@@ -25,6 +25,7 @@ FEATURE_MUC = 'http://jabber.org/protocol/muc'
 
 # ------------------------------------------------------------------------------
 
+
 class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
     """
     A bot that creates chat rooms and invites other bots there
@@ -237,6 +238,7 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         _logger.info(text)
 
 # ------------------------------------------------------------------------------
+
 
 def main(host):
     """

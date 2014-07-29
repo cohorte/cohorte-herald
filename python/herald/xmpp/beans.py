@@ -9,6 +9,7 @@ import functools
 
 # ------------------------------------------------------------------------------
 
+
 @functools.total_ordering
 class XMPPAccess(object):
     """
@@ -60,6 +61,7 @@ class XMPPAccess(object):
 
     def dump(self):
         """
-        Returns the content to store in a directory dump to describe this access
+        Returns the content to store in a directory dump to describe this
+        access
         """
         return self.__jid
