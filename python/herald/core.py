@@ -63,6 +63,9 @@ class Herald(object):
 
         :param message: A MessageReceived bean forged by the transport
         """
+        _logger.warning("Got message %s from %s",
+                        message.subject, message.sender)
+
         # User a tuple, because list can't be compared to tuples
         parts = tuple(part for part in message.subject.split('/') if part)
         if parts[:2] == ('herald', 'directory'):
@@ -88,7 +91,8 @@ class Herald(object):
             self._directory.register(message.content)
 
             # Reply to it
-            message.reply('welcome', self._directory.get_local_peer().dump())
+            self.reply(message, self._directory.get_local_peer().dump(),
+                       'herald/directory/welcome')
 
         elif kind == 'welcome':
             # A peer replied to our 'newcomer' event
@@ -112,15 +116,46 @@ class Herald(object):
             # This a new message: call listeners in the task thread
             pass
 
-    def fire(self, target, message):
+    def fire(self, target, message, reply_to=None):
         """
         Fires (and forget) the given message to the target
 
         :param target: The UID of a Peer, or a Peer object
+                       (ignored if reply_to is given)
         :param message: A Message bean
+        :param reply_to: MessageReceived bean this message replies to
+                         (optional)
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         """
+        if reply_to is not None:
+            # Use the message source peer
+            try:
+                transport = self._transports[reply_to.access]
+            except KeyError:
+                # Reception transport is not available anymore...
+                _logger.warning("No reply transport for access %s",
+                                reply_to.access)
+                pass
+            else:
+                # Try to get the Peer bean. If unknown, consider that the
+                # "extra" data will help the transport to reply
+                try:
+                    peer = self._directory.get_peer(reply_to.sender)
+                except KeyError:
+                    peer = None
+
+                try:
+                    # Send the reply
+                    transport.fire(peer, message, reply_to.extra)
+                except InvalidPeerAccess as ex:
+                    _logger.error("Can't reply to %s using %s transport",
+                                  peer, reply_to.access)
+                else:
+                    # Reply sent. Stop here
+                    return
+
+        # Standard behavior
         # Get the Peer object
         if not isinstance(target, beans.Peer):
             peer = self._directory.get_peer(target)
@@ -152,3 +187,21 @@ class Herald(object):
         else:
             # No transport for those accesses
             raise NoTransport("No transport found for peer {0}".format(peer))
+
+    def reply(self, message, content, subject=None):
+        """
+        Replies to a message
+
+        :param message: Original message
+        :param content: Content of the response
+        :param subject: Reply message subject (same as request if None)
+        """
+        # Normalize subject
+        if not subject:
+            subject = message.subject
+
+        try:
+            # Fire the reply
+            self.fire(message.sender, beans.Message(subject, content), message)
+        except KeyError:
+            _logger.error("No access to reply to %s", message.sender)

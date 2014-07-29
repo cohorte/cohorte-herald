@@ -283,15 +283,25 @@ class MessageReceived(Message):
     """
     Represents a message received by a transport
     """
-    def __init__(self, uid, subject, content, sender_uid, reply_to,
+    def __init__(self, uid, subject, content, sender_uid, reply_to, access,
                  timestamp=None, extra=None):
         """
         Sets up the bean
+
+        :param uid: Message UID
+        :param subject: Subject of the message
+        :param content: Content of the message
+        :param sender_uid: UID of the sending peer
+        :param reply_to: UID of the message this one replies to
+        :param access: Access ID of the transport which received this message
+        :param timestamp: Message sending time stamp
+        :param extra: Extra configuration for the transport in case of reply
         """
         Message.__init__(self, subject, content)
         self._uid = uid
         self._sender = sender_uid
         self._reply_to = reply_to
+        self._access = access
         self._extra = extra
         self._timestamp = timestamp
 
@@ -300,6 +310,10 @@ class MessageReceived(Message):
         String representation
         """
         return "{0} from {1}".format(self._subject, self._sender)
+
+    @property
+    def access(self):
+        return self._access
 
     @property
     def reply_to(self):
@@ -321,12 +335,3 @@ class MessageReceived(Message):
         Extra information set by the transport that received this message
         """
         return self._extra
-
-    def reply(self, subject, content):
-        """
-        Send a reply to this message
-
-        :param subject: Reply subject
-        :param content: Content of the reply
-        """
-        pass

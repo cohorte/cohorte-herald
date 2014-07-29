@@ -10,6 +10,9 @@ from .beans import XMPPAccess
 from .bot import HeraldBot
 import herald.beans as beans
 
+# XMPP
+import sleekxmpp
+
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, Validate, Invalidate
@@ -27,7 +30,8 @@ _logger = logging.getLogger(__name__)
 @ComponentFactory("herald-xmpp-transport")
 @Requires('_core', 'herald.core')
 @Requires('_directory', 'herald.directory')
-@Provides('herald.xmpp.transport', '_controller')
+@Requires('_xmpp_directory', 'herald.directory.xmpp')
+@Provides('herald.transport', '_controller')
 @Property('_access_id', 'herald.access.id', 'xmpp')
 @Property('_host', 'xmpp.server', 'localhost')
 @Property('_port', 'xmpp.port', 5222)
@@ -45,8 +49,11 @@ class XmppTransport(object):
         # Herald core service
         self._core = None
 
-        # Herald XMPP Directory
+        # Herald Core directory
         self._directory = None
+
+        # Herald XMPP directory
+        self._xmpp_directory = None
 
         # Service controller
         self._controller = False
@@ -59,6 +66,9 @@ class XmppTransport(object):
         self._key = None
         self._room = None
 
+        # MUC service
+        self._muc_domain = None
+
         # XMPP bot
         self._bot = HeraldBot()
 
@@ -70,6 +80,9 @@ class XmppTransport(object):
         # Ensure we do not provide the service at first
         self._controller = False
 
+        # Compute the MUC domain
+        self._muc_domain = sleekxmpp.JID(self._room).domain
+
         # Register to session events
         self._bot.add_event_handler("session_start", self.__on_start)
         self._bot.add_event_handler("session_end", self.__on_end)
@@ -77,6 +90,9 @@ class XmppTransport(object):
                                     self.__room_in)
         self._bot.add_event_handler("muc::{0}::got_offline".format(self._room),
                                     self.__room_out)
+
+        # Register "XEP-0203: Delayed Delivery" plug-in
+        self._bot.register_plugin("xep_0203")
 
         # Register to messages (loop back filtered by the bot)
         self._bot.set_message_callback(self.__on_message)
@@ -121,14 +137,21 @@ class XmppTransport(object):
             # No subject: not an Herald message. Abandon.
             return
 
+        if msg['delay']['stamp'] is not None:
+            # Delayed message: ignore
+            return
+
+        # Check if the message is from Multi-User Chat or direct
+        muc_message = (msg['type'] == 'groupchat') \
+            or (msg['from'].domain == self._muc_domain)
+
         sender_jid = msg['from'].full
         try:
-            if msg['type'] == 'groupchat':
+            if muc_message:
                 # Group message: resource is the isolate UID
                 sender_uid = msg['from'].resource
             else:
-                # FIXME: sender_uid = self._directory.from_jid(sender_jid)
-                sender_uid = "<unknown>"
+                sender_uid = self._xmpp_directory.from_jid(sender_jid)
         except KeyError:
             sender_uid = "<unknown>"
 
@@ -147,7 +170,7 @@ class XmppTransport(object):
 
         # Call back the core service
         message = beans.MessageReceived(uid, subject, content, sender_uid,
-                                        reply_to, extra=extra)
+                                        reply_to, self._access_id, extra=extra)
         self._core.handle_message(message)
 
     def __on_end(self, data):
@@ -171,7 +194,10 @@ class XmppTransport(object):
         local = self._directory.get_local_peer()
 
         if uid == local.uid and room_jid == self._room:
-            # We're on line, in the main room: register our local access
+            # We're on line, in the main room, register our service
+            self._controller = True
+
+            # Register our local access
             peer = self._directory.get_local_peer()
             peer.set_access(self._access_id,
                             XMPPAccess(self._bot.boundjid.full))
@@ -189,15 +215,14 @@ class XmppTransport(object):
         _logger.info("%s is exiting %s", data['from'].resource,
                      data['from'].user)
 
-    def __send_message(self, msgtype, target, message):
+    def __send_message(self, msgtype, target, message, parent_uid=None):
         """
         Prepares and sends a message over XMPP
 
         :param msgtype: Kind of message (chat or groupchat)
         :param target: Target JID or MUC room
         :param message: Herald message bean
-        :param body: The serialized form of the message body. If not given,
-                     the content is the string form of the message.content field
+        :param parent_uid: UID of the message this one replies to (optional)
         """
         # Convert content to JSON, with a converter:
         # sets are converted into tuples
@@ -213,27 +238,39 @@ class XmppTransport(object):
                                           msubject=message.subject,
                                           mtype=msgtype)
         xmpp_msg['thread'] = message.uid
+        if parent_uid:
+            xmpp_msg['parent_thread'] = parent_uid
 
         # Send it
         xmpp_msg.send()
 
-    def fire(self, peer, message):
+    def fire(self, peer, message, extra=None):
         """
         Fires a message to a peer
         """
-        try:
-            # Get the target JID
-            jid = peer.get_access('xmpp').jid
+        # Try to read extra information
+        jid = None
+        parent_uid = None
+        if extra is not None:
+            jid = extra.get('sender_jid')
+            parent_uid = extra.get('parent_uid')
 
-        except KeyError as ex:
+        # Try to read information from the peer
+        if not jid and peer is not None:
+            try:
+                # Get the target JID
+                jid = peer.get_access('xmpp').jid
+            except (KeyError, AttributeError) as ex:
+                pass
+
+        if jid:
+            # Send the XMPP message
+            self.__send_message("chat", jid, message, parent_uid)
+        else:
             # No XMPP access description
             raise InvalidPeerAccess("No '{0}' access found".format(ex))
 
-        else:
-            # Send the XMPP message
-            self.__send_message("chat", jid, message)
-
-    def fire_group(self, group, message):
+    def fire_group(self, group, message, extra=None):
         """
         Fires a message to a group of peers
         """
