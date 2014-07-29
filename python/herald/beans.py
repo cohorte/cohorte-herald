@@ -212,7 +212,7 @@ class Peer(object):
         :param data: The description associated to the given ID
         """
         self.__accesses[access_id] = data
-        self.__callback("peer_set_access", access_id, data)
+        self.__callback("peer_access_set", access_id, data)
 
     def unset_access(self, access_id):
         """
@@ -222,7 +222,7 @@ class Peer(object):
         :return: The associated description, or None
         """
         data = self.__accesses.pop(access_id, None)
-        self.__callback("peer_unset_access", access_id)
+        self.__callback("peer_access_unset", access_id, data)
         return data
 
     def set_directory(self, directory):

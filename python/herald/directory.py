@@ -38,6 +38,7 @@ class HeraldDirectory(object):
         self._directories = {}
 
         # Local bean description
+        self._local_uid = None
         self._local = None
 
         # UID -> Peer bean
@@ -56,8 +57,8 @@ class HeraldDirectory(object):
         self._groups.clear()
 
         # Setup the local peer description
-        uid = context.get_property(pelix.constants.FRAMEWORK_UID)
-        self._local = beans.Peer(uid, self)
+        self._local_uid = context.get_property(pelix.constants.FRAMEWORK_UID)
+        self._local = beans.Peer(self._local_uid, self)
 
     @Invalidate
     def _invalidate(self, context):
@@ -68,6 +69,13 @@ class HeraldDirectory(object):
         self._peers.clear()
         self._groups.clear()
         self._local = None
+
+    @property
+    def local_uid(self):
+        """
+        Returns the local peer UID
+        """
+        return self._local_uid
 
     def get_peer(self, uid):
         """
@@ -87,17 +95,49 @@ class HeraldDirectory(object):
         """
         return self._local
 
-    def peer_set_access(self, peer, access_id, data):
+    def peer_access_set(self, peer, access_id, data):
         """
         A new peer access is available. Called by a Peer bean.
-        """
-        pass
 
-    def peer_unset_access(self, peer, access_id):
+        :param peer: The modified Peer bean
+        :param access_id: ID of the access
+        :param data: Information of the peer access
+        """
+        try:
+            # Get the handling directory
+            directory = self._directories[access_id]
+        except KeyError:
+            # No handler for this directory
+            pass
+        else:
+            try:
+                # Notify it
+                directory.peer_access_set(peer, data)
+            except Exception as ex:
+                _logger.exception("Error notifying a transport directory: %s",
+                                  ex)
+
+    def peer_access_unset(self, peer, access_id, data):
         """
         A peer access has been removed. Called by  a Peer bean.
+
+        :param peer: The modified Peer bean
+        :param access_id: ID of the removed access
+        :param data: Previous information of the peer access
         """
-        pass
+        try:
+            # Get the handling directory
+            directory = self._directories[access_id]
+        except KeyError:
+            # No handler for this directory
+            pass
+        else:
+            try:
+                # Notify it
+                directory.peer_access_unset(peer, data)
+            except Exception as ex:
+                _logger.exception("Error notifying a transport directory: %s",
+                                  ex)
 
     def dump(self):
         """
@@ -125,11 +165,11 @@ class HeraldDirectory(object):
         :param description: Description of the peer, in the format of dump()
         """
         uid = description['uid']
-        if uid == self._local.uid:
-            # Local peer: ignore
+        if uid == self._local_uid or uid in self._peers:
+            # Local/Already known peer: ignore
             return
 
-        # Make the peer bean
+        # Make a new bean
         peer = beans.Peer(uid, self)
 
         # Setup writable properties
