@@ -21,7 +21,7 @@ _logger = logging.getLogger(__name__)
 @ComponentFactory("herald-xmpp-directory")
 @Requires('_directory', 'herald.directory')
 @Property('_access_id', 'herald.access.id', 'xmpp')
-@Provides(('herald.transport.directory', 'herald.xmpp.directory'))
+@Provides(('herald.transport.directory', 'herald.directory.xmpp'))
 class XMPPDirectory(object):
     """
     XMPP Directory for Herald
@@ -64,6 +64,30 @@ class XMPPDirectory(object):
         :return: An XMPPAccess bean
         """
         return XMPPAccess(data)
+
+    def peer_access_set(self, peer, data):
+        """
+        The access to the given peer matching our access ID has been set
+
+        :param peer: The Peer bean
+        :param data: The peer access data
+                     (previously loaded with load_access())
+        """
+        if peer.uid != self._directory.local_uid:
+            _logger.info("Peer %s access set: %s", peer, data)
+            self._jid_uid[data.jid] = peer
+
+    def peer_access_unset(self, peer, data):
+        """
+        The access to the given peer matching our access ID has been removed
+
+        :param peer: The Peer bean
+        :param data: The peer access data
+        """
+        try:
+            del self._jid_uid[data.jid]
+        except KeyError:
+            pass
 
     def from_jid(self, jid):
         """
