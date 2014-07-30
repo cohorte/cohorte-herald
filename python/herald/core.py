@@ -245,7 +245,7 @@ class Herald(object):
         # Call listeners in the thread pool
         for listener in msg_listeners:
             try:
-                self.__pool.enqueue(listener.herald_message, message)
+                self.__pool.enqueue(listener.herald_message, herald, message)
             except (AttributeError, ValueError):
                 # Invalid listener
                 pass
