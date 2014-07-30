@@ -20,10 +20,6 @@ except ImportError:
 
 # ------------------------------------------------------------------------------
 
-_logger = logging.getLogger(__name__)
-
-# ------------------------------------------------------------------------------
-
 
 def dump_element(element):
     """
@@ -99,6 +95,9 @@ class RoomCreator(object):
         self.__xmpp = client
         self.__muc = client['xep_0045']
 
+        # Logger
+        self.__logger = logging.getLogger(logname)
+
         # Room name -> RoomData
         self.__rooms = {}
 
@@ -153,7 +152,8 @@ class RoomCreator(object):
             try:
                 method(room_data.room, room_data.nick)
             except Exception as ex:
-                _logger.exception("Error calling back room creator: %s", ex)
+                self.__logger.exception("Error calling back room creator: %s",
+                                        ex)
 
     def __safe_errback(self, room_data, err_condition, err_text):
         """
@@ -168,7 +168,8 @@ class RoomCreator(object):
             try:
                 method(room_data.room, room_data.nick, err_condition, err_text)
             except Exception as ex:
-                _logger.exception("Error calling back room creator: %s", ex)
+                self.__logger.exception("Error calling back room creator: %s",
+                                        ex)
 
     def __on_presence(self, data):
         """

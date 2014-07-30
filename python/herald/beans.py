@@ -62,7 +62,7 @@ class Peer(object):
         Equality is based on the UID
         """
         if isinstance(other, Peer):
-            return self.__uid == other.__uid
+            return self.__uid == other.uid
         return False
 
     def __lt__(self, other):
@@ -70,7 +70,7 @@ class Peer(object):
         Ordering is based on the UID
         """
         if isinstance(other, Peer):
-            return self.__uid < other.__uid
+            return self.__uid < other.uid
         return False
 
     @property
@@ -222,9 +222,15 @@ class Peer(object):
         :param access_id: An access ID (xmpp, http, ...)
         :return: The associated description, or None
         """
-        data = self.__accesses.pop(access_id, None)
-        self.__callback("peer_access_unset", access_id, data)
-        return data
+        try:
+            data = self.__accesses.pop(access_id)
+        except KeyError:
+            # Unknown access
+            return None
+        else:
+            # Notify the directory
+            self.__callback("peer_access_unset", access_id, data)
+            return data
 
     def set_directory(self, directory):
         """
@@ -316,6 +322,9 @@ class MessageReceived(Message):
 
     @property
     def access(self):
+        """
+        Returns the access ID of the transport which received this message
+        """
         return self._access
 
     @property

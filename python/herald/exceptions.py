@@ -23,7 +23,7 @@ class HeraldTimeout(HeraldException):
         :param text: Description of the exception
         :param message: The request which got no reply
         """
-        super(HeraldException, self).__init__(text)
+        super(HeraldTimeout, self).__init__(text)
         self.message = message
 
 

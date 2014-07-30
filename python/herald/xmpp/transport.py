@@ -198,19 +198,19 @@ class XmppTransport(object):
         """
         uid = data['from'].resource
         room_jid = data['from'].bare
-        local = self._directory.get_local_peer()
+        local_peer = self._directory.get_local_peer()
 
-        if uid == local.uid and room_jid == self._room:
+        if uid == local_peer.uid and room_jid == self._room:
             # We're on line, in the main room, register our service
             self._controller = True
 
             # Register our local access
-            peer = self._directory.get_local_peer()
-            peer.set_access(self._access_id,
-                            XMPPAccess(self._bot.boundjid.full))
+            local_peer.set_access(self._access_id,
+                                  XMPPAccess(self._bot.boundjid.full))
 
             # Send the "new comer" message
-            message = beans.Message('herald/directory/newcomer', local.dump())
+            message = beans.Message('herald/directory/newcomer',
+                                    local_peer.dump())
             self.__send_message("groupchat", room_jid, message)
 
     def __room_out(self, data):
@@ -219,8 +219,16 @@ class XmppTransport(object):
 
         :param data: MUC presence stanza
         """
-        _logger.info("%s is exiting %s", data['from'].resource,
-                     data['from'].user)
+        uid = data['from'].resource
+        room_jid = data['from'].bare
+
+        if uid != self._directory.local_uid and room_jid == self._room:
+            # Someone else is leaving the main room: clean up the directory
+            try:
+                peer = self._directory.get_peer(uid)
+                peer.unset_access(ACCESS_ID)
+            except KeyError:
+                pass
 
     def __send_message(self, msgtype, target, message, parent_uid=None):
         """
@@ -234,6 +242,9 @@ class XmppTransport(object):
         # Convert content to JSON, with a converter:
         # sets are converted into tuples
         def set_converter(obj):
+            """
+            Converts sets to list during JSON serialization
+            """
             if isinstance(obj, (set, frozenset)):
                 return tuple(obj)
             raise TypeError
@@ -291,7 +302,7 @@ class XmppTransport(object):
             self.__send_message("chat", jid, message, parent_uid)
         else:
             # No XMPP access description
-            raise InvalidPeerAccess("No '{0}' access found" \
+            raise InvalidPeerAccess("No '{0}' access found"
                                     .format(self._access_id))
 
     def fire_group(self, group, message, extra=None):

@@ -250,46 +250,50 @@ class Herald(object):
                 # Invalid listener
                 pass
 
-    def fire(self, target, message, reply_to=None):
+    def _fire_reply(self, message, reply_to):
+        """
+        Tries to fire a reply to the given message
+
+        :param message: Message to send as a reply
+        :param reply_to: Message the first argument replies to
+        :return: The UID of the sent message, None
+        """
+        # Use the message source peer
+        try:
+            transport = self._transports[reply_to.access]
+        except KeyError:
+            # Reception transport is not available anymore...
+            raise NoTransport("No reply transport for access {0}"
+                              .format(reply_to.access))
+        else:
+            # Try to get the Peer bean. If unknown, consider that the
+            # "extra" data will help the transport to reply
+            try:
+                peer = self._directory.get_peer(reply_to.sender)
+            except KeyError:
+                peer = None
+
+            try:
+                # Send the reply
+                transport.fire(peer, message, reply_to.extra)
+            except InvalidPeerAccess:
+                raise NoTransport("Can't reply to {0} using {1} transport"
+                                  .format(peer, reply_to.access))
+            else:
+                # Reply sent. Stop here
+                return message.uid
+
+    def fire(self, target, message):
         """
         Fires (and forget) the given message to the target
 
         :param target: The UID of a Peer, or a Peer object
                        (ignored if reply_to is given)
         :param message: A Message bean
-        :param reply_to: MessageReceived bean this message replies to
-                         (optional)
         :return: The UID of the message sent
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         """
-        if reply_to is not None:
-            # Use the message source peer
-            try:
-                transport = self._transports[reply_to.access]
-            except KeyError:
-                # Reception transport is not available anymore...
-                _logger.warning("No reply transport for access %s",
-                                reply_to.access)
-                pass
-            else:
-                # Try to get the Peer bean. If unknown, consider that the
-                # "extra" data will help the transport to reply
-                try:
-                    peer = self._directory.get_peer(reply_to.sender)
-                except KeyError:
-                    peer = None
-
-                try:
-                    # Send the reply
-                    transport.fire(peer, message, reply_to.extra)
-                except InvalidPeerAccess as ex:
-                    _logger.error("Can't reply to %s using %s transport",
-                                  peer, reply_to.access)
-                else:
-                    # Reply sent. Stop here
-                    return message.uid
-
         # Standard behavior
         # Get the Peer object
         if not isinstance(target, beans.Peer):
@@ -372,13 +376,27 @@ class Herald(object):
         :param message: Original message
         :param content: Content of the response
         :param subject: Reply message subject (same as request if None)
+        :raise NoTransport: No transport/access found to send the reply
         """
         # Normalize subject
         if not subject:
             subject = message.subject
 
         try:
+            # Try to reuse the same transport
+            self._fire_reply(beans.Message(subject, content), message)
+        except NoTransport:
+            # Continue...
+            pass
+        else:
+            # No error
+            return
+
+        # If not possible: fire a standard reply
+        try:
             # Fire the reply
-            self.fire(message.sender, beans.Message(subject, content), message)
+            self.fire(message.sender, beans.Message(subject, content))
         except KeyError:
-            _logger.error("No access to reply to %s", message.sender)
+            # Convert KeyError to NoTransport
+            raise NoTransport("No access to reply to {0}"
+                              .format(message.sender))
