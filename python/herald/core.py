@@ -179,9 +179,6 @@ class Herald(object):
 
         :param message: A MessageReceived bean forged by the transport
         """
-        _logger.warning("Got message %s from %s",
-                        message.subject, message.sender)
-
         # User a tuple, because list can't be compared to tuples
         parts = tuple(part for part in message.subject.split('/') if part)
         if parts[:2] == ('herald', 'directory'):
