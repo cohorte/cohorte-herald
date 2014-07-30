@@ -228,7 +228,7 @@ class Herald(object):
         if message.reply_to:
             try:
                 # This is an answer to a message: unlock the sender
-                self.__waiting_events.pop(message.uid).set(message)
+                self.__waiting_events.pop(message.reply_to).set(message)
             except KeyError:
                 # Nobody was waiting for the event
                 pass
