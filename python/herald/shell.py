@@ -47,6 +47,8 @@ class HeraldCommands(object):
         """
         return [("fire", self.fire),
                 ("send", self.send),
+                ("post", self.post),
+                ("forget", self.forget),
                 ("peers", self.list_peers),
                 ("local", self.local_peer), ]
 
@@ -85,6 +87,44 @@ class HeraldCommands(object):
         else:
             io_handler.write_line("Response: {0}", result.subject)
             io_handler.write_line(result.content)
+
+    def post(self, io_handler, target, subject, *words):
+        """
+        Post a message to the given peer.
+        """
+        def callback(herald, message):
+            """
+            Received a reply
+            """
+            io_handler.write_line("Got answer to {0}:", message.reply_to)
+            io_handler.write_line(message.content)
+
+        def errback(herald, exception):
+            """
+            Error during message transmission
+            """
+            io_handler.write_line("Error posting message: {0} ({1})",
+                                  type(exception).__name__, exception)
+
+        try:
+            uid = self._herald.post(target,
+                                    beans.Message(subject, ' '.join(words)),
+                                    callback, errback)
+        except KeyError:
+            io_handler.write_line("Unknown target: {0}", target)
+        except NoTransport:
+            io_handler.write_line("No transport to join {0}", target)
+        else:
+            io_handler.write_line("Message sent: {0}", uid)
+
+    def forget(self, io_handler, uid):
+        """
+        Forgets about the given message
+        """
+        if self._herald.forget(uid):
+            io_handler.write_line("Herald forgot about {0}", uid)
+        else:
+            io_handler.write_line("Herald wasn't aware of {0}", uid)
 
     def __print_peer(self, io_handler, peer):
         """

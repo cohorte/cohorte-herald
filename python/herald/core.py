@@ -6,7 +6,7 @@ Herald Core service
 
 # Herald
 from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout, \
-    NoListener
+    NoListener, ForgotMessage
 import herald
 import herald.beans as beans
 
@@ -65,6 +65,9 @@ class Herald(object):
 
         # Events used for blocking "send()": UID -> EventData
         self.__waiting_events = {}
+
+        # Events used for "post()" methods: UID -> (callback, errback)
+        self.__waiting_posts = {}
 
     @Validate
     def _validate(self, context):
@@ -209,17 +212,35 @@ class Herald(object):
         """
         if kind == 'no-listener':
             # No listener found for a given message
+            # ... release send() calls
             try:
                 # Get the request message UID
                 uid = message.content['uid']
                 subject = message.content['subject']
+            except KeyError:
+                # Invalid error content...
+                return
 
+            try:
                 # Unlock the sender with an exception
                 self.__waiting_events.pop(uid) \
                     .raise_exception(NoListener(uid, subject))
             except KeyError:
-                # Nobody was waiting for the event, or invalid content
+                # Nobody was waiting for the event
                 pass
+
+            # ... notify post() callers
+            try:
+                errback = self.__waiting_posts.pop(uid)[1]
+            except (KeyError, IndexError):
+                # No error callback for this message
+                pass
+            else:
+                if errback is not None:
+                    try:
+                        errback(self, NoListener(uid, subject))
+                    except Exception as ex:
+                        _logger.exception("Error calling errback: %s", ex)
 
     def _handle_directory_message(self, message, kind):
         """
@@ -252,12 +273,25 @@ class Herald(object):
         :param message: The received message
         """
         if message.reply_to:
+            # ... unlock send() calls
             try:
                 # This is an answer to a message: unlock the sender
                 self.__waiting_events.pop(message.reply_to).set(message)
             except KeyError:
                 # Nobody was waiting for the event
                 pass
+
+            # ... notify post() callers
+            try:
+                callback = self.__waiting_posts[message.reply_to][0]
+            except KeyError:
+                # Nobody was waiting for an answer
+                pass
+            else:
+                try:
+                    callback(self, message)
+                except Exception as ex:
+                    _logger.exception("Error calling back poster: %s", ex)
 
         # Compute the list of listeners to notify
         msg_listeners = set()
@@ -273,7 +307,7 @@ class Herald(object):
             for listener in msg_listeners:
                 try:
                     self.__pool.enqueue(listener.herald_message,
-                                        herald, message)
+                                        self, message)
                 except (AttributeError, ValueError):
                     # Invalid listener
                     pass
@@ -321,7 +355,6 @@ class Herald(object):
         Fires (and forget) the given message to the target
 
         :param target: The UID of a Peer, or a Peer object
-                       (ignored if reply_to is given)
         :param message: A Message bean
         :return: The UID of the message sent
         :raise KeyError: Unknown peer UID
@@ -367,7 +400,6 @@ class Herald(object):
         Sends a message, and waits for its reply
 
         :param target: The UID of a Peer, or a Peer object
-                       (ignored if reply_to is given)
         :param message: A Message bean
         :param timeout: Maximum time to wait for an answer
         :return: The reply message bean
@@ -403,6 +435,73 @@ class Herald(object):
             except KeyError:
                 # Ignore errors at this point
                 pass
+
+    def post(self, target, message, callback, errback):
+        """
+        Posts a message. The given methods will be called back as soon as a
+        result is given, or in case of error
+
+        The given callback methods must have the following signatures:
+        - callback(herald, reply_message)
+        - errback(herald, exception)
+
+        :param target: The UID of a Peer, or a Peer object
+        :param message: A Message bean
+        :param callback: Method to call back when a reply is received
+        :param errback: Method to call back if an error occurs
+        :return: The message UID
+        :raise KeyError: Unknown peer UID
+        :raise NoTransport: No transport found to send the message
+        """
+        # Prepare an entry in the waiting posts
+        self.__waiting_posts[message.uid] = (callback, errback)
+
+        try:
+            # Fire the message
+            return self.fire(target, message)
+        except:
+            # Early clean up in case of exception
+            try:
+                del self.__waiting_posts[message.uid]
+            except KeyError:
+                pass
+
+    def forget(self, uid):
+        """
+        Tells Herald to forget informations about the given message UIDs.
+
+        This can be used to clean up references to a component being
+        invalidated.
+
+        :param uid: The UID of a message
+        :return: True if there was a reference about this message
+        """
+        # Prepare the exception
+        result = False
+        exception = ForgotMessage(uid)
+
+        # ... release the send() call
+        try:
+            self.__waiting_events.pop(uid).raise_exception(exception)
+            result = True
+        except KeyError:
+            # ... no pending call
+            pass
+
+        try:
+            errback = self.__waiting_posts.pop(uid)[1]
+        except KeyError:
+            # ... no pending call
+            pass
+        else:
+            result = True
+            try:
+                errback(self, exception)
+            except:
+                # Silent exception
+                pass
+
+        return result
 
     def reply(self, message, content, subject=None):
         """
