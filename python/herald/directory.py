@@ -5,6 +5,7 @@ Herald Core directory
 """
 
 # Herald
+import herald
 import herald.beans as beans
 
 # Pelix
@@ -23,9 +24,9 @@ _logger = logging.getLogger(__name__)
 
 
 @ComponentFactory("herald-directory-factory")
-@Provides('herald.directory')
-@RequiresMap('_directories', 'herald.transport.directory', 'herald.access.id',
-             False, False, True)
+@Provides(herald.SERVICE_DIRECTORY)
+@RequiresMap('_directories', herald.SERVICE_TRANSPORT_DIRECTORY,
+             herald.PROP_ACCESS_ID, False, False, True)
 @Instantiate("herald-directory")
 class HeraldDirectory(object):
     """

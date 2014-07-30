@@ -4,10 +4,16 @@
 Herald XMPP transport implementation
 """
 
-# Herald
-from herald.exceptions import InvalidPeerAccess
+# Herald XMPP
+from . import FACTORY_TRANSPORT, SERVICE_XMPP_DIRECTORY, ACCESS_ID, \
+    PROP_XMPP_SERVER, PROP_XMPP_PORT, PROP_MONITOR_JID, PROP_MONITOR_KEY, \
+    PROP_XMPP_ROOM_JID
 from .beans import XMPPAccess
 from .bot import HeraldBot
+
+# Herald Core
+from herald.exceptions import InvalidPeerAccess
+import herald
 import herald.beans as beans
 
 # XMPP
@@ -28,17 +34,17 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
-@ComponentFactory("herald-xmpp-transport")
-@Requires('_core', 'herald.core')
-@Requires('_directory', 'herald.directory')
-@Requires('_xmpp_directory', 'herald.directory.xmpp')
+@ComponentFactory(FACTORY_TRANSPORT)
+@Requires('_core', herald.SERVICE_HERALD)
+@Requires('_directory', herald.SERVICE_DIRECTORY)
+@Requires('_xmpp_directory', SERVICE_XMPP_DIRECTORY)
 @Provides('herald.transport', '_controller')
-@Property('_access_id', 'herald.access.id', 'xmpp')
-@Property('_host', 'xmpp.server', 'localhost')
-@Property('_port', 'xmpp.port', 5222)
-@Property('_monitor_jid', 'herald.monitor.jid')
-@Property('_key', 'herald.xmpp.key')
-@Property('_room', 'herald.xmpp.room')
+@Property('_access_id', herald.PROP_ACCESS_ID, ACCESS_ID)
+@Property('_host', PROP_XMPP_SERVER, 'localhost')
+@Property('_port', PROP_XMPP_PORT, 5222)
+@Property('_monitor_jid', PROP_MONITOR_JID)
+@Property('_key', PROP_MONITOR_KEY)
+@Property('_room', PROP_XMPP_ROOM_JID)
 class XmppTransport(object):
     """
     XMPP Messenger for Herald.
@@ -60,7 +66,7 @@ class XmppTransport(object):
         self._controller = False
 
         # Properties
-        self._access_id = "xmpp"
+        self._access_id = ACCESS_ID
         self._host = "localhost"
         self._port = 5222
         self._monitor_jid = None

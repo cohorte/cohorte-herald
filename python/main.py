@@ -15,6 +15,9 @@ __docformat__ = "restructuredtext en"
 # Monitor bot
 import herald.xmpp.monitor as xmpp_monitor
 
+# Herald constants
+import herald.xmpp
+
 # Pelix
 from pelix.ipopo.constants import use_waiting_list
 import pelix.framework
@@ -73,16 +76,15 @@ def main(xmpp_server, xmpp_port, run_monitor):
     with use_waiting_list(context) as ipopo:
         # Instantiate remote service components
         # ... XMPP Directory
-        ipopo.add("herald-xmpp-directory", "herald-xmpp-directory")
+        ipopo.add(herald.xmpp.FACTORY_DIRECTORY, "herald-xmpp-directory")
 
         # ... XMPP Transport
-        ipopo.add("herald-xmpp-transport", "herald-xmpp-transport",
-                  {'xmpp.server': xmpp_server,
-                   'xmpp.port': xmpp_port,
-                   'herald.monitor.jid': monitor_jid,
-                   'herald.xmpp.key': "42",
-                   'herald.xmpp.room': main_room_jid,
-                   })
+        ipopo.add(herald.xmpp.FACTORY_TRANSPORT, "herald-xmpp-transport",
+                  {herald.xmpp.PROP_XMPP_SERVER: xmpp_server,
+                   herald.xmpp.PROP_XMPP_PORT: xmpp_port,
+                   herald.xmpp.PROP_MONITOR_JID: monitor_jid,
+                   herald.xmpp.PROP_MONITOR_KEY: "42",
+                   herald.xmpp.PROP_XMPP_ROOM_JID: main_room_jid})
 
     # Start the framework and wait for it to stop
     framework.wait_for_stop()

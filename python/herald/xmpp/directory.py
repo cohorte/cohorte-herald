@@ -1,11 +1,15 @@
 #!/usr/bin/python
 # -- Content-Encoding: UTF-8 --
 """
-Herald XMPP directory
+Herald XMPP transport directory
 """
 
-# Herald XMPP beans
+# Herald XMPP
+from . import FACTORY_DIRECTORY, SERVICE_XMPP_DIRECTORY, ACCESS_ID
 from .beans import XMPPAccess
+
+# Herald
+import herald
 
 # Standard library
 import logging
@@ -19,10 +23,10 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
-@ComponentFactory("herald-xmpp-directory")
-@Requires('_directory', 'herald.directory')
-@Property('_access_id', 'herald.access.id', 'xmpp')
-@Provides(('herald.transport.directory', 'herald.directory.xmpp'))
+@ComponentFactory(FACTORY_DIRECTORY)
+@Requires('_directory', herald.SERVICE_DIRECTORY)
+@Property('_access_id', herald.PROP_ACCESS_ID, ACCESS_ID)
+@Provides((herald.SERVICE_TRANSPORT_DIRECTORY, SERVICE_XMPP_DIRECTORY))
 class XMPPDirectory(object):
     """
     XMPP Directory for Herald
@@ -33,7 +37,7 @@ class XMPPDirectory(object):
         """
         # Herald Core Directory
         self._directory = None
-        self._access_id = "xmpp"
+        self._access_id = ACCESS_ID
 
         # JID -> Peer UID
         self._jid_uid = {}
@@ -75,7 +79,6 @@ class XMPPDirectory(object):
                      (previously loaded with load_access())
         """
         if peer.uid != self._directory.local_uid:
-            _logger.info("Peer %s access set: %s", peer, data)
             self._jid_uid[data.jid] = peer
 
     def peer_access_unset(self, peer, data):

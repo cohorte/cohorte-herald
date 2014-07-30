@@ -4,6 +4,9 @@
 Herald XMPP beans definition
 """
 
+# Herald XMPP
+from . import ACCESS_ID
+
 # Standard library
 import functools
 
@@ -50,7 +53,7 @@ class XMPPAccess(object):
         """
         Retrieves the access ID associated to this kind of access
         """
-        return "xmpp"
+        return ACCESS_ID
 
     @property
     def jid(self):

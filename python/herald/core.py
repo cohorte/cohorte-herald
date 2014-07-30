@@ -6,6 +6,7 @@ Herald Core service
 
 # Herald
 from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout
+import herald
 import herald.beans as beans
 
 # Pelix
@@ -29,10 +30,10 @@ _logger = logging.getLogger(__name__)
 
 
 @ComponentFactory("herald-core-factory")
-@Provides('herald.core')
-@Requires('_directory', 'herald.directory')
-@Requires('_listeners', 'herald.listener', True, True)
-@RequiresMap('_transports', 'herald.transport', 'herald.access.id',
+@Provides(herald.SERVICE_HERALD)
+@Requires('_directory', herald.SERVICE_DIRECTORY)
+@Requires('_listeners', herald.SERVICE_LISTENER, True, True)
+@RequiresMap('_transports', herald.SERVICE_TRANSPORT, herald.PROP_ACCESS_ID,
              False, False, True)
 @Instantiate("herald-core")
 class Herald(object):
@@ -105,7 +106,8 @@ class Herald(object):
         with self.__lock:
             re_filters = set(self.__compile_pattern(fn_filter)
                              for fn_filter
-                             in svc_ref.get_property("herald.filters") or [])
+                             in svc_ref.get_property(herald.PROP_FILTERS)
+                             or [])
             for re_filter in re_filters:
                 self.__msg_listeners.setdefault(re_filter, set()) \
                     .add(listener)
@@ -119,10 +121,11 @@ class Herald(object):
             # Get old and new filters as sets
             old_filters = set(self.__compile_pattern(fn_filter)
                               for fn_filter
-                              in old_props.get("herald.filters") or [])
+                              in old_props.get(herald.PROP_FILTERS) or [])
             new_filters = set(self.__compile_pattern(fn_filter)
                               for fn_filter
-                              in svc_ref.get_property("herald.filters") or [])
+                              in svc_ref.get_property(herald.PROP_FILTERS)
+                              or [])
 
             # Compute differences
             added_filters = new_filters.difference(old_filters)
@@ -154,7 +157,8 @@ class Herald(object):
         with self.__lock:
             re_filters = set(self.__compile_pattern(fn_filter)
                              for fn_filter
-                             in svc_ref.get_property("herald.filters") or [])
+                             in svc_ref.get_property(herald.PROP_FILTERS)
+                             or [])
             for re_filter in re_filters:
                 try:
                     listeners = self.__msg_listeners[re_filter]
@@ -189,7 +193,7 @@ class Herald(object):
                 pass
 
         # Notify others of the message
-        self._notify(message)
+        self.__notify(message)
 
     def _handle_directory_message(self, message, kind):
         """
