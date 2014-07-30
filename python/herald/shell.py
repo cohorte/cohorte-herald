@@ -5,7 +5,7 @@ Pelix Shell commands for Herald
 """
 
 # Herald
-from herald.exceptions import NoTransport
+from herald.exceptions import NoTransport, HeraldTimeout
 import herald
 import herald.beans as beans
 
@@ -69,12 +69,17 @@ class HeraldCommands(object):
         Sends a message to the given peer(s). Prints responses in the shell.
         """
         try:
-            result = self._herald.fire(target,
-                                       beans.Message(subject, ' '.join(words)))
+            # Send the message with a 10 seconds timeout
+            # (we're blocking the shell here)
+            result = self._herald.send(target,
+                                       beans.Message(subject, ' '.join(words)),
+                                       10)
         except KeyError:
             io_handler.write_line("Unknown target: {0}", target)
         except NoTransport:
             io_handler.write_line("No transport to join {0}", target)
+        except HeraldTimeout:
+            io_handler.write_line("No response given before timeout")
         else:
             io_handler.write_line("Response: {0}", result.subject)
             io_handler.write_line(result.content)
