@@ -92,14 +92,14 @@ class HeraldCommands(object):
         """
         Post a message to the given peer.
         """
-        def callback(herald, message):
+        def callback(_, message):
             """
             Received a reply
             """
             io_handler.write_line("Got answer to {0}:", message.reply_to)
             io_handler.write_line(message.content)
 
-        def errback(herald, exception):
+        def errback(_, exception):
             """
             Error during message transmission
             """
