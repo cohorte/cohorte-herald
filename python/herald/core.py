@@ -10,13 +10,16 @@ import herald.beans as beans
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Validate, Invalidate, Instantiate, RequiresMap
+    Validate, Invalidate, Instantiate, RequiresMap, BindField, UpdateField, \
+    UnbindField
 import pelix.threadpool
 import pelix.utilities
 
 # Standard library
-import logging
 import fnmatch
+import logging
+import re
+import threading
 
 # ------------------------------------------------------------------------------
 
@@ -43,11 +46,14 @@ class Herald(object):
         # Herald core directory
         self._directory = None
 
-        # Message listeners
+        # Message listeners (dependency)
         self._listeners = []
 
-        # Filter -> Listener
-        self.__listeners = {}
+        # Filter -> Listener (computed)
+        self.__msg_listeners = {}
+
+        # Thread safety for listeners
+        self.__lock = threading.Lock()
 
         # Herald transports: access ID -> implementation
         self._transports = {}
@@ -81,6 +87,85 @@ class Herald(object):
 
         # Clear the thread pool
         self.__pool.clear()
+
+    def __compile_pattern(self, pattern):
+        """
+        Converts a file name pattern to a regular expression
+
+        :param pattern: A file name pattern
+        :return: A compiled regular expression
+        """
+        return re.compile(fnmatch.translate(pattern), re.IGNORECASE)
+
+    @BindField
+    def _bind_listener(self, _, listener, svc_ref):
+        """
+        A message listener has been bound
+        """
+        with self.__lock:
+            re_filters = set(self.__compile_pattern(fn_filter)
+                             for fn_filter
+                             in svc_ref.get_property("herald.filters") or [])
+            for re_filter in re_filters:
+                self.__msg_listeners.setdefault(re_filter, set()) \
+                    .add(listener)
+
+    @UpdateField
+    def _update_listener(self, _, listener, svc_ref, old_props):
+        """
+        The properties of a message listener have been updated
+        """
+        with self.__lock:
+            # Get old and new filters as sets
+            old_filters = set(self.__compile_pattern(fn_filter)
+                              for fn_filter
+                              in old_props.get("herald.filters") or [])
+            new_filters = set(self.__compile_pattern(fn_filter)
+                              for fn_filter
+                              in svc_ref.get_property("herald.filters") or [])
+
+            # Compute differences
+            added_filters = new_filters.difference(old_filters)
+            removed_filters = old_filters.difference(new_filters)
+
+            # Add new filters
+            for re_filter in added_filters:
+                self.__msg_listeners.setdefault(re_filter, set()) \
+                    .add(listener)
+
+            # Remove old ones
+            for re_filter in removed_filters:
+                try:
+                    listeners = self.__msg_listeners[re_filter]
+                    listeners.remove(listener)
+                except KeyError:
+                    # Filter or listener not found
+                    pass
+                else:
+                    # Clean up dictionary if necessary
+                    if not listeners:
+                        del self.__msg_listeners[re_filter]
+
+    @UnbindField
+    def _unbind_listener(self, _, listener, svc_ref):
+        """
+        A message listener has gone away
+        """
+        with self.__lock:
+            re_filters = set(self.__compile_pattern(fn_filter)
+                             for fn_filter
+                             in svc_ref.get_property("herald.filters") or [])
+            for re_filter in re_filters:
+                try:
+                    listeners = self.__msg_listeners[re_filter]
+                    listeners.remove(listener)
+                except KeyError:
+                    # Filter or listener not found
+                    pass
+                else:
+                    # Clean up dictionary if necessary
+                    if not listeners:
+                        del self.__msg_listeners[re_filter]
 
     def handle_message(self, message):
         """
@@ -144,13 +229,14 @@ class Herald(object):
                 # Nobody was waiting for the event
                 pass
 
-        # Compute listeners
+        # Compute the list of listeners to notify
         msg_listeners = set()
         subject = message.subject
 
-        for pattern, pat_listeners in self.__listeners.items():
-            if fnmatch.fnmatch(subject, pattern):
-                msg_listeners.update(pat_listeners)
+        with self.__lock:
+            for re_filter, re_listeners in self.__msg_listeners.items():
+                if re_filter.match(subject) is not None:
+                    msg_listeners.update(re_listeners)
 
         # Call listeners in the thread pool
         for listener in msg_listeners:
