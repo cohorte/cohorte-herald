@@ -98,7 +98,7 @@ class Herald(object):
         """
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE)
 
-    @BindField
+    @BindField('_listeners')
     def _bind_listener(self, _, listener, svc_ref):
         """
         A message listener has been bound
@@ -112,7 +112,7 @@ class Herald(object):
                 self.__msg_listeners.setdefault(re_filter, set()) \
                     .add(listener)
 
-    @UpdateField
+    @UpdateField('_listeners')
     def _update_listener(self, _, listener, svc_ref, old_props):
         """
         The properties of a message listener have been updated
@@ -149,7 +149,7 @@ class Herald(object):
                     if not listeners:
                         del self.__msg_listeners[re_filter]
 
-    @UnbindField
+    @UnbindField('_listeners')
     def _unbind_listener(self, _, listener, svc_ref):
         """
         A message listener has gone away
