@@ -245,31 +245,48 @@ class XmppTransport(object):
         # Send it
         xmpp_msg.send()
 
-    def fire(self, peer, message, extra=None):
+    def __get_jid(self, peer, extra):
         """
-        Fires a message to a peer
+        Retrieves the JID to use to communicate with a peer
+
+        :param peer: A Peer bean or None
+        :param extra: The extra information for a reply or None
+        :return: The JID to use to reply, or None
         """
-        # Try to read extra information
+        # Get JID from reply information
         jid = None
-        parent_uid = None
         if extra is not None:
             jid = extra.get('sender_jid')
-            parent_uid = extra.get('parent_uid')
 
         # Try to read information from the peer
         if not jid and peer is not None:
             try:
                 # Get the target JID
-                jid = peer.get_access('xmpp').jid
-            except (KeyError, AttributeError) as ex:
+                jid = peer.get_access(self._access_id).jid
+            except (KeyError, AttributeError):
                 pass
+
+        return jid
+
+    def fire(self, peer, message, extra=None):
+        """
+        Fires a message to a peer
+        """
+        # Get the request message UID, if any
+        parent_uid = None
+        if extra is not None:
+            parent_uid = extra.get('parent_uid')
+
+        # Try to read extra information
+        jid = self.__get_jid(peer, extra)
 
         if jid:
             # Send the XMPP message
             self.__send_message("chat", jid, message, parent_uid)
         else:
             # No XMPP access description
-            raise InvalidPeerAccess("No '{0}' access found".format(ex))
+            raise InvalidPeerAccess("No '{0}' access found" \
+                                    .format(self._access_id))
 
     def fire_group(self, group, message, extra=None):
         """
