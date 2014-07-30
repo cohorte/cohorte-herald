@@ -56,6 +56,7 @@ def main(xmpp_server, xmpp_port, run_monitor):
                       # Herald
                       'herald.core',
                       'herald.directory',
+                      'herald.shell',
                       'herald.xmpp.directory',
                       'herald.xmpp.transport',
                       ))
