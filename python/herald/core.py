@@ -5,12 +5,14 @@ Herald Core service
 """
 
 # Herald
-from herald.exceptions import InvalidPeerAccess, NoTransport
+from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout
 import herald.beans as beans
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Validate, Invalidate, Instantiate, RequiresMap
+import pelix.threadpool
+import pelix.utilities
 
 # Standard library
 import logging
@@ -42,19 +44,35 @@ class Herald(object):
         # Herald transports: access ID -> implementation
         self._transports = {}
 
+        # Task thread
+        self.__pool = pelix.threadpool.ThreadPool(1, logname="HeraldNotify")
+
+        # Events used for blocking "send()": UID -> EventData
+        self.__waiting_events = {}
+
     @Validate
     def _validate(self, context):
         """
         Component validated
         """
-        _logger.debug("Herald core service validated")
+        # Start the thread pool
+        self.__pool.start()
 
     @Invalidate
     def _invalidate(self, context):
         """
         Component invalidated
         """
-        _logger.debug("Herald core service invalidated")
+        # Stop the thread pool
+        self.__pool.stop()
+
+        # Clear waiting events (set them with no data)
+        for event in tuple(self.__waiting_events.values()):
+            event.set(None)
+        self.__waiting_events.clear()
+
+        # Clear the thread pool
+        self.__pool.clear()
 
     def handle_message(self, message):
         """
@@ -78,7 +96,7 @@ class Herald(object):
                 pass
 
         # Notify others of the message
-        self.__notify(message)
+        self._notify(message)
 
     def _handle_directory_message(self, message, kind):
         """
@@ -111,11 +129,15 @@ class Herald(object):
         :param message: The received message
         """
         if message.reply_to:
-            # This is an answer to a message: unlock waiting events
-            pass
-        else:
-            # This a new message: call listeners in the task thread
-            pass
+            try:
+                # This is an answer to a message: unlock the sender
+                self.__waiting_events.pop(message.uid).set(message)
+            except KeyError:
+                # Nobody was waiting for the event
+                pass
+
+        # Call listeners in the task thread
+        pass
 
     def fire(self, target, message, reply_to=None):
         """
@@ -126,6 +148,7 @@ class Herald(object):
         :param message: A Message bean
         :param reply_to: MessageReceived bean this message replies to
                          (optional)
+        :return: The UID of the message sent
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         """
@@ -154,7 +177,7 @@ class Herald(object):
                                   peer, reply_to.access)
                 else:
                     # Reply sent. Stop here
-                    return
+                    return message.uid
 
         # Standard behavior
         # Get the Peer object
@@ -188,6 +211,48 @@ class Herald(object):
         else:
             # No transport for those accesses
             raise NoTransport("No transport found for peer {0}".format(peer))
+
+        return message.uid
+
+    def send(self, target, message, timeout=None):
+        """
+        Sends a message, and waits for its reply
+
+        :param target: The UID of a Peer, or a Peer object
+                       (ignored if reply_to is given)
+        :param message: A Message bean
+        :param timeout: Maximum time to wait for an answer
+        :return: The reply message bean
+        :raise KeyError: Unknown peer UID
+        :raise NoTransport: No transport found to send the message
+        :raise HeraldTimeout: Timeout raised before getting an answer
+        """
+        # Prepare an event, which will be set when the answer will be received
+        event = pelix.utilities.EventData()
+        self.__waiting_events[message.uid] = event
+
+        try:
+            # Fire the message
+            self.fire(target, message)
+
+            # Message sent, wait for an answer
+            if event.wait(timeout):
+                if event.data is not None:
+                    return event.data
+                else:
+                    # Message cancelled due to invalidation
+                    raise HeraldTimeout("Herald stops listening to messages",
+                                        message)
+            else:
+                raise HeraldTimeout("Timeout reached before receiving a reply",
+                                    message)
+        finally:
+            try:
+                # Clean up
+                del self.__waiting_events[message.uid]
+            except KeyError:
+                # Ignore errors at this point
+                pass
 
     def reply(self, message, content, subject=None):
         """

@@ -12,6 +12,21 @@ class HeraldException(Exception):
     pass
 
 
+class HeraldTimeout(HeraldException):
+    """
+    A timeout has been reached
+    """
+    def __init__(self, text, message):
+        """
+        Sets up the exception
+
+        :param text: Description of the exception
+        :param message: The request which got no reply
+        """
+        super(HeraldException, self).__init__(text)
+        self.message = message
+
+
 class NoTransport(HeraldException):
     """
     No transport has been found to contact the targeted peer
