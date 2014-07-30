@@ -16,6 +16,7 @@ import pelix.utilities
 
 # Standard library
 import logging
+import fnmatch
 
 # ------------------------------------------------------------------------------
 
@@ -27,6 +28,7 @@ _logger = logging.getLogger(__name__)
 @ComponentFactory("herald-core-factory")
 @Provides('herald.core')
 @Requires('_directory', 'herald.directory')
+@Requires('_listeners', 'herald.listener', True, True)
 @RequiresMap('_transports', 'herald.transport', 'herald.access.id',
              False, False, True)
 @Instantiate("herald-core")
@@ -41,11 +43,17 @@ class Herald(object):
         # Herald core directory
         self._directory = None
 
+        # Message listeners
+        self._listeners = []
+
+        # Filter -> Listener
+        self.__listeners = {}
+
         # Herald transports: access ID -> implementation
         self._transports = {}
 
-        # Task thread
-        self.__pool = pelix.threadpool.ThreadPool(1, logname="HeraldNotify")
+        # Notification threads
+        self.__pool = pelix.threadpool.ThreadPool(5, logname="HeraldNotify")
 
         # Events used for blocking "send()": UID -> EventData
         self.__waiting_events = {}
@@ -136,8 +144,21 @@ class Herald(object):
                 # Nobody was waiting for the event
                 pass
 
-        # Call listeners in the task thread
-        pass
+        # Compute listeners
+        msg_listeners = set()
+        subject = message.subject
+
+        for pattern, pat_listeners in self.__listeners.items():
+            if fnmatch.fnmatch(subject, pattern):
+                msg_listeners.update(pat_listeners)
+
+        # Call listeners in the thread pool
+        for listener in msg_listeners:
+            try:
+                self.__pool.enqueue(listener.herald_message, message)
+            except (AttributeError, ValueError):
+                # Invalid listener
+                pass
 
     def fire(self, target, message, reply_to=None):
         """
