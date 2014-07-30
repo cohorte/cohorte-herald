@@ -97,6 +97,12 @@ class HeraldDirectory(object):
         """
         return self._local
 
+    def get_peers(self):
+        """
+        Returns the list of all known peers
+        """
+        return tuple(self._peers.values())
+
     def peer_access_set(self, peer, access_id, data):
         """
         A new peer access is available. Called by a Peer bean.
