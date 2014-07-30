@@ -5,7 +5,7 @@ Pelix Shell commands for Herald
 """
 
 # Herald
-from herald.exceptions import NoTransport, HeraldTimeout
+from herald.exceptions import NoTransport, HeraldTimeout, NoListener
 import herald
 import herald.beans as beans
 
@@ -78,6 +78,8 @@ class HeraldCommands(object):
             io_handler.write_line("Unknown target: {0}", target)
         except NoTransport:
             io_handler.write_line("No transport to join {0}", target)
+        except NoListener:
+            io_handler.write_line("No listener for {0}", subject)
         except HeraldTimeout:
             io_handler.write_line("No response given before timeout")
         else:

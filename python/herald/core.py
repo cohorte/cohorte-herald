@@ -5,7 +5,8 @@ Herald Core service
 """
 
 # Herald
-from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout
+from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout, \
+    NoListener
 import herald
 import herald.beans as beans
 
@@ -181,16 +182,44 @@ class Herald(object):
         """
         # User a tuple, because list can't be compared to tuples
         parts = tuple(part for part in message.subject.split('/') if part)
-        if parts[:2] == ('herald', 'directory'):
-            try:
-                # Directory update message
-                self._handle_directory_message(message, parts[2])
-            except IndexError:
-                # Not enough arguments for a directory update: ignore
-                pass
+        try:
+            if parts[0] == 'herald':
+                # Internal message
+                if parts[1] == 'error':
+                    # Error message: handle it, but don't propagate it
+                    self._handle_error(message, parts[2])
+                    return
+
+                elif parts[1] == 'directory':
+                    # Directory update message
+                    self._handle_directory_message(message, parts[2])
+        except IndexError:
+            # Not enough arguments for a directory update: ignore
+            pass
 
         # Notify others of the message
         self.__notify(message)
+
+    def _handle_error(self, message, kind):
+        """
+        Handles an error message
+
+        :param message: Message received from another peer
+        :param kind: Kind of error
+        """
+        if kind == 'no-listener':
+            # No listener found for a given message
+            try:
+                # Get the request message UID
+                uid = message.content['uid']
+                subject = message.content['subject']
+
+                # Unlock the sender with an exception
+                self.__waiting_events.pop(uid) \
+                    .raise_exception(NoListener(uid, subject))
+            except KeyError:
+                # Nobody was waiting for the event, or invalid content
+                pass
 
     def _handle_directory_message(self, message, kind):
         """
@@ -239,13 +268,20 @@ class Herald(object):
                 if re_filter.match(subject) is not None:
                     msg_listeners.update(re_listeners)
 
-        # Call listeners in the thread pool
-        for listener in msg_listeners:
-            try:
-                self.__pool.enqueue(listener.herald_message, herald, message)
-            except (AttributeError, ValueError):
-                # Invalid listener
-                pass
+        if msg_listeners:
+            # Call listeners in the thread pool
+            for listener in msg_listeners:
+                try:
+                    self.__pool.enqueue(listener.herald_message,
+                                        herald, message)
+                except (AttributeError, ValueError):
+                    # Invalid listener
+                    pass
+        else:
+            # No listener found: send an error message
+            self.reply(message,
+                       {'uid': message.uid, 'subject': message.subject},
+                       'herald/error/no-listener')
 
     def _fire_reply(self, message, reply_to):
         """
@@ -337,6 +373,8 @@ class Herald(object):
         :return: The reply message bean
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
+        :raise NoListener: Message received, but nobody was registered to
+                           listen to it
         :raise HeraldTimeout: Timeout raised before getting an answer
         """
         # Prepare an event, which will be set when the answer will be received

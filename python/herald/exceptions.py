@@ -39,3 +39,11 @@ class InvalidPeerAccess(HeraldException):
     The description of an access to peer can't be read by the access handler
     """
     pass
+
+
+class NoListener(HeraldException):
+    """
+    The message has been received by the remote peer, but no listener has been
+    found to register it.
+    """
+    pass
