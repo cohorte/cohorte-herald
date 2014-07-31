@@ -13,10 +13,10 @@ __docformat__ = "restructuredtext en"
 # ------------------------------------------------------------------------------
 
 # Monitor bot
-import herald.xmpp.monitor as xmpp_monitor
+import herald.transports.xmpp.monitor as xmpp_monitor
 
 # Herald constants
-import herald.xmpp
+import herald.transports.xmpp
 
 # Pelix
 from pelix.ipopo.constants import use_waiting_list
@@ -55,8 +55,8 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name):
          'herald.core',
          'herald.directory',
          'herald.shell',
-         'herald.xmpp.directory',
-         'herald.xmpp.transport'),
+         'herald.transports.xmpp.directory',
+         'herald.transports.xmpp.transport'),
         {herald.FWPROP_NODE_UID: node_name,
          herald.FWPROP_NODE_NAME: node_name,
          herald.FWPROP_PEER_NAME: peer_name})
@@ -77,15 +77,17 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name):
     with use_waiting_list(context) as ipopo:
         # Instantiate remote service components
         # ... XMPP Directory
-        ipopo.add(herald.xmpp.FACTORY_DIRECTORY, "herald-xmpp-directory")
+        ipopo.add(herald.transports.xmpp.FACTORY_DIRECTORY,
+                  "herald-xmpp-directory")
 
         # ... XMPP Transport
-        ipopo.add(herald.xmpp.FACTORY_TRANSPORT, "herald-xmpp-transport",
-                  {herald.xmpp.PROP_XMPP_SERVER: xmpp_server,
-                   herald.xmpp.PROP_XMPP_PORT: xmpp_port,
-                   herald.xmpp.PROP_MONITOR_JID: monitor_jid,
-                   herald.xmpp.PROP_MONITOR_KEY: "42",
-                   herald.xmpp.PROP_XMPP_ROOM_JID: main_room_jid})
+        ipopo.add(herald.transports.xmpp.FACTORY_TRANSPORT,
+                  "herald-xmpp-transport",
+                  {herald.transports.xmpp.PROP_XMPP_SERVER: xmpp_server,
+                   herald.transports.xmpp.PROP_XMPP_PORT: xmpp_port,
+                   herald.transports.xmpp.PROP_MONITOR_JID: monitor_jid,
+                   herald.transports.xmpp.PROP_MONITOR_KEY: "42",
+                   herald.transports.xmpp.PROP_XMPP_ROOM_JID: main_room_jid})
 
     # Start the framework and wait for it to stop
     framework.wait_for_stop()
