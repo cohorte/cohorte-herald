@@ -132,13 +132,17 @@ class HeraldCommands(object):
         """
         lines = []
         lines.append("Peer {0}".format(peer.uid))
-        lines.append("\t- UID : {0}".format(peer.uid))
-        lines.append("\t- Name: {0}".format(peer.name))
+        lines.append("\t- UID......: {0}".format(peer.uid))
+        lines.append("\t- Name.....: {0}".format(peer.name))
         lines.append("\t- Node UID.: {0}".format(peer.node_uid))
         lines.append("\t- Node Name: {0}".format(peer.node_name))
-        lines.append("\t- Groups:")
+        lines.append("\t- Groups...:")
         for group in sorted(peer.groups):
             lines.append("\t\t- {0}".format(group))
+        lines.append("\t- Accesses.:")
+        for access in sorted(peer.get_accesses()):
+            lines.append("\t\t- {0}: {1}"
+                         .format(access, peer.get_access(access)))
 
         lines.append("")
         io_handler.write("\n".join(lines))
