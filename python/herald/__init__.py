@@ -4,6 +4,9 @@
 Herald core package
 """
 
+# ------------------------------------------------------------------------------
+# Service specifications
+
 SERVICE_HERALD = "herald.core"
 """
 Specification of the core Herald service
@@ -30,6 +33,7 @@ Specification of the directory associated to a transport implementation
 """
 
 # ------------------------------------------------------------------------------
+# Service properties
 
 PROP_ACCESS_ID = "herald.access.id"
 """
@@ -39,4 +43,27 @@ Unique name of the kind of access a transport implementation handles
 PROP_FILTERS = "herald.filters"
 """
 A set of filename patterns to filter messages
+"""
+
+# ------------------------------------------------------------------------------
+# Framework properties
+
+FWPROP_PEER_UID = "herald.peer.uid"
+"""
+UID of the peer. Default to the Pelix framework UID.
+"""
+
+FWPROP_PEER_NAME = "herald.peer.name"
+"""
+Human-readable name of the peer. Default to the peer UID.
+"""
+
+FWPROP_NODE_UID = "herald.node.uid"
+"""
+UID of the node hosting the peer. Defaults to the peer UID.
+"""
+
+FWPROP_NODE_NAME = "herald.node.name"
+"""
+Human-readable name of the node hosting the peer. Defaults to the node UID.
 """

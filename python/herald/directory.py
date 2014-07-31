@@ -59,8 +59,17 @@ class HeraldDirectory(object):
         self._groups.clear()
 
         # Setup the local peer description
-        self._local_uid = context.get_property(pelix.constants.FRAMEWORK_UID)
+        self._local_uid = context.get_property(herald.FWPROP_PEER_UID) \
+            or context.get_property(pelix.constants.FRAMEWORK_UID)
         self._local = beans.Peer(self._local_uid, self)
+
+        # Setup node and name information
+        self._local.name = context.get_property(herald.FWPROP_PEER_NAME) \
+            or self._local_uid
+        self._local.node_uid = context.get_property(herald.FWPROP_NODE_UID) \
+            or self._local_uid
+        self._local.node_name = context.get_property(herald.FWPROP_NODE_NAME) \
+            or self._local.node_uid
 
     @Invalidate
     def _invalidate(self, context):
