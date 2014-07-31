@@ -29,13 +29,16 @@ import sys
 
 # ------------------------------------------------------------------------------
 
-def main(xmpp_server, xmpp_port, run_monitor):
+
+def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name):
     """
     Runs the framework
 
     :param xmpp_server: Address of the XMPP server
     :param xmpp_port: Port of the XMPP server
     :param run_monitor: Start the monitor bot
+    :param peer_name: Name of the peer
+    :param node_name: Name (also, UID) of the node hosting the peer
     """
     # Monitor configuration
     monitor_jid = 'bot@phenomtwo3000'
@@ -44,22 +47,19 @@ def main(xmpp_server, xmpp_port, run_monitor):
 
     # Create the framework
     framework = pelix.framework.create_framework(
-                     (# iPOPO
-                      'pelix.ipopo.core',
-                      'pelix.ipopo.waiting',
-
-                      # Shell
-                      'pelix.shell.core',
-                      'pelix.shell.ipopo',
-                      'pelix.shell.console',
-
-                      # Herald
-                      'herald.core',
-                      'herald.directory',
-                      'herald.shell',
-                      'herald.xmpp.directory',
-                      'herald.xmpp.transport',
-                      ))
+        ('pelix.ipopo.core',
+         'pelix.ipopo.waiting',
+         'pelix.shell.core',
+         'pelix.shell.ipopo',
+         'pelix.shell.console',
+         'herald.core',
+         'herald.directory',
+         'herald.shell',
+         'herald.xmpp.directory',
+         'herald.xmpp.transport'),
+        {herald.FWPROP_NODE_UID: node_name,
+         herald.FWPROP_NODE_NAME: node_name,
+         herald.FWPROP_PEER_NAME: peer_name})
 
     # Start everything
     framework.start()
@@ -113,6 +113,14 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--port", action="store", type=int, default=5222,
                         dest="xmpp_port", help="Port of the XMPP server")
 
+    # Peer info
+    parser.add_argument("-n", "--name", action="store", default=None,
+                        dest="name", help="Peer name")
+
+    # Node info
+    parser.add_argument("--node", action="store", default=None,
+                        dest="node", help="Node name")
+
     # Parse arguments
     args = parser.parse_args(sys.argv[1:])
 
@@ -121,4 +129,5 @@ if __name__ == "__main__":
     logging.getLogger('herald').setLevel(logging.DEBUG)
 
     # Run the framework
-    main(args.xmpp_server, args.xmpp_port, args.monitor)
+    main(args.xmpp_server, args.xmpp_port, args.monitor,
+         args.name, args.node)
