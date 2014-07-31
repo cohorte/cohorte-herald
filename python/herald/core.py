@@ -22,12 +22,84 @@ import fnmatch
 import logging
 import re
 import threading
+import time
 
 # ------------------------------------------------------------------------------
 
 _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
+
+
+class _WaitingPost(object):
+    """
+    A bean that describes parameters of a post() call
+    """
+    def __init__(self, callback, errback, timeout, forget_on_first):
+        """
+        Sets up members
+
+        :param callback: Method to call back when an answer is received
+        :param errback: Method to call back on error
+        :param timeout: Time to wait before forgetting this post, in seconds
+                        (<= 0 or None for never)
+        :param forget_on_first: If True, forget this post after the first
+                                answer
+        """
+        self.__callback = callback
+        self.__errback = errback
+        self.__forget_on_first = forget_on_first
+
+        if timeout is not None and timeout > 0:
+            self.__deadline = time.time() + timeout
+        else:
+            self.__deadline = None
+
+    @property
+    def forget_on_first(self):
+        """
+        Flag to determine if this post must be forgotten after its first reply
+        """
+        return self.__forget_on_first
+
+    def is_dead(self):
+        """
+        Checks if the deadline has been reached
+
+        :return: True if this message can be forgotten
+        """
+        if self.__deadline is not None:
+            return self.__deadline > time.time()
+        else:
+            return False
+
+    def callback(self, herald_svc, message):
+        """
+        Tries to call the callback of the post message.
+        Avoids errors to go outside this method.
+
+        :param herald_svc: Herald service instance
+        :param message: Received answer message
+        """
+        if self.__errback is not None:
+            try:
+                self.__callback(herald_svc, message)
+            except Exception as ex:
+                _logger.exception("Error calling callback: %s", ex)
+
+    def errback(self, herald_svc, exception):
+        """
+        Tries to call the error callback of the post message.
+        Avoids errors to go outside this method.
+
+        :param herald_svc: Herald service instance
+        :param exception: An exception describing/caused by the error
+        """
+        if self.__errback is not None:
+            try:
+                self.__errback(herald_svc, exception)
+            except Exception as ex:
+                _logger.exception("Error calling errback: %s", ex)
 
 
 @ComponentFactory("herald-core-factory")
@@ -66,7 +138,8 @@ class Herald(object):
         # Events used for blocking "send()": UID -> EventData
         self.__waiting_events = {}
 
-        # Events used for "post()" methods: UID -> (callback, errback)
+        # Events used for "post()" methods:
+        # UID -> _WaitingPost
         self.__waiting_posts = {}
 
     @Validate
@@ -231,16 +304,11 @@ class Herald(object):
 
             # ... notify post() callers
             try:
-                errback = self.__waiting_posts.pop(uid)[1]
-            except (KeyError, IndexError):
+                self.__waiting_posts.pop(uid) \
+                    .errback(self, NoListener(uid, subject))
+            except KeyError:
                 # No error callback for this message
                 pass
-            else:
-                if errback is not None:
-                    try:
-                        errback(self, NoListener(uid, subject))
-                    except Exception as ex:
-                        _logger.exception("Error calling errback: %s", ex)
 
     def _handle_directory_message(self, message, kind):
         """
@@ -283,15 +351,15 @@ class Herald(object):
 
             # ... notify post() callers
             try:
-                callback = self.__waiting_posts[message.reply_to][0]
+                waiting_post = self.__waiting_posts[message.reply_to]
             except KeyError:
                 # Nobody was waiting for an answer
                 pass
             else:
-                try:
-                    callback(self, message)
-                except Exception as ex:
-                    _logger.exception("Error calling back poster: %s", ex)
+                waiting_post.callback(self, message)
+                if waiting_post.forget_on_first:
+                    # First answer received: forget about the message
+                    del self.__waiting_posts[message.reply_to]
 
         # Compute the list of listeners to notify
         msg_listeners = set()
@@ -436,7 +504,8 @@ class Herald(object):
                 # Ignore errors at this point
                 pass
 
-    def post(self, target, message, callback, errback):
+    def post(self, target, message, callback, errback,
+             timeout=None, forget_on_first=True):
         """
         Posts a message. The given methods will be called back as soon as a
         result is given, or in case of error
@@ -449,12 +518,15 @@ class Herald(object):
         :param message: A Message bean
         :param callback: Method to call back when a reply is received
         :param errback: Method to call back if an error occurs
+        :param timeout: Time after which the message will be forgotten
+        :param forget_on_first: Forget the message after the first answer
         :return: The message UID
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         """
         # Prepare an entry in the waiting posts
-        self.__waiting_posts[message.uid] = (callback, errback)
+        self.__waiting_posts[message.uid] = \
+            _WaitingPost(callback, errback, timeout, forget_on_first)
 
         try:
             # Fire the message
@@ -489,17 +561,11 @@ class Herald(object):
             pass
 
         try:
-            errback = self.__waiting_posts.pop(uid)[1]
+            self.__waiting_posts.pop(uid).errback(self, exception)
+            result = True
         except KeyError:
             # ... no pending call
             pass
-        else:
-            result = True
-            try:
-                errback(self, exception)
-            except:
-                # Silent exception
-                pass
 
         return result
 
