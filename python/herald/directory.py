@@ -15,6 +15,7 @@ import pelix.constants
 
 # Standard library
 import logging
+import threading
 
 # ------------------------------------------------------------------------------
 
@@ -46,8 +47,14 @@ class HeraldDirectory(object):
         # UID -> Peer bean
         self._peers = {}
 
-        # Group name -> Peer UIDs
+        # Name -> Set of Peer UIDs
+        self._names = {}
+
+        # Group name -> Set of Peer UIDs
         self._groups = {}
+
+        # Thread safety
+        self.__lock = threading.Lock()
 
     @Validate
     def _validate(self, context):
@@ -109,8 +116,50 @@ class HeraldDirectory(object):
     def get_peers(self):
         """
         Returns the list of all known peers
+
+        :return: A tuple containing all known peers
         """
         return tuple(self._peers.values())
+
+    def get_uids_for_name(self, name):
+        """
+        Returns the UIDs of the peers having the given name
+
+        :param name: The name used by some peers
+        :return: A set of UIDs
+        :raise KeyError: No peer has this name
+        """
+        return self._names[name].copy()
+
+    def get_peers_for_name(self, name):
+        """
+        Returns the Peer beans of the peers having the given name
+
+        :param name: The name used by some peers
+        :return: A list of Peer beans
+        :raise KeyError: No peer has this name
+        """
+        return [self._peers[uid] for uid in self._names[name]]
+
+    def get_uids_for_group(self, group):
+        """
+        Returns the UIDs of the peers having the given name
+
+        :param group: The name of a group
+        :return: A set of UIDs
+        :raise KeyError: Unknown group
+        """
+        return self._groups[group].copy()
+
+    def get_peers_for_group(self, group):
+        """
+        Returns the Peer beans of the peers having the given name
+
+        :param group: The name of a group
+        :return: A list of Peer beans
+        :raise KeyError: Unknown group
+        """
+        return [self._peers[uid] for uid in self._groups[group]]
 
     def peer_access_set(self, peer, access_id, data):
         """
@@ -181,32 +230,37 @@ class HeraldDirectory(object):
 
         :param description: Description of the peer, in the format of dump()
         """
-        uid = description['uid']
-        if uid == self._local_uid or uid in self._peers:
-            # Local/Already known peer: ignore
-            return
+        with self.__lock:
+            uid = description['uid']
+            if uid == self._local_uid or uid in self._peers:
+                # Local/Already known peer: ignore
+                return
 
-        # Make a new bean
-        peer = beans.Peer(uid, self)
+            # Make a new bean
+            peer = beans.Peer(uid, self)
 
-        # Setup writable properties
-        for name in ('name', 'node_uid', 'node_name', 'groups'):
-            setattr(peer, name, description[name])
+            # Setup writable properties
+            for name in ('name', 'node_uid', 'node_name', 'groups'):
+                setattr(peer, name, description[name])
 
-        # Accesses
-        for access_id, data in description['accesses'].items():
-            try:
-                data = self._directories[access_id].load_access(data)
-            except KeyError:
-                # Access not available for parsing
-                pass
+            # Accesses
+            for access_id, data in description['accesses'].items():
+                try:
+                    data = self._directories[access_id].load_access(data)
+                except KeyError:
+                    # Access not available for parsing
+                    pass
 
-            # Store the parsed data, or keep it as is
-            peer.set_access(access_id, data)
+                # Store the parsed data, or keep it as is
+                peer.set_access(access_id, data)
 
-        # Store the peer
-        self._peers[uid] = peer
-        _logger.info("Registered peer: %s", peer)
+            # Store the peer
+            self._peers[uid] = peer
+            self._names.setdefault(peer.name, set()).add(peer)
+            for group in peer.groups:
+                self._groups.setdefault(group, set()).add(peer)
+
+            _logger.info("Registered peer: %s", peer)
 
     def unregister(self, uid):
         """
@@ -215,4 +269,32 @@ class HeraldDirectory(object):
         :param uid: UID of the peer
         :return: The Peer bean if it was known, else None
         """
-        return self._peers.pop(uid, None)
+        with self.__lock:
+            try:
+                # Pop the peer bean
+                peer = self._peers.pop(uid)
+            except KeyError:
+                # Unknown peer
+                return
+            else:
+                # Remove it from other dictionaries
+                try:
+                    uids = self._names[peer.name]
+                    uids.remove(peer.uid)
+                    if not uids:
+                        del self._names[peer.name]
+                except KeyError:
+                    # Name wasn't registered...
+                    pass
+
+                for group in peer.groups:
+                    try:
+                        uids = self._groups[group]
+                        uids.remove(peer.uid)
+                        if not uids:
+                            del self._groups[group]
+                    except KeyError:
+                        # Peer wasn't in that group
+                        pass
+
+                return peer
