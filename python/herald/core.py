@@ -31,6 +31,21 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
+class LoopTimer(threading._Timer):
+    """
+    Extension of Python's Timer class, which executes the requested method
+    again and again, until cancel() is called.
+    """
+    def run(self):
+        """
+        Runs the given method until cancel() is called
+        """
+        # The "or" part is for Python 2.6
+        while not (self.finished.wait(self.interval)
+                   or self.finished.is_set()):
+            self.function(*self.args, **self.kwargs)
+
+
 class _WaitingPost(object):
     """
     A bean that describes parameters of a post() call
@@ -126,14 +141,14 @@ class Herald(object):
         # Filter -> Listener (computed)
         self.__msg_listeners = {}
 
-        # Thread safety for listeners
-        self.__lock = threading.Lock()
-
         # Herald transports: access ID -> implementation
         self._transports = {}
 
         # Notification threads
         self.__pool = pelix.threadpool.ThreadPool(5, logname="HeraldNotify")
+
+        # Garbage collection timer
+        self.__gc_timer = None
 
         # Events used for blocking "send()": UID -> EventData
         self.__waiting_events = {}
@@ -141,6 +156,10 @@ class Herald(object):
         # Events used for "post()" methods:
         # UID -> _WaitingPost
         self.__waiting_posts = {}
+
+        # Thread safety
+        self.__listeners_lock = threading.Lock()
+        self.__post_lock = threading.Lock()
 
     @Validate
     def _validate(self, context):
@@ -150,18 +169,35 @@ class Herald(object):
         # Start the thread pool
         self.__pool.start()
 
+        # Start the garbage collector
+        self.__gc_timer = LoopTimer(30, self.__garbage_collect)
+        self.__gc_timer.start()
+
     @Invalidate
     def _invalidate(self, context):
         """
         Component invalidated
         """
+        # Stop the garbage collector
+        self.__gc_timer.cancel()
+        self.__gc_timer.join()
+        self.__gc_timer = None
+
         # Stop the thread pool
         self.__pool.stop()
 
         # Clear waiting events (set them with no data)
         for event in tuple(self.__waiting_events.values()):
             event.set(None)
+
+        exception = HeraldTimeout("Herald stops listening to messages", None)
+        with self.__post_lock:
+            for waiting_post in self.__waiting_posts.values():
+                waiting_post.errback(self, exception)
+
+        # Clear storage
         self.__waiting_events.clear()
+        self.__waiting_posts.clear()
 
         # Clear the thread pool
         self.__pool.clear()
@@ -180,7 +216,7 @@ class Herald(object):
         """
         A message listener has been bound
         """
-        with self.__lock:
+        with self.__listeners_lock:
             re_filters = set(self.__compile_pattern(fn_filter)
                              for fn_filter
                              in svc_ref.get_property(herald.PROP_FILTERS)
@@ -194,7 +230,7 @@ class Herald(object):
         """
         The properties of a message listener have been updated
         """
-        with self.__lock:
+        with self.__listeners_lock:
             # Get old and new filters as sets
             old_filters = set(self.__compile_pattern(fn_filter)
                               for fn_filter
@@ -231,7 +267,7 @@ class Herald(object):
         """
         A message listener has gone away
         """
-        with self.__lock:
+        with self.__listeners_lock:
             re_filters = set(self.__compile_pattern(fn_filter)
                              for fn_filter
                              in svc_ref.get_property(herald.PROP_FILTERS)
@@ -247,6 +283,18 @@ class Herald(object):
                     # Clean up dictionary if necessary
                     if not listeners:
                         del self.__msg_listeners[re_filter]
+
+    def __garbage_collect(self):
+        """
+        Garbage collects dead waiting post beans. Calls on a regular basis
+        by a LoopTimer
+        """
+        with self.__post_lock:
+            to_delete = [uid
+                         for uid, waiting_post in self.__waiting_posts.items()
+                         if waiting_post.is_dead()]
+            for uid in to_delete:
+                del self.__waiting_posts[uid]
 
     def handle_message(self, message):
         """
@@ -351,7 +399,8 @@ class Herald(object):
 
             # ... notify post() callers
             try:
-                waiting_post = self.__waiting_posts[message.reply_to]
+                with self.__post_lock:
+                    waiting_post = self.__waiting_posts[message.reply_to]
             except KeyError:
                 # Nobody was waiting for an answer
                 pass
@@ -365,7 +414,7 @@ class Herald(object):
         msg_listeners = set()
         subject = message.subject
 
-        with self.__lock:
+        with self.__listeners_lock:
             for re_filter, re_listeners in self.__msg_listeners.items():
                 if re_filter.match(subject) is not None:
                     msg_listeners.update(re_listeners)
@@ -524,9 +573,10 @@ class Herald(object):
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         """
-        # Prepare an entry in the waiting posts
-        self.__waiting_posts[message.uid] = \
-            _WaitingPost(callback, errback, timeout, forget_on_first)
+        with self.__post_lock:
+            # Prepare an entry in the waiting posts
+            self.__waiting_posts[message.uid] = \
+                _WaitingPost(callback, errback, timeout, forget_on_first)
 
         try:
             # Fire the message
@@ -534,7 +584,8 @@ class Herald(object):
         except:
             # Early clean up in case of exception
             try:
-                del self.__waiting_posts[message.uid]
+                with self.__post_lock:
+                    del self.__waiting_posts[message.uid]
             except KeyError:
                 pass
 
@@ -560,12 +611,13 @@ class Herald(object):
             # ... no pending call
             pass
 
-        try:
-            self.__waiting_posts.pop(uid).errback(self, exception)
-            result = True
-        except KeyError:
-            # ... no pending call
-            pass
+        with self.__post_lock:
+            try:
+                self.__waiting_posts.pop(uid).errback(self, exception)
+                result = True
+            except KeyError:
+                # ... no pending call
+                pass
 
         return result
 
