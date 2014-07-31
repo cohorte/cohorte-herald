@@ -205,6 +205,14 @@ class Peer(object):
         """
         return access_id in self.__accesses
 
+    def has_accesses(self):
+        """
+        Checks if the peer has any access
+
+        :return: True if the peer has at least one access
+        """
+        return bool(self.__accesses)
+
     def set_access(self, access_id, data):
         """
         Sets the description associated to an access ID.

@@ -205,6 +205,10 @@ class HeraldDirectory(object):
                 _logger.exception("Error notifying a transport directory: %s",
                                   ex)
 
+        if not peer.has_accesses():
+            # Peer has no more access, unregister it
+            self.unregister(peer.uid)
+
     def dump(self):
         """
         Dumps the content of the local directory in a dictionary
