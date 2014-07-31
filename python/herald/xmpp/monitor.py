@@ -40,6 +40,8 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
 
         # Register the Multi-User Chat plug-in
         self.register_plugin('xep_0045')
+        # Register the Delayed Message plug-in
+        self.register_plugin("xep_0203")
 
         # Nick name
         self._nick = nick
@@ -171,6 +173,10 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         """
         An Herald Message received (fire & forget)
         """
+        if msg['delay']['stamp'] is not None:
+            # Delayed message: ignore
+            return
+
         if msg['type'] in ('chat', 'normal'):
             # Check message source
             from_jid = msg['from']
