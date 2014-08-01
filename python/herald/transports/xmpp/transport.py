@@ -131,7 +131,8 @@ class XmppTransport(object):
 
         # Ask the monitor to invite us, using our UID as nickname
         _logger.info("Requesting to join %s", self._monitor_jid)
-        self._bot.herald_join(peer.uid, self._monitor_jid, self._key)
+        self._bot.herald_join(peer.uid, self._monitor_jid, self._key,
+                              peer.groups)
 
     def __on_message(self, msg):
         """
@@ -288,6 +289,10 @@ class XmppTransport(object):
     def fire(self, peer, message, extra=None):
         """
         Fires a message to a peer
+
+        :param Peer: A Peer bean
+        :param message: Message to send
+        :param extra: Extra information used in case of a reply
         """
         # Get the request message UID, if any
         parent_uid = None
@@ -305,12 +310,20 @@ class XmppTransport(object):
             raise InvalidPeerAccess("No '{0}' access found"
                                     .format(self._access_id))
 
-    def fire_group(self, group, message, extra=None):
+    def fire_group(self, group, peers, message):
         """
         Fires a message to a group of peers
+
+        :param group: Name of a group
+        :param peers: Peers to communicate with
+        :param message: Message to send
         """
-        # Get the group JID
-        group_jid = self._directory.get_group_jid(group)
+        # Special case for the main room
+        if group == 'all':
+            group_jid = self._room
+        else:
+            # Get the group JID
+            group_jid = sleekxmpp.JID(local=group, domain=self._muc_domain)
 
         # Send the XMPP message
         self.__send_message("groupchat", group_jid, message)
