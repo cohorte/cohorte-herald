@@ -19,6 +19,7 @@ import pelix.utilities
 
 # Standard library
 import fnmatch
+import itertools
 import logging
 import re
 import threading
@@ -511,6 +512,64 @@ class Herald(object):
             raise NoTransport("No transport found for peer {0}".format(peer))
 
         return message.uid
+
+    def fire_group(self, group, message):
+        """
+        Fires (and forget) the given message to the given group of peers
+
+        :param group: A group of peer
+        :param message: A Message bean
+        :return: A tuple: the UID of the message sent and the list of
+                 peers
+        :raise KeyError: Unknown group
+        :raise NoTransport: No transport found to send the message
+        """
+        # Check if some transports are bound
+        if not self._transports:
+            raise NoTransport("No transport bound yet.")
+
+        # Find the common accesses
+        all_peers = self._directory.get_peers_for_group(group)
+        accesses = {}
+        for peer in all_peers:
+            for access in peer.get_accesses():
+                accesses.setdefault(access, set()).add(peer)
+
+        missing = []
+        for access, access_peers in accesses.items():
+            if not access_peers:
+                # Nothing to do
+                continue
+
+            try:
+                transport = self._transports[access]
+            except KeyError:
+                # No transport for this kind of access
+                pass
+            else:
+                try:
+                    # Call it
+                    transport.fire_group(group, access_peers, message)
+                except InvalidPeerAccess:
+                    # Transport can't find group access data
+                    pass
+                else:
+                    # Success: clean up waiting peers
+                    all_done = True
+                    for remaining_peers in accesses.values():
+                        remaining_peers.difference_update(access_peers)
+                        if remaining_peers:
+                            # Still some peers to notify
+                            all_done = False
+
+                    if all_done:
+                        break
+        else:
+            missing = set(itertools.chain(*accesses.values()))
+            _logger.warning("Some peers haven't been notified: %s",
+                            ', '.join(missing))
+
+        return (message.uid, missing)
 
     def send(self, target, message, timeout=None):
         """
