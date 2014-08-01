@@ -204,7 +204,7 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
                     try:
                         # Authorized client: invite it to requested rooms
                         rooms = set(content[2].split(','))
-                        rooms.intersection_update(self.__rooms)
+                        rooms.difference_update(self.__rooms)
                     except IndexError:
                         # No room specified
                         rooms = set()
