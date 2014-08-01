@@ -166,16 +166,6 @@ class HeraldDirectory(object):
         """
         return [self._peers[uid] for uid in self._names[name]]
 
-    def get_uids_for_group(self, group):
-        """
-        Returns the UIDs of the peers having the given name
-
-        :param group: The name of a group
-        :return: A set of UIDs
-        :raise KeyError: Unknown group
-        """
-        return self._groups[group].copy()
-
     def get_peers_for_group(self, group):
         """
         Returns the Peer beans of the peers having the given name
@@ -184,7 +174,7 @@ class HeraldDirectory(object):
         :return: A list of Peer beans
         :raise KeyError: Unknown group
         """
-        return [self._peers[uid] for uid in self._groups[group]]
+        return self._groups[group].copy()
 
     def peer_access_set(self, peer, access_id, data):
         """
