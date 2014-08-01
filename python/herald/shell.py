@@ -46,6 +46,7 @@ class HeraldCommands(object):
         Retrieves the list of tuples (command, method) for this command handler
         """
         return [("fire", self.fire),
+                ("fire_group", self.fire_group),
                 ("send", self.send),
                 ("post", self.post),
                 ("forget", self.forget),
@@ -65,6 +66,22 @@ class HeraldCommands(object):
             io_handler.write_line("No transport to join {0}", target)
         else:
             io_handler.write_line("Message sent: {0}", uid)
+
+    def fire_group(self, io_handler, group, subject, *words):
+        """
+        Fires a message to the given group of peers.
+        """
+        try:
+            uid, missed = self._herald.fire_group(
+                group, beans.Message(subject, ' '.join(words)))
+        except KeyError:
+            io_handler.write_line("Unknown group: {0}", group)
+        except NoTransport:
+            io_handler.write_line("No transport to join {0}", group)
+        else:
+            io_handler.write_line("Message sent: {0}", uid)
+            if missed:
+                io_handler.write_line("Missed peers: {0}", ",".join(missed))
 
     def send(self, io_handler, target, subject, *words):
         """
