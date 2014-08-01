@@ -58,6 +58,12 @@ FWPROP_PEER_NAME = "herald.peer.name"
 Human-readable name of the peer. Default to the peer UID.
 """
 
+FWPROP_PEER_GROUPS = "herald.peer.groups"
+"""
+The list of groups the peer belongs to. Can be either a list or
+a comma-separated list string.
+"""
+
 FWPROP_NODE_UID = "herald.node.uid"
 """
 UID of the node hosting the peer. Defaults to the peer UID.

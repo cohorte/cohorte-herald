@@ -11,7 +11,9 @@ import herald.beans as beans
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, RequiresMap, Provides, \
     Validate, Invalidate, Instantiate
+from pelix.utilities import is_string
 import pelix.constants
+
 
 # Standard library
 import logging
@@ -56,6 +58,39 @@ class HeraldDirectory(object):
         # Thread safety
         self.__lock = threading.Lock()
 
+    def __make_local_peer(self, context):
+        """
+        Prepares a Peer bean with local configuration
+
+        :param context: Bundle context
+        """
+        # Get local peer UID and node UID
+        peer_uid = context.get_property(herald.FWPROP_PEER_UID) \
+            or context.get_property(pelix.constants.FRAMEWORK_UID)
+        node_uid = context.get_property(herald.FWPROP_NODE_UID)
+
+        # Find configured groups
+        groups = context.get_property(herald.FWPROP_PEER_GROUPS)
+        if not groups:
+            groups = []
+        elif is_string(groups):
+            groups = (group.strip() for group in groups.split(',')
+                      if group.strip)
+        groups = set(groups)
+
+        # Add pre-configured groups: 'all' and node
+        groups.add('all')
+        if node_uid:
+            groups.add(node_uid)
+
+        # Make the Peer bean
+        peer = beans.Peer(peer_uid, node_uid, groups, self)
+
+        # Setup node and name information
+        peer.name = context.get_property(herald.FWPROP_PEER_NAME)
+        peer.node_name = context.get_property(herald.FWPROP_NODE_NAME)
+        return peer
+
     @Validate
     def _validate(self, context):
         """
@@ -65,18 +100,8 @@ class HeraldDirectory(object):
         self._peers.clear()
         self._groups.clear()
 
-        # Setup the local peer description
-        self._local_uid = context.get_property(herald.FWPROP_PEER_UID) \
-            or context.get_property(pelix.constants.FRAMEWORK_UID)
-        self._local = beans.Peer(self._local_uid, self)
-
-        # Setup node and name information
-        self._local.name = context.get_property(herald.FWPROP_PEER_NAME) \
-            or self._local_uid
-        self._local.node_uid = context.get_property(herald.FWPROP_NODE_UID) \
-            or self._local_uid
-        self._local.node_name = context.get_property(herald.FWPROP_NODE_NAME) \
-            or self._local.node_uid
+        self._local = self.__make_local_peer(context)
+        self._local_uid = self._local.uid
 
     @Invalidate
     def _invalidate(self, context):
@@ -241,10 +266,11 @@ class HeraldDirectory(object):
                 return
 
             # Make a new bean
-            peer = beans.Peer(uid, self)
+            peer = beans.Peer(uid, description['node_uid'],
+                              description['groups'], self)
 
             # Setup writable properties
-            for name in ('name', 'node_uid', 'node_name', 'groups'):
+            for name in ('name', 'node_name'):
                 setattr(peer, name, description[name])
 
             # Accesses

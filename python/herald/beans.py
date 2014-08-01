@@ -17,22 +17,24 @@ class Peer(object):
     """
     Represents a peer in Herald
     """
-    def __init__(self, uid, directory=None):
+    def __init__(self, uid, node_uid, groups, directory=None):
         """
         Sets up the peer
 
         :param uid: Peer Unique ID
+        :param node_uid: Node Unique ID
+        :param groups: The list of groups this peer belongs to
         :param directory: Directory to call back on access update
-        :raise ValueError: Invalid UID
+        :raise ValueError: Invalid Peer UID
         """
         if not uid:
             raise ValueError("The UID of a peer can't be empty")
 
         self.__uid = uid
         self.__name = uid
-        self.__node = uid
-        self.__node_name = uid
-        self.__groups = set()
+        self.__node = node_uid or uid
+        self.__node_name = self.__node
+        self.__groups = set(groups or [])
         self.__accesses = {}
         self.__directory = directory
 
@@ -103,17 +105,6 @@ class Peer(object):
         """
         return self.__node
 
-    @node_uid.setter
-    def node_uid(self, value):
-        """
-        Sets the UID of the node hosting the peer
-
-        :param value: A node UID
-        """
-        self.__node = value or self.__uid
-        if not self.__node_name:
-            self.__node_name = self.__node
-
     @property
     def node_name(self):
         """
@@ -128,7 +119,7 @@ class Peer(object):
 
         :param value: A node name
         """
-        self.__node_name = value or self.__node or self.__uid
+        self.__node_name = value or self.__node
 
     @property
     def groups(self):
@@ -136,16 +127,6 @@ class Peer(object):
         Retrieves the set of groups this peer belongs
         """
         return self.__groups.copy()
-
-    @groups.setter
-    def groups(self, values):
-        """
-        Sets the groups this peer belong to. Callable only once.
-
-        :param values: A list of names of groups
-        """
-        if not self.__groups:
-            self.__groups.update(values)
 
     def __callback(self, method_name, *args):
         """
