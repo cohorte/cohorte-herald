@@ -32,7 +32,7 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
-class LoopTimer(threading._Timer):
+class LoopTimer(type(threading.Timer(0, None))):
     """
     Extension of Python's Timer class, which executes the requested method
     again and again, until cancel() is called.
