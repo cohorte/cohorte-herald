@@ -1,3 +1,0 @@
-"""
-Herald library
-"""
