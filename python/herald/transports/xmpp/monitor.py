@@ -5,7 +5,7 @@ Herald XMPP control robot implementation
 """
 
 # XMPP
-import sleekxmpp
+from sleekxmpp import JID
 
 # Pelix XMPP utility classes
 import pelix.misc.xmpp as pelixmpp
@@ -16,6 +16,7 @@ from .utils import RoomCreator
 # Standard library
 import logging
 import random
+import threading
 
 # ------------------------------------------------------------------------------
 
@@ -24,6 +25,85 @@ _logger = logging.getLogger(__name__)
 FEATURE_MUC = 'http://jabber.org/protocol/muc'
 
 # ------------------------------------------------------------------------------
+
+
+class _MarksCallback(object):
+    """
+    Calls back a method when a list of elements have been marked
+    """
+    def __init__(self, elements, callback):
+        """
+        Sets up the count down.
+
+        The callback method must accept two arguments: successful elements and
+        erroneous ones. The elements must be hashable, as sets are used
+        internally.
+
+        :param elements: A list of elements to wait for
+        :param callback: Method to call back when all elements have been
+                         marked
+        """
+        self.__elements = set(elements)
+        self.__callback = callback
+        self.__called = False
+        self.__successes = set()
+        self.__errors = set()
+
+    def __call(self):
+        """
+        Calls the callback method
+        """
+        try:
+            if self.__callback is not None:
+                self.__callback(self.__successes, self.__errors)
+        except Exception as ex:
+            _logger.exception("Error calling back count down handler: %s", ex)
+        else:
+            self.__called = True
+
+    def __mark(self, element, mark_set):
+        """
+        Marks an element
+
+        :param element: The element to mark
+        :param mark_set: The set corresponding to the mark
+        :return: True if the element was known
+        """
+        try:
+            self.__elements.remove(element)
+            mark_set.add(element)
+        except KeyError:
+            return False
+        else:
+            if not self.__elements:
+                # No more elements to wait for
+                self.__call()
+            return True
+
+    def is_done(self):
+        """
+        Checks if the call back has been called, i.e. if this object can be
+        deleted
+        """
+        return self.__called
+
+    def set(self, element):
+        """
+        Marks an element as successful
+
+        :param element: An element
+        :return: True if the element was known
+        """
+        return self.__mark(element, self.__successes)
+
+    def set_error(self, element):
+        """
+        Marks an element as erroneous
+
+        :param element: An element
+        :return: True if the element was known
+        """
+        return self.__mark(element, self.__errors)
 
 
 class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
@@ -49,8 +129,9 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         # MUC service name
         self.__muc_service = None
 
-        # Required and joined rooms
-        self.__req_rooms = set()
+        # Pending count downs and joined rooms
+        self.__countdowns = set()
+        self.__countdowns_lock = threading.Lock()
         self.__rooms = set()
         self.__main_room = None
 
@@ -60,20 +141,22 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         # Register to events
         self.add_event_handler("message", self.__on_message)
 
-    def create_main_room(self, room):
+    def create_main_room(self, room, callback=None):
         """
         Creates the main room
 
         :param room: Main room name
+        :param callback: Method to call back when the room has been created
         """
         self.__main_room = room
-        self.create_rooms([room])
+        self.create_rooms([room], callback)
 
-    def create_rooms(self, rooms):
+    def create_rooms(self, rooms, callback=None):
         """
         Creates or joins the given rooms
 
         :param rooms: A list of rooms to join / create
+        :param callback: Method to call back when all rooms have been created
         :raise ValueError: No Multi-User Chat service available
         """
         # Look for the MUC service if necessary
@@ -83,11 +166,14 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
             except StopIteration:
                 raise ValueError("No Multi-User Chat service on server")
 
-        # Store the list of rooms to create
-        self.__req_rooms.update(rooms)
+        if callback is not None:
+            # Prepare a callback
+            self.__countdowns.add(
+                _MarksCallback((JID(local=room, domain=self.__muc_service)
+                                for room in rooms), callback))
 
         # Prepare the room creator
-        creator = RoomCreator(self)
+        creator = RoomCreator(self, "Herald-XMPP-RoomCreator")
 
         # Prepare rooms configuration
         rooms_config = {
@@ -146,12 +232,20 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         :param room: Bare JID of the room
         :param nick: Our nick in the room
         """
-        try:
-            self.__req_rooms.remove(sleekxmpp.JID(room).user)
-        except KeyError:
-            _logger.debug("Unknown room: %s", room)
-        else:
-            _logger.info("Room created: %s", room)
+        with self.__countdowns_lock:
+            to_remove = set()
+            for countdown in self.__countdowns:
+                # Mark the room
+                countdown.set(room)
+
+                # Check for cleanup
+                if countdown.is_done():
+                    to_remove.add(countdown)
+
+            # Cleanup
+            self.__countdowns.difference_update(to_remove)
+
+            # Keep track of the room
             self.__rooms.add(room)
 
     def __room_error(self, room, nick, condition, text):
@@ -167,6 +261,19 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
             _logger.warning("We are not the owner of %s", room)
             self.__room_created(room, nick)
         else:
+            with self.__countdowns_lock:
+                to_remove = set()
+                for countdown in self.__countdowns:
+                    # Mark the room
+                    countdown.set_error(room)
+
+                    # Check for cleanup
+                    if countdown.is_done():
+                        to_remove.add(countdown)
+
+                # Cleanup
+                self.__countdowns.difference_update(to_remove)
+
             _logger.error("Error creating room: %s (%s)", text, condition)
 
     def __on_message(self, msg):
@@ -204,7 +311,6 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
                     try:
                         # Authorized client: invite it to requested rooms
                         rooms = set(content[2].split(','))
-                        rooms.difference_update(self.__rooms)
                     except IndexError:
                         # No room specified
                         rooms = set()
@@ -213,15 +319,31 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
                     if self.__main_room:
                         rooms.add(self.__main_room)
 
-                    for room in rooms:
-                        room = sleekxmpp.JID(local=room,
-                                             domain=self.__muc_service).bare
-                        self.__reply(msg, "Invite {0} to {1}",
-                                     from_jid.full, room)
+                    rooms_jids = set(JID(local=room, domain=self.__muc_service)
+                                     for room in rooms)
 
-                        # ... invite user in all created rooms
-                        self['xep_0045'].invite(room, from_jid.full,
-                                                "Client accepted")
+                    def rooms_ready(successes, failures):
+                        """
+                        Invites the requester in the rooms it requested, as
+                        soon as they are ready
+
+                        :param rooms_jids: JIDs of the usable rooms
+                        """
+                        for room_jid in rooms_jids.difference(failures):
+                            # Invite to valid rooms (old and new ones)
+                            self['xep_0045'].invite(room_jid, from_jid.full,
+                                                    "Client accepted")
+
+                    # Create rooms if necessary...
+                    to_create = rooms.difference(self.__rooms)
+                    if to_create:
+                        # We'll have to wait for the rooms before inviting
+                        # the sender
+                        self.create_rooms(to_create, rooms_ready)
+                    else:
+                        # All rooms already exist
+                        rooms_ready(rooms_jids, [])
+
             except IndexError:
                 self.__reply(msg, "Bad command format")
 
