@@ -5,7 +5,8 @@ Herald Remote Services discovery
 """
 
 # Herald
-import herald
+import herald.beans as beans
+import herald.remote
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
@@ -22,7 +23,7 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
-@ComponentFactory(pelix.remote.FACTORY_DISCOVERY_MULTICAST)
+@ComponentFactory(herald.remote.FACTORY_DISCOVERY)
 @Provides(pelix.remote.SERVICE_EXPORT_ENDPOINT_LISTENER)
 @Provides(herald.SERVICE_LISTENER)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
@@ -92,9 +93,20 @@ class HeraldDiscovery(object):
         """
         Prepares a subject for Herald discovery
 
+        :param kind: Kind of discovery message
         :return: A subject string that can be handled by Herald Discovery
         """
         return '/'.join(('herald', 'rpc', 'discovery', kind))
+
+    def __send_message(self, kind, content):
+        """
+        Fires a discovery message to all peers
+
+        :param kind: Kind of discovery message
+        :param content: Content of the message
+        """
+        self._herald.fire_group('all', beans.Message(self.__subject(kind),
+                                                     content))
 
     @Validate
     def _validate(self, context):
@@ -102,15 +114,15 @@ class HeraldDiscovery(object):
         Component validated
         """
         # Send a discovery signal
-        endpoints = self._dump_endpoints(self._dispatcher.get_endpoints)
-        self._herald.fire_group('all', self.__subject("discovery"), endpoints)
+        endpoints = self._dump_endpoints(self._dispatcher.get_endpoints())
+        self.__send_message('discovery', endpoints)
 
     def herald_message(self, herald_svc, message):
         """
         An Herald message has been received
         """
         kind = message.subject.rsplit('/', 1)[1]
-        if kind == 'add':
+        if kind in ('add', 'discovered'):
             # Register the new endpoints
             for endpoint_dict in message.content:
                 try:
@@ -132,17 +144,16 @@ class HeraldDiscovery(object):
 
         elif kind == 'discovery':
             # Reply with the whole list of our exported endpoints
-            endpoints = self._dump_endpoints(self._dispatcher.get_endpoints)
+            endpoints = self._dump_endpoints(self._dispatcher.get_endpoints())
             herald_svc.reply(message, endpoints, self.__subject("discovered"))
 
-    def endpoints_add(self, endpoints):
+    def endpoints_added(self, endpoints):
         """
         Multiple endpoints have been created
 
         :param endpoints: A list of ExportEndpoint beans
         """
-        self._herald.fire_group("all", self.__subject("add"),
-                                self._dump_endpoints(endpoints))
+        self.__send_message('add', self._dump_endpoints(endpoints))
 
     def endpoint_updated(self, endpoint, old_properties):
         """
@@ -151,14 +162,12 @@ class HeraldDiscovery(object):
         :param endpoint: An updated ExportEndpoint bean
         :param old_properties: Previous value of the endpoint properties
         """
-        self._herald.fire_group("all", self.__subject("update"),
-                                {"uid": endpoint.uid,
-                                 "properties":
-                                 endpoint.make_import_properties()})
+        self.__send_message('update',
+                            {"uid": endpoint.uid,
+                             "properties": endpoint.make_import_properties()})
 
     def endpoint_removed(self, endpoint):
         """
         An endpoint has been removed
         """
-        self._herald.fire_group("all", self.__subject("remove"),
-                                {"uid": endpoint.uid})
+        self.__send_message('remove', {"uid": endpoint.uid})
