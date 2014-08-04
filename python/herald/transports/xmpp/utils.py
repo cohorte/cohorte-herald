@@ -13,6 +13,7 @@ import threading
 
 try:
     # Python 2
+    # pylint: disable=F0401
     from StringIO import StringIO
 except ImportError:
     # Python 3

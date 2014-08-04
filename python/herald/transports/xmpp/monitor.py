@@ -383,6 +383,7 @@ def main(host):
 
     try:
         try:
+            # pylint: disable=E0602
             raw_input("Press enter to stop...")
         except NameError:
             input("Press enter to stop...")
