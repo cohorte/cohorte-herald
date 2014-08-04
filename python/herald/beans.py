@@ -248,6 +248,12 @@ class Message(object):
         self._subject = subject
         self._content = content
 
+    def __str__(self):
+        """
+        String representation
+        """
+        return "{0} ({1})".format(self._subject, self._uid)
+
     @property
     def subject(self):
         """
@@ -307,7 +313,8 @@ class MessageReceived(Message):
         """
         String representation
         """
-        return "{0} from {1}".format(self._subject, self._sender)
+        return "{0} ({1}) from {2}".format(self._subject, self._uid,
+                                           self._sender)
 
     @property
     def access(self):
