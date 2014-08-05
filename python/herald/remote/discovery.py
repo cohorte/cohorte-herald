@@ -10,7 +10,7 @@ import herald.remote
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property, Validate
+    Property, Validate, Instantiate
 import pelix.remote.beans
 
 # Standard library
@@ -31,6 +31,7 @@ _logger = logging.getLogger(__name__)
 @Requires('_dispatcher', pelix.remote.SERVICE_DISPATCHER)
 @Requires('_registry', pelix.remote.SERVICE_REGISTRY)
 @Property('_filters', herald.PROP_FILTERS, ['herald/rpc/discovery/*'])
+@Instantiate('herald-remote-discovery')
 class HeraldDiscovery(object):
     """
     Remote services discovery and notification using Herald
