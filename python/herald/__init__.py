@@ -9,7 +9,14 @@ Herald core package
 
 SERVICE_HERALD = "herald.core"
 """
-Specification of the core Herald service
+Specification of the Herald core service. This service is provided only if
+at least one transport implementation is available.
+"""
+
+SERVICE_HERALD_INTERNAL = "herald.core.internal"
+"""
+Synonym for the Herald core server, but with a different life cycle:
+this service has the same life cycle as the Herald core component
 """
 
 SERVICE_DIRECTORY = "herald.directory"

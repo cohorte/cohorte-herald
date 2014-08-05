@@ -48,6 +48,7 @@ class LoopTimer(threading.Thread):
         :param name: Name of the loop thread
         """
         threading.Thread.__init__(self, name=name)
+        self.daemon = True
         self.interval = interval
         self.function = function
         self.args = args if args is not None else []
@@ -142,7 +143,8 @@ class _WaitingPost(object):
 
 
 @ComponentFactory("herald-core-factory")
-@Provides(herald.SERVICE_HERALD)
+@Provides(herald.SERVICE_HERALD_INTERNAL)
+@Provides(herald.SERVICE_HERALD, '_controller')
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_listeners', herald.SERVICE_LISTENER, True, True)
 @RequiresMap('_transports', herald.SERVICE_TRANSPORT, herald.PROP_ACCESS_ID,
@@ -158,6 +160,9 @@ class Herald(object):
         """
         # Herald core directory
         self._directory = None
+
+        # Service controller
+        self._controller = False
 
         # Message listeners (dependency)
         self._listeners = []
@@ -235,6 +240,23 @@ class Herald(object):
         :return: A compiled regular expression
         """
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE)
+
+    @BindField('_transports')
+    def _bind_transport(self, _, listener, svc_ref):
+        """
+        A transport implementation has been bound
+        """
+        # Activate the service
+        self._controller = True
+
+    @UnbindField('_transports')
+    def _unbind_transport(self, _, listener, svc_ref):
+        """
+        A transport implementation has gone away
+        """
+        if len(self._transports) == 1:
+            # Last transport is going away
+            self._controller = False
 
     @BindField('_listeners')
     def _bind_listener(self, _, listener, svc_ref):

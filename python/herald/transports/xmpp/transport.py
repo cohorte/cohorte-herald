@@ -35,7 +35,7 @@ _logger = logging.getLogger(__name__)
 
 
 @ComponentFactory(FACTORY_TRANSPORT)
-@Requires('_core', herald.SERVICE_HERALD)
+@Requires('_core', herald.SERVICE_HERALD_INTERNAL)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_xmpp_directory', SERVICE_XMPP_DIRECTORY)
 @Provides('herald.transport', '_controller')
