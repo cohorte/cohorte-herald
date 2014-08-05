@@ -52,11 +52,21 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name):
          'pelix.shell.core',
          'pelix.shell.ipopo',
          'pelix.shell.console',
+
+         # Herald core
          'herald.core',
          'herald.directory',
          'herald.shell',
+
+         # Herald XMPP
          'herald.transports.xmpp.directory',
-         'herald.transports.xmpp.transport'),
+         'herald.transports.xmpp.transport',
+
+         # RPC
+         'pelix.remote.dispatcher',
+         'pelix.remote.registry',
+         'herald.remote.discovery',
+         'herald.remote.herald_rpc',),
         {herald.FWPROP_NODE_UID: node_name,
          herald.FWPROP_NODE_NAME: node_name,
          herald.FWPROP_PEER_NAME: peer_name})
