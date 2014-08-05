@@ -102,6 +102,9 @@ class HeraldDirectory(object):
 
         self._local = self.__make_local_peer(context)
         self._local_uid = self._local.uid
+        for group in self._local.groups:
+            # Create (empty) groups
+            self._groups.setdefault(group, set())
 
     @Invalidate
     def _invalidate(self, context):
