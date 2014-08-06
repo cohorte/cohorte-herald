@@ -581,8 +581,14 @@ class Herald(object):
             for access in peer.get_accesses():
                 accesses.setdefault(access, set()).add(peer)
 
+        # Sort accesses by number of peers
+        sorted_accesses = sorted(((len(peers), access)
+                                  for access, peers in accesses.items()),
+                                 reverse=True)
+
         missing = []
-        for access, access_peers in accesses.items():
+        for _, access in sorted_accesses:
+            access_peers = accesses[access]
             if not access_peers:
                 # Nothing to do
                 continue
@@ -693,6 +699,76 @@ class Herald(object):
                     del self.__waiting_posts[message.uid]
             except KeyError:
                 pass
+
+    def post_group(self, group, message, callback, errback,
+                   timeout=None):
+        """
+        Posts a message to a group of peers. The given methods will be called
+        back as soon as a result is given, or in case of error.
+
+        If no timeout is given, the message UID must be forgotten manually.
+
+        :param group: A group of peer
+        :param message: A Message bean
+        :param callback: Method to call back when a reply is received
+        :param errback: Method to call back if an error occurs
+        :param timeout: Time after which the message will be forgotten
+        :return: The message UID
+        :raise KeyError: Unknown group
+        :raise NoTransport: No transport found to send the message
+        """
+        # Check if some transports are bound
+        if not self._transports:
+            raise NoTransport("No transport bound yet.")
+
+        with self.__post_lock:
+            # Prepare an entry in the waiting posts
+            self.__waiting_posts[message.uid] = \
+                _WaitingPost(callback, errback, timeout, False)
+
+        # Find the common accesses
+        all_peers = self._directory.get_peers_for_group(group)
+        accesses = {}
+        for peer in all_peers:
+            for access in peer.get_accesses():
+                accesses.setdefault(access, set()).add(peer)
+
+        # Sort accesses by number of peers
+        sorted_accesses = sorted(((len(peers), access)
+                                  for access, peers in accesses.items()),
+                                 reverse=True)
+
+        for _, access in sorted_accesses:
+            access_peers = accesses[access]
+            if not access_peers:
+                # Nothing to do
+                continue
+
+            try:
+                transport = self._transports[access]
+            except KeyError:
+                # No transport for this kind of access
+                pass
+            else:
+                try:
+                    # Call it
+                    transport.fire_group(group, access_peers, message)
+                except InvalidPeerAccess:
+                    # Transport can't find group access data
+                    pass
+                else:
+                    # Success: clean up waiting peers
+                    all_done = True
+                    for remaining_peers in accesses.values():
+                        remaining_peers.difference_update(access_peers)
+                        if remaining_peers:
+                            # Still some peers to notify
+                            all_done = False
+
+                    if all_done:
+                        break
+
+        return message.uid
 
     def forget(self, uid):
         """
