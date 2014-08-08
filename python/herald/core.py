@@ -620,14 +620,8 @@ class Herald(object):
             for access in peer.get_accesses():
                 accesses.setdefault(access, set()).add(peer)
 
-        # Sort accesses by number of peers
-        sorted_accesses = sorted(((len(peers), access)
-                                  for access, peers in accesses.items()),
-                                 reverse=True)
-
         missing = []
-        for _, access in sorted_accesses:
-            access_peers = accesses[access]
+        for access, access_peers in accesses.items():
             if not access_peers:
                 # Nothing to do
                 continue
@@ -773,13 +767,7 @@ class Herald(object):
             for access in peer.get_accesses():
                 accesses.setdefault(access, set()).add(peer)
 
-        # Sort accesses by number of peers
-        sorted_accesses = sorted(((len(peers), access)
-                                  for access, peers in accesses.items()),
-                                 reverse=True)
-
-        for _, access in sorted_accesses:
-            access_peers = accesses[access]
+        for access, access_peers in accesses.items():
             if not access_peers:
                 # Nothing to do
                 continue
