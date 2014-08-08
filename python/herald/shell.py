@@ -49,6 +49,7 @@ class HeraldCommands(object):
                 ("fire_group", self.fire_group),
                 ("send", self.send),
                 ("post", self.post),
+                ("post_group", self.post_group),
                 ("forget", self.forget),
                 ("peers", self.list_peers),
                 ("local", self.local_peer), ]
@@ -113,8 +114,8 @@ class HeraldCommands(object):
             """
             Received a reply
             """
-            io_handler.write_line("Got answer to {0}:", message.reply_to)
-            io_handler.write_line(message.content)
+            io_handler.write_line("Got answer to {0}:\n{1}",
+                                  message.reply_to, message.content)
 
         def errback(_, exception):
             """
@@ -131,6 +132,36 @@ class HeraldCommands(object):
             io_handler.write_line("Unknown target: {0}", target)
         except NoTransport:
             io_handler.write_line("No transport to join {0}", target)
+        else:
+            io_handler.write_line("Message sent: {0}", uid)
+
+    def post_group(self, io_handler, group, subject, *words):
+        """
+        Post a message to the given group of peers
+        """
+        def callback(_, message):
+            """
+            Received a reply
+            """
+            io_handler.write_line("Got answer to {0} from {1}:\n{2}",
+                                  message.reply_to, message.sender,
+                                  message.content)
+
+        def errback(_, exception):
+            """
+            Error during message transmission
+            """
+            io_handler.write_line("Error posting message: {0} ({1})",
+                                  type(exception).__name__, exception)
+
+        try:
+            uid = self._herald.post_group(
+                group, beans.Message(subject, ' '.join(words)),
+                callback, errback)
+        except KeyError:
+            io_handler.write_line("Unknown group: {0}", group)
+        except NoTransport:
+            io_handler.write_line("No transport to join {0}", group)
         else:
             io_handler.write_line("Message sent: {0}", uid)
 
