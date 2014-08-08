@@ -82,9 +82,9 @@ class _WaitingPost(object):
         :param callback: Method to call back when an answer is received
         :param errback: Method to call back on error
         :param timeout: Time to wait before forgetting this post, in seconds
-                        (<= 0 or None for never)
+        (<= 0 or None for never)
         :param forget_on_first: If True, forget this post after the first
-                                answer
+        answer
         """
         self.__callback = callback
         self.__errback = errback
@@ -123,6 +123,7 @@ class _WaitingPost(object):
         """
         if self.__errback is not None:
             try:
+                # pylint: disable=W0703
                 self.__callback(herald_svc, message)
             except Exception as ex:
                 _logger.exception("Error calling callback: %s", ex)
@@ -137,6 +138,7 @@ class _WaitingPost(object):
         """
         if self.__errback is not None:
             try:
+                # pylint: disable=W0703
                 self.__errback(herald_svc, exception)
             except Exception as ex:
                 _logger.exception("Error calling errback: %s", ex)
@@ -603,8 +605,7 @@ class Herald(object):
 
         :param group: A group of peer
         :param message: A Message bean
-        :return: A tuple: the UID of the message sent and the list of
-                 peers
+        :return: A tuple: the UID of the message sent and the list of peers
         :raise KeyError: Unknown group
         :raise NoTransport: No transport found to send the message
         """
@@ -672,7 +673,7 @@ class Herald(object):
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         :raise NoListener: Message received, but nobody was registered to
-                           listen to it
+        listen to it
         :raise HeraldTimeout: Timeout raised before getting an answer
         """
         # Prepare an event, which will be set when the answer will be received
@@ -709,8 +710,8 @@ class Herald(object):
         result is given, or in case of error
 
         The given callback methods must have the following signatures:
-        - callback(herald, reply_message)
-        - errback(herald, exception)
+          - callback(herald, reply_message)
+          - errback(herald, exception)
 
         :param target: The UID of a Peer, or a Peer object
         :param message: A Message bean
@@ -729,6 +730,7 @@ class Herald(object):
 
         try:
             # Fire the message
+            # pylint: disable=W0702
             return self.fire(target, message)
         except:
             # Early clean up in case of exception

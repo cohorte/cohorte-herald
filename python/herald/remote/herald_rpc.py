@@ -55,9 +55,9 @@ try:
     # Python 3
     from xmlrpc.server import SimpleXMLRPCDispatcher
     import xmlrpc.client as xmlrpclib
-
 except ImportError:
     # Python 2
+    # pylint: disable=F0401
     from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
     import xmlrpclib
 

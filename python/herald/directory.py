@@ -46,7 +46,6 @@ class HeraldDirectory(object):
         self._listeners = []
 
         # Local bean description
-        self._local_uid = None
         self._local = None
 
         # UID -> Peer bean
@@ -105,7 +104,6 @@ class HeraldDirectory(object):
 
         # Prepare local peer
         self._local = self.__make_local_peer(context)
-        self._local_uid = self._local.uid
         for group in self._local.groups:
             # Create (empty) groups
             self._groups.setdefault(group, set())
@@ -137,6 +135,7 @@ class HeraldDirectory(object):
         if self._listeners:
             for listener in self._listeners[:]:
                 try:
+                    # pylint: disable=W0703
                     listener.peer_registered(peer)
                 except Exception as ex:
                     _logger.exception("Error notifying listener: %s", ex)
@@ -150,6 +149,7 @@ class HeraldDirectory(object):
         if self._listeners:
             for listener in self._listeners[:]:
                 try:
+                    # pylint: disable=W0703
                     listener.peer_unregistered(peer)
                 except Exception as ex:
                     _logger.exception("Error notifying listener: %s", ex)
@@ -166,6 +166,7 @@ class HeraldDirectory(object):
         if self._listeners:
             for listener in self._listeners[:]:
                 try:
+                    # pylint: disable=W0703
                     listener.peer_updated(peer, access_id, data, previous)
                 except Exception as ex:
                     _logger.exception("Error notifying listener: %s", ex)
@@ -175,7 +176,7 @@ class HeraldDirectory(object):
         """
         Returns the local peer UID
         """
-        return self._local_uid
+        return self._local.uid
 
     def get_peer(self, uid):
         """
@@ -317,7 +318,7 @@ class HeraldDirectory(object):
         """
         with self.__lock:
             uid = description['uid']
-            if uid == self._local_uid or uid in self._peers:
+            if uid == self._local.uid or uid in self._peers:
                 # Local/Already known peer: ignore
                 return
 

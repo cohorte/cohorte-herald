@@ -111,14 +111,14 @@ class RoomCreator(object):
         Prepares the creation of a room.
 
         The callback is a method with two arguments:
-        - room: Bare JID of the room
-        - nick: Nick used to create the room
+          - room: Bare JID of the room
+          - nick: Nick used to create the room
 
         The errback is a method with 4 arguments:
-        - room: Bare JID of the room
-        - nick: Nick used to create the room
-        - condition: error category (XMPP specification or "not-owner")
-        - text: description of the error
+          - room: Bare JID of the room
+          - nick: Nick used to create the room
+          - condition: error category (XMPP specification or "not-owner")
+          - text: description of the error
 
 
         :param room: Name of the room

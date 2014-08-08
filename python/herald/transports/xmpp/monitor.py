@@ -41,7 +41,7 @@ class _MarksCallback(object):
 
         :param elements: A list of elements to wait for
         :param callback: Method to call back when all elements have been
-                         marked
+        marked
         """
         self.__elements = set(elements)
         self.__callback = callback

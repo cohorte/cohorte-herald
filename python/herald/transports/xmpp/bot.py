@@ -88,8 +88,7 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
         :param target: Target JID or MUC room
         :param message: Herald message bean
         :param body: The serialized form of the message body. If not given,
-                     the content is the string form of the message.content
-                     field
+        the content is the string form of the message.content field
         """
         if body is None:
             # String form of the message as content
