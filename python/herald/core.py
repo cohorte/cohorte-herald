@@ -665,7 +665,7 @@ class Herald(object):
                 pass
 
     def post(self, target, message, callback, errback,
-             timeout=None, forget_on_first=True):
+             timeout=180, forget_on_first=True):
         """
         Posts a message. The given methods will be called back as soon as a
         result is given, or in case of error
@@ -701,7 +701,7 @@ class Herald(object):
                 pass
 
     def post_group(self, group, message, callback, errback,
-                   timeout=None):
+                   timeout=180):
         """
         Posts a message to a group of peers. The given methods will be called
         back as soon as a result is given, or in case of error.
