@@ -179,6 +179,12 @@ class Herald(object):
         # Garbage collection timer
         self.__gc_timer = None
 
+        # Last time a GC was done
+        self._last_gc = None
+
+        # List of received messages UIDs, kept 5 minutes: UID -> TTL
+        self.__treated = {}
+
         # Events used for blocking "send()": UID -> EventData
         self.__waiting_events = {}
 
@@ -188,7 +194,7 @@ class Herald(object):
 
         # Thread safety
         self.__listeners_lock = threading.Lock()
-        self.__post_lock = threading.Lock()
+        self.__gc_lock = threading.Lock()
 
     @Validate
     def _validate(self, context):
@@ -199,6 +205,7 @@ class Herald(object):
         self.__pool.start()
 
         # Start the garbage collector
+        self._last_gc = None
         self.__gc_timer = LoopTimer(30, self.__garbage_collect,
                                     name="Herald-GC")
         self.__gc_timer.start()
@@ -221,7 +228,7 @@ class Herald(object):
             event.set(None)
 
         exception = HeraldTimeout("Herald stops listening to messages", None)
-        with self.__post_lock:
+        with self.__gc_lock:
             for waiting_post in self.__waiting_posts.values():
                 waiting_post.errback(self, exception)
 
@@ -336,12 +343,33 @@ class Herald(object):
         Garbage collects dead waiting post beans. Calls on a regular basis
         by a LoopTimer
         """
-        with self.__post_lock:
+        with self.__gc_lock:
+            # Compute last garbage collect time
+            if self._last_gc is None:
+                gc_delta = 0
+            else:
+                gc_delta = int(time.time()) - self._last_gc
+
+            # Delete timed out post message beans
             to_delete = [uid
                          for uid, waiting_post in self.__waiting_posts.items()
                          if waiting_post.is_dead()]
             for uid in to_delete:
                 del self.__waiting_posts[uid]
+
+            # Delete UID of treated message of more than 5 minutes
+            to_delete = []
+            for uid, ttl in self.__treated.items():
+                new_ttl = ttl + gc_delta
+                self.__treated[uid] = new_ttl
+                if new_ttl > 300:
+                    to_delete.append(uid)
+
+            for uid in to_delete:
+                del self.__treated[uid]
+
+            # Update the "last garbage collect time"
+            self._last_gc = int(time.time())
 
     def handle_message(self, message):
         """
@@ -351,6 +379,16 @@ class Herald(object):
 
         :param message: A MessageReceived bean forged by the transport
         """
+        with self.__gc_lock:
+            if message.uid in self.__treated:
+                # Message already handled, maybe it has been received by
+                # another transport
+                _logger.debug("Ignoring message %s: already treated", message)
+                return
+            else:
+                # Store the message UID in the treated messages
+                self.__treated[message.uid] = 0
+
         # User a tuple, because list can't be compared to tuples
         parts = tuple(part for part in message.subject.split('/') if part)
         try:
@@ -446,7 +484,7 @@ class Herald(object):
 
             # ... notify post() callers
             try:
-                with self.__post_lock:
+                with self.__gc_lock:
                     waiting_post = self.__waiting_posts[message.reply_to]
             except KeyError:
                 # Nobody was waiting for an answer
@@ -684,7 +722,7 @@ class Herald(object):
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         """
-        with self.__post_lock:
+        with self.__gc_lock:
             # Prepare an entry in the waiting posts
             self.__waiting_posts[message.uid] = \
                 _WaitingPost(callback, errback, timeout, forget_on_first)
@@ -695,7 +733,7 @@ class Herald(object):
         except:
             # Early clean up in case of exception
             try:
-                with self.__post_lock:
+                with self.__gc_lock:
                     del self.__waiting_posts[message.uid]
             except KeyError:
                 pass
@@ -721,7 +759,7 @@ class Herald(object):
         if not self._transports:
             raise NoTransport("No transport bound yet.")
 
-        with self.__post_lock:
+        with self.__gc_lock:
             # Prepare an entry in the waiting posts
             self.__waiting_posts[message.uid] = \
                 _WaitingPost(callback, errback, timeout, False)
@@ -792,7 +830,7 @@ class Herald(object):
             # ... no pending call
             pass
 
-        with self.__post_lock:
+        with self.__gc_lock:
             try:
                 self.__waiting_posts.pop(uid).errback(self, exception)
                 result = True
