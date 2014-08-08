@@ -29,6 +29,11 @@ SERVICE_LISTENER = "herald.message.listener"
 Specification of a message listener
 """
 
+SERVICE_DIRECTORY_LISTENER = "herald.directory.listener"
+"""
+Specification of a directory listener
+"""
+
 SERVICE_TRANSPORT = "herald.transport"
 """
 Specification of a transport implementation for Herald

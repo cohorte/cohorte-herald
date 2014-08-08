@@ -9,11 +9,10 @@ import herald
 import herald.beans as beans
 
 # Pelix
-from pelix.ipopo.decorators import ComponentFactory, RequiresMap, Provides, \
-    Validate, Invalidate, Instantiate
+from pelix.ipopo.decorators import ComponentFactory, Requires, RequiresMap, \
+    Provides, BindField, Validate, Invalidate, Instantiate
 from pelix.utilities import is_string
 import pelix.constants
-
 
 # Standard library
 import logging
@@ -30,6 +29,7 @@ _logger = logging.getLogger(__name__)
 @Provides(herald.SERVICE_DIRECTORY)
 @RequiresMap('_directories', herald.SERVICE_TRANSPORT_DIRECTORY,
              herald.PROP_ACCESS_ID, False, False, True)
+@Requires('_listeners', herald.SERVICE_DIRECTORY_LISTENER, True, True)
 @Instantiate("herald-directory")
 class HeraldDirectory(object):
     """
@@ -41,6 +41,9 @@ class HeraldDirectory(object):
         """
         # Transport-specific directories
         self._directories = {}
+
+        # Directory listeners
+        self._listeners = []
 
         # Local bean description
         self._local_uid = None
@@ -100,6 +103,7 @@ class HeraldDirectory(object):
         self._peers.clear()
         self._groups.clear()
 
+        # Prepare local peer
         self._local = self.__make_local_peer(context)
         self._local_uid = self._local.uid
         for group in self._local.groups:
@@ -115,6 +119,56 @@ class HeraldDirectory(object):
         self._peers.clear()
         self._groups.clear()
         self._local = None
+
+    @BindField('_listeners', if_valid=True)
+    def _bind_listener(self, _, svc, svc_ref):
+        """
+        A directory listener has been bound
+        """
+        for peer in list(self._peers.values()):
+            svc.peer_added(peer)
+
+    def __notify_peer_registered(self, peer):
+        """
+        Notify listeners about a new peer
+
+        :param peer: Bean of the new peer
+        """
+        if self._listeners:
+            for listener in self._listeners[:]:
+                try:
+                    listener.peer_registered(peer)
+                except Exception as ex:
+                    _logger.exception("Error notifying listener: %s", ex)
+
+    def __notify_peer_unregistered(self, peer):
+        """
+        Notify listeners about the loss of peer
+
+        :param peer: Bean of the loss of peer
+        """
+        if self._listeners:
+            for listener in self._listeners[:]:
+                try:
+                    listener.peer_unregistered(peer)
+                except Exception as ex:
+                    _logger.exception("Error notifying listener: %s", ex)
+
+    def __notify_peer_updated(self, peer, access_id, data, previous=None):
+        """
+        Notifies listeners about the modification of a peer access
+
+        :param peer: Bean of the modified peer
+        :param access_id: ID of the modified access
+        :param data: New access data (None of unset)
+        :param previous: Previous access data (None for set)
+        """
+        if self._listeners:
+            for listener in self._listeners[:]:
+                try:
+                    listener.peer_updated(peer, access_id, data, previous)
+                except Exception as ex:
+                    _logger.exception("Error notifying listener: %s", ex)
 
     @property
     def local_uid(self):
@@ -201,6 +255,11 @@ class HeraldDirectory(object):
                 _logger.exception("Error notifying a transport directory: %s",
                                   ex)
 
+            # Notify listeners only if the peer is already/still registered
+            if peer.uid in self._peers:
+                # Notify directory listeners
+                self.__notify_peer_updated(peer, access_id, data)
+
     def peer_access_unset(self, peer, access_id, data):
         """
         A peer access has been removed. Called by  a Peer bean.
@@ -222,6 +281,9 @@ class HeraldDirectory(object):
             except Exception as ex:
                 _logger.exception("Error notifying a transport directory: %s",
                                   ex)
+
+            # Notify directory listeners
+            self.__notify_peer_updated(peer, access_id, None, data)
 
         if not peer.has_accesses():
             # Peer has no more access, unregister it
@@ -251,6 +313,7 @@ class HeraldDirectory(object):
         Registers a peer
 
         :param description: Description of the peer, in the format of dump()
+        :return: The registered Peer bean
         """
         with self.__lock:
             uid = description['uid']
@@ -283,7 +346,9 @@ class HeraldDirectory(object):
             for group in peer.groups:
                 self._groups.setdefault(group, set()).add(peer)
 
-            _logger.info("Registered peer: %s", peer)
+        # Notify listeners
+        self.__notify_peer_registered(peer)
+        return peer
 
     def unregister(self, uid):
         """
@@ -320,4 +385,6 @@ class HeraldDirectory(object):
                         # Peer wasn't in that group
                         pass
 
-                return peer
+        # Notify listeners
+        self.__notify_peer_unregistered(peer)
+        return peer
