@@ -26,6 +26,11 @@ Pelix Remote Services implementation based on Herald
     limitations under the License.
 """
 
+# Documentation strings format
+__docformat__ = "restructuredtext en"
+
+# ------------------------------------------------------------------------------
+
 FACTORY_DISCOVERY = 'herald-remote-discovery-factory'
 """
 Name of the Herald Remote Services discovery component factory

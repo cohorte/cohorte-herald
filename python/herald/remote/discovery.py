@@ -112,7 +112,7 @@ class HeraldDiscovery(object):
         _dump_endpoint()
 
         :param endpoint_dict: The result of a call to _dump_endpoint(),
-        sent over Herald
+                              sent over Herald
         :return: An ImportEndpoint bean
         :raise KeyError: Incomplete dump
         """

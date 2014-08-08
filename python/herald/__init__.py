@@ -26,6 +26,9 @@ Herald core package
     limitations under the License.
 """
 
+# Documentation strings format
+__docformat__ = "restructuredtext en"
+
 # ------------------------------------------------------------------------------
 # Service specifications
 

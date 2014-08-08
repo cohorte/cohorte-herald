@@ -164,7 +164,7 @@ class Peer(object):
         Calls back the associated directory
 
         :param method_name: Name of the method to call
-        :param *args: Arguments of the method to call back
+        :param args: Arguments of the method to call back
         """
         try:
             method = getattr(self.__directory, method_name)

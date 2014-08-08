@@ -106,8 +106,7 @@ class XMPPDirectory(object):
         The access to the given peer matching our access ID has been set
 
         :param peer: The Peer bean
-        :param data: The peer access data
-        (previously loaded with load_access())
+        :param data: The peer access data, previously loaded with load_access()
         """
         if peer.uid != self._directory.local_uid:
             self._jid_uid[data.jid] = peer

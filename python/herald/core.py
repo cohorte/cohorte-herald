@@ -113,9 +113,9 @@ class _WaitingPost(object):
         :param callback: Method to call back when an answer is received
         :param errback: Method to call back on error
         :param timeout: Time to wait before forgetting this post, in seconds
-        (<= 0 or None for never)
+                        (<= 0 or None for never)
         :param forget_on_first: If True, forget this post after the first
-        answer
+                                answer
         """
         self.__callback = callback
         self.__errback = errback
@@ -698,7 +698,7 @@ class Herald(object):
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         :raise NoListener: Message received, but nobody was registered to
-        listen to it
+                           listen to it
         :raise HeraldTimeout: Timeout raised before getting an answer
         """
         # Prepare an event, which will be set when the answer will be received

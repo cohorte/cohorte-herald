@@ -26,6 +26,11 @@ Herald XMPP transport implementation
     limitations under the License.
 """
 
+# Documentation strings format
+__docformat__ = "restructuredtext en"
+
+# ------------------------------------------------------------------------------
+
 ACCESS_ID = "xmpp"
 """
 Access ID used by the XMPP transport implementation

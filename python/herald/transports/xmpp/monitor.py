@@ -72,7 +72,7 @@ class _MarksCallback(object):
 
         :param elements: A list of elements to wait for
         :param callback: Method to call back when all elements have been
-        marked
+                         marked
         """
         self.__elements = set(elements)
         self.__callback = callback
@@ -387,7 +387,7 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
 
         :param in_message: Message received
         :param text: Text of the reply, with string.format syntax
-        :param *args: String format arguments
+        :param args: String format arguments
         """
         if args:
             text = text.format(*args)

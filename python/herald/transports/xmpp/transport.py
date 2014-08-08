@@ -321,7 +321,7 @@ class XmppTransport(object):
         """
         Fires a message to a peer
 
-        :param Peer: A Peer bean
+        :param peer: A Peer bean
         :param message: Message to send
         :param extra: Extra information used in case of a reply
         """
