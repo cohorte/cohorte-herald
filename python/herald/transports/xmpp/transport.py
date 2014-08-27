@@ -69,7 +69,7 @@ _logger = logging.getLogger(__name__)
 @Requires('_core', herald.SERVICE_HERALD_INTERNAL)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_xmpp_directory', SERVICE_XMPP_DIRECTORY)
-@Provides('herald.transport', '_controller')
+@Provides(herald.SERVICE_TRANSPORT, '_controller')
 @Property('_access_id', herald.PROP_ACCESS_ID, ACCESS_ID)
 @Property('_host', PROP_XMPP_SERVER, 'localhost')
 @Property('_port', PROP_XMPP_PORT, 5222)
@@ -348,6 +348,7 @@ class XmppTransport(object):
         :param group: Name of a group
         :param peers: Peers to communicate with
         :param message: Message to send
+        :return: The list of reached peers
         """
         # Special case for the main room
         if group == 'all':
@@ -358,3 +359,4 @@ class XmppTransport(object):
 
         # Send the XMPP message
         self.__send_message("groupchat", group_jid, message)
+        return peers
