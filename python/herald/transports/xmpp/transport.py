@@ -46,6 +46,7 @@ from .bot import HeraldBot
 from herald.exceptions import InvalidPeerAccess
 import herald
 import herald.beans as beans
+import herald.utils as utils
 
 # XMPP
 import sleekxmpp
@@ -271,16 +272,8 @@ class XmppTransport(object):
         :param message: Herald message bean
         :param parent_uid: UID of the message this one replies to (optional)
         """
-        # Convert content to JSON, with a converter:
-        # sets are converted into tuples
-        def set_converter(obj):
-            """
-            Converts sets to list during JSON serialization
-            """
-            if isinstance(obj, (set, frozenset)):
-                return tuple(obj)
-            raise TypeError
-        content = json.dumps(message.content, default=set_converter)
+        # Convert content to JSON
+        content = json.dumps(message.content, default=utils.json_converter)
 
         # Prepare an XMPP message, based on the Herald message
         xmpp_msg = self._bot.make_message(mto=target,
