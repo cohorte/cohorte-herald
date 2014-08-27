@@ -666,7 +666,7 @@ class Herald(object):
                 transport = self._transports[access]
             except KeyError:
                 # No transport for this kind of access
-                pass
+                _logger.debug("No transport for %s", access)
             else:
                 try:
                     # Call it
@@ -674,9 +674,9 @@ class Herald(object):
                                                          message)
                     if reached_peers is None:
                         reached_peers = access_peers
-                except InvalidPeerAccess:
+                except InvalidPeerAccess as ex:
                     # Transport can't find group access data
-                    pass
+                    _logger.debug("Missing access info: %s", ex)
                 else:
                     # Success: clean up waiting peers
                     all_done = True
@@ -691,7 +691,7 @@ class Herald(object):
         else:
             missing = set(itertools.chain(*accesses.values()))
             _logger.warning("Some peers haven't been notified: %s",
-                            ', '.join(missing))
+                            ', '.join(str(peer) for peer in missing))
 
         return (message.uid, missing)
 
