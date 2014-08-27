@@ -48,7 +48,6 @@ import pelix.framework
 # Standard library
 import argparse
 import logging
-import sys
 
 # ------------------------------------------------------------------------------
 
@@ -102,17 +101,10 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name):
         # Start the monitor
         monitor = xmpp_monitor.MonitorBot(monitor_jid, "bot", "Monitor")
         monitor.connect(xmpp_server, xmpp_port, use_tls=False)
-
         monitor.create_main_room(main_room)
 
     # Instantiate components
-    # Get the iPOPO service
     with use_waiting_list(context) as ipopo:
-        # Instantiate remote service components
-        # ... XMPP Directory
-        ipopo.add(herald.transports.xmpp.FACTORY_DIRECTORY,
-                  "herald-xmpp-directory")
-
         # ... XMPP Transport
         ipopo.add(herald.transports.xmpp.FACTORY_TRANSPORT,
                   "herald-xmpp-transport",
@@ -143,21 +135,21 @@ if __name__ == "__main__":
     # XMPP server
     group = parser.add_argument_group("XMPP Configuration",
                                       "Configuration of the XMPP transport")
-    parser.add_argument("-s", "--server", action="store", default="localhost",
-                        dest="xmpp_server", help="Host of the XMPP server")
-    parser.add_argument("-p", "--port", action="store", type=int, default=5222,
-                        dest="xmpp_port", help="Port of the XMPP server")
+    group.add_argument("-s", "--server", action="store", default="localhost",
+                       dest="xmpp_server", help="Host of the XMPP server")
+    group.add_argument("-p", "--port", action="store", type=int, default=5222,
+                       dest="xmpp_port", help="Port of the XMPP server")
 
     # Peer info
-    parser.add_argument("-n", "--name", action="store", default=None,
-                        dest="name", help="Peer name")
-
-    # Node info
-    parser.add_argument("--node", action="store", default=None,
-                        dest="node", help="Node name")
+    group = parser.add_argument_group("Peer Configuration",
+                                      "Identity of the Peer")
+    group.add_argument("-n", "--name", action="store", default=None,
+                       dest="name", help="Peer name")
+    group.add_argument("--node", action="store", default=None,
+                       dest="node", help="Node name")
 
     # Parse arguments
-    args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args()
 
     # Configure the logging package
     logging.basicConfig(level=logging.INFO)
