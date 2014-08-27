@@ -36,7 +36,7 @@ __docformat__ = "restructuredtext en"
 # ------------------------------------------------------------------------------
 
 # Herald XMPP
-from . import FACTORY_DIRECTORY, SERVICE_XMPP_DIRECTORY, ACCESS_ID
+from . import SERVICE_XMPP_DIRECTORY, ACCESS_ID
 from .beans import XMPPAccess
 
 # Herald
@@ -45,7 +45,7 @@ import herald
 # Standard library
 import logging
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property, Validate, Invalidate
+    Property, Validate, Invalidate, Instantiate
 
 # ------------------------------------------------------------------------------
 
@@ -54,17 +54,18 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
-@ComponentFactory(FACTORY_DIRECTORY)
+@ComponentFactory('herald-xmpp-directory-factory')
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Property('_access_id', herald.PROP_ACCESS_ID, ACCESS_ID)
 @Provides((herald.SERVICE_TRANSPORT_DIRECTORY, SERVICE_XMPP_DIRECTORY))
+@Instantiate('herald-xmpp-directory')
 class XMPPDirectory(object):
     """
     XMPP Directory for Herald
     """
     def __init__(self):
         """
-        Sets up the transport
+        Sets up the transport directory
         """
         # Herald Core Directory
         self._directory = None

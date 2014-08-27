@@ -76,8 +76,3 @@ FACTORY_TRANSPORT = "herald-xmpp-transport-factory"
 """
 Name of the XMPP transport implementation factory
 """
-
-FACTORY_DIRECTORY = "herald-xmpp-directory-factory"
-"""
-Name of the XMPP transport directory factory
-"""
