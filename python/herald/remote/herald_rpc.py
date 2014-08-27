@@ -53,6 +53,7 @@ import logging
 # XML RPC modules
 try:
     # Python 3
+    # pylint: disable=F0401
     from xmlrpc.server import SimpleXMLRPCDispatcher
     import xmlrpc.client as xmlrpclib
 except ImportError:
