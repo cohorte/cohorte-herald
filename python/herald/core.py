@@ -620,13 +620,18 @@ class Herald(object):
                     transport.fire(peer, message)
                 except InvalidPeerAccess as ex:
                     # Transport can't read peer access data
-                    _logger.debug("Error using transport %s: %s", access, ex)
+                    _logger.debug("Error reading access for transport %s: %s",
+                                  access, ex)
+                except Exception as ex:
+                    # Exception during transport
+                    _logger.warning("Error using transport %s: %s", access, ex)
                 else:
                     # Success
                     break
         else:
             # No transport for those accesses
-            raise NoTransport("No transport found for peer {0}".format(peer))
+            raise NoTransport("No working transport found for peer {0}"
+                              .format(peer))
 
         return message.uid
 
@@ -665,7 +670,10 @@ class Herald(object):
             else:
                 try:
                     # Call it
-                    transport.fire_group(group, access_peers, message)
+                    reached_peers = transport.fire_group(group, access_peers,
+                                                         message)
+                    if reached_peers is None:
+                        reached_peers = access_peers
                 except InvalidPeerAccess:
                     # Transport can't find group access data
                     pass
@@ -673,7 +681,7 @@ class Herald(object):
                     # Success: clean up waiting peers
                     all_done = True
                     for remaining_peers in accesses.values():
-                        remaining_peers.difference_update(access_peers)
+                        remaining_peers.difference_update(reached_peers)
                         if remaining_peers:
                             # Still some peers to notify
                             all_done = False
