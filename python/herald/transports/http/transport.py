@@ -44,6 +44,7 @@ import requests
 # Herald Core
 from herald.exceptions import InvalidPeerAccess
 import herald
+import herald.beans as beans
 import herald.utils as utils
 
 # Pelix
@@ -198,7 +199,8 @@ class HttpTransport(object):
         url = self.__get_access(peer, extra)
         if not url:
             # No HTTP access description
-            raise InvalidPeerAccess("No '{0}' access found"
+            raise InvalidPeerAccess(beans.Target(uid=peer.uid),
+                                    "No '{0}' access found"
                                     .format(self._access_id))
 
         # Send the HTTP request (blocking) and raise an error if necessary
@@ -240,7 +242,8 @@ class HttpTransport(object):
             url = self.__get_access(peer)
             if not url:
                 # No HTTP access description
-                raise InvalidPeerAccess("No '{0}' access found"
+                raise InvalidPeerAccess(beans.Target(uid=peer.uid),
+                                        "No '{0}' access found"
                                         .format(self._access_id))
 
             # Send the HTTP requests (from the thread pool)

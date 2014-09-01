@@ -263,6 +263,46 @@ class Peer(object):
 # ------------------------------------------------------------------------------
 
 
+class Target(object):
+    """
+    The description of a target, used in exceptions
+    """
+    def __init__(self, uid=None, group=None, uids=None):
+        """
+        Sets the target definition. Only one argument should be set at once.
+
+        :param uid: The UID of the targeted peer
+        :param group: The targeted group
+        :param uids: The UIDs of the targeted peers (for groups only)
+        """
+        self.__uid = uid
+        self.__group = group
+        self.__uids = uids or []
+
+    @property
+    def uid(self):
+        """
+        The UID of the targeted peer
+        """
+        return self.__uid
+
+    @property
+    def group(self):
+        """
+        The targeted group
+        """
+        return self.__group
+
+    @property
+    def uids(self):
+        """
+        The UIDs of the targeted peers (for groups only)
+        """
+        return self.__uids
+
+# ------------------------------------------------------------------------------
+
+
 class Message(object):
     """
     Represents a message to be sent

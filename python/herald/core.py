@@ -260,7 +260,8 @@ class Herald(object):
         for event in tuple(self.__waiting_events.values()):
             event.set(None)
 
-        exception = HeraldTimeout("Herald stops listening to messages", None)
+        exception = HeraldTimeout(None, "Herald stops listening to messages",
+                                  None)
         with self.__gc_lock:
             for waiting_post in self.__waiting_posts.values():
                 waiting_post.errback(self, exception)
@@ -446,32 +447,31 @@ class Herald(object):
         """
         Handles an error message
 
-        :param message: Message received from another peer
+        :param message: MessageReceived bean, received from another peer
         :param kind: Kind of error
         """
         if kind == 'no-listener':
             # No listener found for a given message
             # ... release send() calls
             try:
-                # Get the request message UID
+                # Get the original message UID and Subject
                 uid = message.content['uid']
-                subject = message.content['subject']
+                exception = NoListener(message.sender, uid,
+                                       message.content['subject'])
             except KeyError:
                 # Invalid error content...
                 return
 
             try:
-                # Unlock the sender with an exception
-                self.__waiting_events.pop(uid) \
-                    .raise_exception(NoListener(uid, subject))
+                # Unlock the poster with an exception
+                self.__waiting_events.pop(uid).raise_exception(exception)
             except KeyError:
                 # Nobody was waiting for the event
                 pass
 
             # ... notify post() callers
             try:
-                self.__waiting_posts.pop(uid) \
-                    .errback(self, NoListener(uid, subject))
+                self.__waiting_posts.pop(uid).errback(self, exception)
             except KeyError:
                 # No error callback for this message
                 pass
@@ -565,7 +565,8 @@ class Herald(object):
             transport = self._transports[reply_to.access]
         except KeyError:
             # Reception transport is not available anymore...
-            raise NoTransport("No reply transport for access {0}"
+            raise NoTransport(beans.Target(uid=reply_to.sender),
+                              "No reply transport for access {0}"
                               .format(reply_to.access))
         else:
             # Try to get the Peer bean. If unknown, consider that the
@@ -579,7 +580,8 @@ class Herald(object):
                 # Send the reply
                 transport.fire(peer, message, reply_to.extra)
             except InvalidPeerAccess:
-                raise NoTransport("Can't reply to {0} using {1} transport"
+                raise NoTransport(beans.Target(uid=reply_to.sender),
+                                  "Can't reply to {0} using {1} transport"
                                   .format(peer, reply_to.access))
             else:
                 # Reply sent. Stop here
@@ -604,7 +606,8 @@ class Herald(object):
 
         # Check if some transports are bound
         if not self._transports:
-            raise NoTransport("No transport bound yet.")
+            raise NoTransport(beans.Target(uid=peer.uid),
+                              "No transport bound yet.")
 
         # Get accesses
         accesses = peer.get_accesses()
@@ -630,7 +633,8 @@ class Herald(object):
                     break
         else:
             # No transport for those accesses
-            raise NoTransport("No working transport found for peer {0}"
+            raise NoTransport(beans.Target(uid=peer.uid),
+                              "No working transport found for peer {0}"
                               .format(peer))
 
         return message.uid
@@ -645,12 +649,17 @@ class Herald(object):
         :raise KeyError: Unknown group
         :raise NoTransport: No transport found to send the message
         """
+        # Get all peers known in the group
+        all_peers = self._directory.get_peers_for_group(group)
+
         # Check if some transports are bound
         if not self._transports:
-            raise NoTransport("No transport bound yet.")
+            raise NoTransport(
+                beans.Target(group=group,
+                             uids=[peer.uid for peer in all_peers]),
+                "No transport bound yet.")
 
         # Find the common accesses
-        all_peers = self._directory.get_peers_for_group(group)
         accesses = {}
         for peer in all_peers:
             for access in peer.get_accesses():
@@ -713,9 +722,15 @@ class Herald(object):
         event = pelix.utilities.EventData()
         self.__waiting_events[message.uid] = event
 
+        # Get the Peer object
+        if not isinstance(target, beans.Peer):
+            peer = self._directory.get_peer(target)
+        else:
+            peer = target
+
         try:
             # Fire the message
-            self.fire(target, message)
+            self.fire(peer, message)
 
             # Message sent, wait for an answer
             if event.wait(timeout):
@@ -723,10 +738,12 @@ class Herald(object):
                     return event.data
                 else:
                     # Message cancelled due to invalidation
-                    raise HeraldTimeout("Herald stops listening to messages",
+                    raise HeraldTimeout(beans.Target(uid=peer.uid),
+                                        "Herald stops listening to messages",
                                         message)
             else:
-                raise HeraldTimeout("Timeout reached before receiving a reply",
+                raise HeraldTimeout(beans.Target(uid=peer.uid),
+                                    "Timeout reached before receiving a reply",
                                     message)
         finally:
             try:
@@ -790,9 +807,15 @@ class Herald(object):
         :raise KeyError: Unknown group
         :raise NoTransport: No transport found to send the message
         """
+        # Get all peers known in the group
+        all_peers = self._directory.get_peers_for_group(group)
+
         # Check if some transports are bound
         if not self._transports:
-            raise NoTransport("No transport bound yet.")
+            raise NoTransport(
+                beans.Target(group=group,
+                             uids=[peer.uid for peer in all_peers]),
+                "No transport bound yet.")
 
         with self.__gc_lock:
             # Prepare an entry in the waiting posts
@@ -800,7 +823,6 @@ class Herald(object):
                 _WaitingPost(callback, errback, timeout, False)
 
         # Find the common accesses
-        all_peers = self._directory.get_peers_for_group(group)
         accesses = {}
         for peer in all_peers:
             for access in peer.get_accesses():
@@ -898,5 +920,6 @@ class Herald(object):
             self.fire(message.sender, beans.Message(subject, content))
         except KeyError:
             # Convert KeyError to NoTransport
-            raise NoTransport("No access to reply to {0}"
+            raise NoTransport(beans.Target(uid=message.sender),
+                              "No access to reply to {0}"
                               .format(message.sender))

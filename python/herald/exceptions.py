@@ -33,14 +33,22 @@ __version__ = ".".join(str(x) for x in __version_info__)
 # Documentation strings format
 __docformat__ = "restructuredtext en"
 
-# ------------------------------------------------------------------------------
-
 
 class HeraldException(Exception):
     """
     Base class for all exceptions in Herald
     """
-    pass
+    def __init__(self, target, text, cause=None):
+        """
+        Sets up the exception
+
+        :param target: A Target bean
+        :param text: A description of the error
+        :param cause: The cause of the error
+        """
+        super(HeraldException, self).__init__(text)
+        self.target = target
+        self.cause = cause
 
 
 class NoTransport(HeraldException):
@@ -61,14 +69,14 @@ class HeraldTimeout(HeraldException):
     """
     A timeout has been reached
     """
-    def __init__(self, text, message):
+    def __init__(self, target, text, message):
         """
         Sets up the exception
 
         :param text: Description of the exception
         :param message: The request which got no reply
         """
-        super(HeraldTimeout, self).__init__(text)
+        super(HeraldTimeout, self).__init__(target, text)
         self.message = message
 
 
@@ -77,14 +85,16 @@ class NoListener(HeraldException):
     The message has been received by the remote peer, but no listener has been
     found to register it.
     """
-    def __init__(self, uid, subject):
+    def __init__(self, target, uid, subject):
         """
         Sets up the exception
 
+        :param target: Target peer with no listener
         :param uid: Original message UID
         :param subject: Subject of the original message
         """
-        super(NoListener, self).__init__("No listener for {0}".format(uid))
+        super(NoListener, self).__init__(target, "No listener for {0}"
+                                         .format(uid))
         self.uid = uid
         self.subject = subject
 
@@ -100,5 +110,6 @@ class ForgotMessage(HeraldException):
 
         :param uid: UID of the forgotten message
         """
-        super(ForgotMessage, self).__init__("Forgot message {0}".format(uid))
+        super(ForgotMessage, self).__init__(None, "Forgot message {0}"
+                                            .format(uid))
         self.uid = uid

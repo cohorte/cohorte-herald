@@ -331,7 +331,8 @@ class XmppTransport(object):
             self.__send_message("chat", jid, message, parent_uid)
         else:
             # No XMPP access description
-            raise InvalidPeerAccess("No '{0}' access found"
+            raise InvalidPeerAccess(beans.Target(uid=peer.uid),
+                                    "No '{0}' access found"
                                     .format(self._access_id))
 
     def fire_group(self, group, peers, message):
