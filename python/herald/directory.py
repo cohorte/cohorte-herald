@@ -243,7 +243,10 @@ class HeraldDirectory(object):
         :return: A set of UIDs
         :raise KeyError: No peer has this name
         """
-        return self._names[name].copy()
+        try:
+            return self._names[name].copy()
+        except KeyError:
+            return [self._peers[name].uid]
 
     def get_peers_for_name(self, name):
         """
@@ -253,7 +256,10 @@ class HeraldDirectory(object):
         :return: A list of Peer beans
         :raise KeyError: No peer has this name
         """
-        return [self._peers[uid] for uid in self._names[name]]
+        try:
+            return [self._peers[uid] for uid in self._names[name]]
+        except KeyError:
+            return [self._peers[name]]
 
     def get_peers_for_group(self, group):
         """
@@ -264,6 +270,16 @@ class HeraldDirectory(object):
         :raise KeyError: Unknown group
         """
         return self._groups[group].copy()
+
+    def get_peers_for_node(self, node_uid):
+        """
+        Returns the Peer beans of the peers associated to the given node UID
+
+        :param node_uid: The UID of a node
+        :return: A list of Peer beans
+        """
+        return [peer for peer in self._peers.values()
+                if peer.node_uid == node_uid]
 
     def peer_access_set(self, peer, access_id, data):
         """
