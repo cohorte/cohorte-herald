@@ -95,6 +95,9 @@ class HttpTransport(object):
         # Request send pool
         self.__pool = pelix.threadpool.ThreadPool(5, logname="herald-http")
 
+        # Requests session
+        self.__session = requests.Session()
+
         # Local access information
         self.__access_port = None
         self.__access_path = None
@@ -113,6 +116,8 @@ class HttpTransport(object):
         """
         Component validated
         """
+        self.__session = requests.Session()
+        self.__session.stream = False
         self.__pool.start()
 
     @Invalidate
@@ -120,6 +125,7 @@ class HttpTransport(object):
         """
         Component invalidated
         """
+        self.__session.close()
         self.__pool.stop()
 
     def __get_access(self, peer, extra=None):
@@ -205,9 +211,7 @@ class HttpTransport(object):
 
         # Send the HTTP request (blocking) and raise an error if necessary
         headers, content = self.__prepare_message(message, parent_uid)
-
-        # FIXME: see how to use a connection pool
-        response = requests.post(url, content, headers=headers)
+        response = self.__session.post(url, content, headers=headers)
         response.raise_for_status()
 
     def fire_group(self, group, peers, message):
@@ -233,6 +237,7 @@ class HttpTransport(object):
             if exception is None:
                 # No exception => success
                 accessed_peers.add(peer)
+
             # In any case: update the count down
             countdown.step()
 
@@ -248,7 +253,7 @@ class HttpTransport(object):
 
             # Send the HTTP requests (from the thread pool)
             # FIXME: see how to use a connection pool
-            future = self.__pool.enqueue(requests.post, url, content,
+            future = self.__pool.enqueue(self.__session.post, url, content,
                                          headers=headers)
             future.set_callback(peer_result, peer)
 
