@@ -45,3 +45,13 @@ FACTORY_HERALD_XMLRPC_IMPORTER = 'herald-rpc-importer-xmlrpc-factory'
 """
 Name of the component factory for the xmlrpclib-based importer
 """
+
+FACTORY_HERALD_JSONRPC_EXPORTER = 'herald-rpc-exporter-jsonrpc-factory'
+"""
+Name of the component factory for the jsonrpclib-based exporter
+"""
+
+FACTORY_HERALD_JSONRPC_IMPORTER = 'herald-rpc-importer-jsonrpc-factory'
+"""
+Name of the component factory for the jsonrpclib-based importer
+"""
