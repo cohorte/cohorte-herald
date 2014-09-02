@@ -92,6 +92,9 @@ class HttpTransport(object):
         # Properties
         self._access_id = ACCESS_ID
 
+        # Local UID
+        self.__peer_uid = None
+
         # Request send pool
         self.__pool = pelix.threadpool.ThreadPool(5, logname="herald-http")
 
@@ -116,6 +119,7 @@ class HttpTransport(object):
         """
         Component validated
         """
+        self.__peer_uid = self._directory.local_uid
         self.__session = requests.Session()
         self.__session.stream = False
         self.__pool.start()
@@ -125,6 +129,7 @@ class HttpTransport(object):
         """
         Component invalidated
         """
+        self.__peer_uid = None
         self.__session.close()
         self.__pool.stop()
 
@@ -177,6 +182,7 @@ class HttpTransport(object):
         # Prepare headers
         headers = {'herald-subject': message.subject,
                    'herald-uid': message.uid,
+                   'herald-sender-uid': self.__peer_uid,
                    'herald-reply-to': parent_uid or "",
                    'herald-timestamp': int(time.time() * 1000),
                    'herald-port': self.__access_port,
@@ -252,13 +258,12 @@ class HttpTransport(object):
                                         .format(self._access_id))
 
             # Send the HTTP requests (from the thread pool)
-            # FIXME: see how to use a connection pool
             future = self.__pool.enqueue(self.__session.post, url, content,
                                          headers=headers)
             future.set_callback(peer_result, peer)
 
         # Wait for the requests to be sent (no more than 30s)
-        if not countdown.wait(30):
-            _logger.warning("Not all peers have been reached after 30s...")
+        if not countdown.wait(10):
+            _logger.warning("Not all peers have been reached after 10s...")
 
         return set(accessed_peers)
