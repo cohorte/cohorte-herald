@@ -1,35 +1,24 @@
-# Eclipse
+# Eclipse / PyCharm
 .metadata
 RemoteSystemsTempFiles/
+.idea
 
-# Binaires
+# Binaries
+*.egg-info
+*.zip
 *.tar.gz
 bin/
 target/
-*.dat
-small-install.zip
-*.pid
-*.access
-
-# Maven (tests)
-# pom.xml
-
-# C
-*.o
-*~
 
 # Python
 *.pyc
+*.pyo
 __pycache__/
-
-# Coverage (Python)
 .coverage
 htmlcov/
+html/
 
 # Sonar
 .sonar/
 sonar-project.properties
-
-# PSEM2M Compiler
-auto_build_psem2m.xml
 
