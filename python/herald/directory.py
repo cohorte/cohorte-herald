@@ -416,7 +416,7 @@ class HeraldDirectory(object):
                 # Remove it from other dictionaries
                 try:
                     uids = self._names[peer.name]
-                    uids.remove(peer.uid)
+                    uids.remove(peer)
                     if not uids:
                         del self._names[peer.name]
                 except KeyError:
@@ -426,8 +426,8 @@ class HeraldDirectory(object):
                 for group in peer.groups:
                     try:
                         uids = self._groups[group]
-                        uids.remove(peer.uid)
-                        if not uids:
+                        uids.remove(peer)
+                        if not uids and group != 'all':
                             del self._groups[group]
                     except KeyError:
                         # Peer wasn't in that group
