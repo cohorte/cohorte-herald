@@ -80,5 +80,6 @@ setup(name='Cohorte-Herald',
           'Topic :: Software Development :: Libraries :: Application Frameworks'
       ],
       install_requires=['iPOPO>=0.5.6',
-                        'sleekxmpp>=1.3.1'],
+                        'sleekxmpp>=1.3.1',
+                        'requests>=2.3.0'],
       )
