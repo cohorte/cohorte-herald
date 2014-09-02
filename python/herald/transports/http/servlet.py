@@ -183,6 +183,7 @@ class HeraldServlet(object):
         content_type = request.get_header('content-type')
         if content_type not in (None, CONTENT_TYPE_JSON):
             # Unknown content type
+            _logger.critical("Bad content type: %s", content_type)
             code, content = _make_json_result(500, "Unknown content type")
 
         else:
@@ -191,19 +192,22 @@ class HeraldServlet(object):
             uid = request.get_header('herald-uid')
             reply_to = request.get_header('herald-reply-to')
             timestamp = request.get_header('herald-timestamp')
+            sender_uid = request.get_header('herald-sender-uid')
             json_content = json.loads(to_unicode(request.read_data()))
 
             # Store sender information
-            extra = {'host': request.get_client_address()[0],
-                     'port': int(request.get_header('herald-port', 80)),
+            host = request.get_client_address()[0]
+            port = int(request.get_header('herald-port', 80))
+            extra = {'host': host, 'port': port,
                      'path': request.get_header('herald-path'),
                      'parent_uid': uid}
 
             try:
-                # Look for the sender UID from the directory
-                sender_uid = self._http_directory.from_address(extra['host'],
-                                                               extra['port'])
-            except KeyError:
+                # Check the sender UID port
+                # (not perfect, but can avoid spoofing)
+                self._http_directory.check_access(sender_uid, host, port)
+            except ValueError as ex:
+                _logger.warning("Sender UID check failed: %s", ex)
                 sender_uid = "<unknown>"
 
             # Let Herald handle the message

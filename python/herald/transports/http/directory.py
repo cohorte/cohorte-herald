@@ -71,22 +71,22 @@ class HTTPDirectory(object):
         self._directory = None
         self._access_id = ACCESS_ID
 
-        # Server address -> Peer UID
-        self._address_uid = {}
+        # Peer UID -> (host, port)
+        self._uid_address = {}
 
     @Validate
     def _validate(self, context):
         """
         Component validated
         """
-        self._address_uid.clear()
+        self._uid_address.clear()
 
     @Invalidate
     def _invalidate(self, context):
         """
         Component invalidated
         """
-        self._address_uid.clear()
+        self._uid_address.clear()
 
     def load_access(self, data):
         """
@@ -105,7 +105,7 @@ class HTTPDirectory(object):
         :param data: The peer access data, previously loaded with load_access()
         """
         if peer.uid != self._directory.local_uid:
-            self._address_uid[data.address] = peer
+            self._uid_address[peer.uid] = data.address
 
     def peer_access_unset(self, peer, data):
         """
@@ -115,17 +115,26 @@ class HTTPDirectory(object):
         :param data: The peer access data
         """
         try:
-            del self._address_uid[data.address]
+            del self._uid_address[peer.uid]
         except KeyError:
             pass
 
-    def from_address(self, host, port):
+    def check_access(self, uid, host, port):
         """
-        Returns the peer UID associated to the given HTTP server
+        Checks if the peer with the given UID is known to have the given access
 
-        :param host: Server host
-        :param port: Server port
-        :return: A peer UID
-        :raise KeyError: Unknown access
+        :param uid: The UID of a peer
+        :param host: The tested peer host
+        :param port: The tested HTTP port
+        :return: True if the given access matches the peer UID
+        :raise ValueError: The access doesn't match the peer
         """
-        return self._address_uid[(host, port)]
+        try:
+            peer_port = self._uid_address[uid][1]
+            if peer_port == port:
+                return True
+            else:
+                raise ValueError("Given port (%d) doesn't match peer %s (%d)"
+                                 .format(port, uid, peer_port))
+        except KeyError:
+            raise ValueError("Unknown peer: {0}".format(uid))
