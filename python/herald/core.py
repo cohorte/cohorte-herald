@@ -699,10 +699,13 @@ class Herald(object):
                         break
         else:
             missing = set(itertools.chain(*accesses.values()))
-            _logger.warning("Some peers haven't been notified: %s",
-                            ', '.join(str(peer) for peer in missing))
+            if missing:
+                _logger.warning("Some peers haven't been notified: %s",
+                                ', '.join(str(peer) for peer in missing))
+            else:
+                _logger.debug("No peer to send the message to.")
 
-        return (message.uid, missing)
+        return message.uid, missing
 
     def send(self, target, message, timeout=None):
         """
