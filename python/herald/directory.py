@@ -269,6 +269,10 @@ class HeraldDirectory(object):
         :return: A list of Peer beans
         :raise KeyError: Unknown group
         """
+        if group == 'all':
+            # Special group: retrieve all peers
+            return list(self._peers.values())
+
         return self._groups[group].copy()
 
     def get_peers_for_node(self, node_uid):
