@@ -82,7 +82,7 @@ def main(http_port, peer_name, node_name):
          'pelix.remote.dispatcher',
          'pelix.remote.registry',
          'herald.remote.discovery',
-         'herald.remote.herald_rpc',),
+         'herald.remote.herald_xmlrpc',),
         {herald.FWPROP_NODE_UID: node_name,
          herald.FWPROP_NODE_NAME: node_name,
          herald.FWPROP_PEER_NAME: peer_name})
