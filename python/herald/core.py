@@ -903,9 +903,10 @@ class Herald(object):
         :param subject: Reply message subject (same as request if None)
         :raise NoTransport: No transport/access found to send the reply
         """
-        # Normalize subject
+        # Normalize subject. By default, add a 'reply' prefix,
+        # to avoid potential loops
         if not subject:
-            subject = message.subject
+            subject = '/'.join(('reply', message.subject))
 
         try:
             # Try to reuse the same transport
