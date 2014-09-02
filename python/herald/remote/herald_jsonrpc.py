@@ -51,7 +51,7 @@ import pelix.remote.transport.commons as commons
 import logging
 
 # JSON-RPC modules
-import jsonrpclib
+import jsonrpclib.jsonrpc
 from jsonrpclib.SimpleJSONRPCServer import SimpleJSONRPCDispatcher
 
 # ------------------------------------------------------------------------------
@@ -250,8 +250,10 @@ class _JsonRpcMethod(object):
         # Send it
         reply_message = self.__send(self.__peer, self.__subject, request)
 
-        # Parse the reply
-        return jsonrpclib.loads(reply_message.content)
+        # Parse the reply and check for errors
+        result = jsonrpclib.loads(reply_message.content)
+        jsonrpclib.jsonrpc.check_for_errors(result)
+        return result['result']
 
 
 @ComponentFactory(herald.remote.FACTORY_HERALD_JSONRPC_IMPORTER)
