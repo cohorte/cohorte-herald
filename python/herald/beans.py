@@ -37,6 +37,7 @@ __docformat__ = "restructuredtext en"
 
 # Standard library
 import functools
+import threading
 import time
 import uuid
 
@@ -68,6 +69,7 @@ class Peer(object):
         self.__groups = set(groups or [])
         self.__accesses = {}
         self.__directory = directory
+        self.__lock = threading.RLock()
 
     def __repr__(self):
         """
@@ -232,8 +234,17 @@ class Peer(object):
         :param access_id: An access ID (xmpp, http, ...)
         :param data: The description associated to the given ID
         """
-        self.__accesses[access_id] = data
-        self.__callback("peer_access_set", access_id, data)
+        with self.__lock:
+            try:
+                old_data = self.__accesses[access_id]
+            except KeyError:
+                # Unknown data
+                old_data = None
+
+            if data != old_data:
+                # Update only if necessary
+                self.__accesses[access_id] = data
+                self.__callback("peer_access_set", access_id, data)
 
     def unset_access(self, access_id):
         """
@@ -242,15 +253,16 @@ class Peer(object):
         :param access_id: An access ID (xmpp, http, ...)
         :return: The associated description, or None
         """
-        try:
-            data = self.__accesses.pop(access_id)
-        except KeyError:
-            # Unknown access
-            return None
-        else:
-            # Notify the directory
-            self.__callback("peer_access_unset", access_id, data)
-            return data
+        with self.__lock:
+            try:
+                data = self.__accesses.pop(access_id)
+            except KeyError:
+                # Unknown access
+                return None
+            else:
+                # Notify the directory
+                self.__callback("peer_access_unset", access_id, data)
+                return data
 
     def set_directory(self, directory):
         """
