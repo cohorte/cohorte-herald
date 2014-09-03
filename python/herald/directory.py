@@ -369,19 +369,31 @@ class HeraldDirectory(object):
         """
         with self.__lock:
             uid = description['uid']
-            if uid == self._local.uid or uid in self._peers:
-                # Local/Already known peer: ignore
+            if uid == self._local.uid:
+                # Ignore local peer
                 return
 
-            # Make a new bean
-            peer = beans.Peer(uid, description['node_uid'],
-                              description['groups'], self)
+            try:
+                # Check if the peer is known
+                peer = self._peers[uid]
+            except KeyError:
+                # Make a new bean
+                peer = beans.Peer(uid, description['node_uid'],
+                                  description['groups'], self)
 
-            # Setup writable properties
-            for name in ('name', 'node_name'):
-                setattr(peer, name, description[name])
+                # Setup writable properties
+                for name in ('name', 'node_name'):
+                    setattr(peer, name, description[name])
 
-            # Accesses
+                # Store the peer
+                self._peers[uid] = peer
+                self._names.setdefault(peer.name, set()).add(peer)
+
+                # Set up groups
+                for group in peer.groups:
+                    self._groups.setdefault(group, set()).add(peer)
+
+            # In any case, parse and store (new/updated) accesses
             for access_id, data in description['accesses'].items():
                 try:
                     data = self._directories[access_id].load_access(data)
@@ -391,12 +403,6 @@ class HeraldDirectory(object):
 
                 # Store the parsed data, or keep it as is
                 peer.set_access(access_id, data)
-
-            # Store the peer
-            self._peers[uid] = peer
-            self._names.setdefault(peer.name, set()).add(peer)
-            for group in peer.groups:
-                self._groups.setdefault(group, set()).add(peer)
 
         # Notify listeners
         self.__notify_peer_registered(peer)
