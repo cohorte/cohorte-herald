@@ -417,7 +417,6 @@ class Herald(object):
             if message.uid in self.__treated:
                 # Message already handled, maybe it has been received by
                 # another transport
-                _logger.debug("Ignoring message %s: already treated", message)
                 return
             else:
                 # Store the message UID in the treated messages
