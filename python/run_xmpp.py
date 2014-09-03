@@ -35,9 +35,6 @@ __docformat__ = "restructuredtext en"
 
 # ------------------------------------------------------------------------------
 
-# Monitor bot
-import herald.transports.xmpp.monitor as xmpp_monitor
-
 # Herald constants
 import herald.transports.xmpp
 
@@ -92,19 +89,28 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name):
         {herald.FWPROP_NODE_UID: node_name,
          herald.FWPROP_NODE_NAME: node_name,
          herald.FWPROP_PEER_NAME: peer_name})
-
-    # Start everything
-    framework.start()
     context = framework.get_bundle_context()
 
     if run_monitor:
-        # Start the monitor
-        monitor = xmpp_monitor.MonitorBot(monitor_jid, "bot", "Monitor")
-        monitor.connect(xmpp_server, xmpp_port, use_tls=False)
-        monitor.create_main_room(main_room)
+        # Also install the monitor bundle
+        context.install_bundle('herald.transports.xmpp.monitor')
+
+    # Start everything
+    framework.start()
 
     # Instantiate components
     with use_waiting_list(context) as ipopo:
+        if run_monitor:
+            # ... Monitor bot
+            ipopo.add(herald.transports.xmpp.FACTORY_MONITOR,
+                      "herald-xmpp-monitor",
+                      {herald.transports.xmpp.PROP_XMPP_SERVER: xmpp_server,
+                       herald.transports.xmpp.PROP_XMPP_PORT: xmpp_port,
+                       herald.transports.xmpp.PROP_MONITOR_JID: monitor_jid,
+                       herald.transports.xmpp.PROP_MONITOR_PASSWORD: "bot",
+                       herald.transports.xmpp.PROP_MONITOR_NICK: "Monitor",
+                       herald.transports.xmpp.PROP_XMPP_ROOM_NAME: main_room})
+
         # ... XMPP Transport
         ipopo.add(herald.transports.xmpp.FACTORY_TRANSPORT,
                   "herald-xmpp-transport",
@@ -116,10 +122,6 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name):
 
     # Start the framework and wait for it to stop
     framework.wait_for_stop()
-
-    if run_monitor:
-        # Stop the monitor
-        monitor.disconnect()
 
 # ------------------------------------------------------------------------------
 
