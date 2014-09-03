@@ -1,4 +1,4 @@
-#!/usr/bi    n/python
+#!/usr/bin/python
 # -- Content-Encoding: UTF-8 --
 """
 Herald XMPP control robot implementation
@@ -38,7 +38,16 @@ __docformat__ = "restructuredtext en"
 # XMPP
 from sleekxmpp import JID
 
-# Pelix XMPP utility classes
+# Herald XMPP
+from . import FACTORY_MONITOR, SERVICE_MONITOR_BOT, \
+    PROP_MONITOR_JID, PROP_MONITOR_PASSWORD, PROP_MONITOR_NICK, \
+    PROP_XMPP_SERVER, PROP_XMPP_PORT, PROP_XMPP_ROOM_NAME
+
+# Pelix
+from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
+    Property, Validate, Invalidate
+from pelix.ipopo.constants import use_ipopo, use_waiting_list
+import pelix.framework
 import pelix.misc.xmpp as pelixmpp
 
 # Room creation utility
@@ -47,6 +56,7 @@ from .utils import RoomCreator
 # Standard library
 import logging
 import random
+import sys
 import threading
 
 # ------------------------------------------------------------------------------
@@ -399,34 +409,148 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
 # ------------------------------------------------------------------------------
 
 
-def main(host):
+@ComponentFactory(FACTORY_MONITOR)
+@Provides(SERVICE_MONITOR_BOT)
+@Property('_jid', PROP_MONITOR_JID, None)
+@Property('_password', PROP_MONITOR_PASSWORD, None)
+@Property('_nick', PROP_MONITOR_NICK, 'HeraldMonitorBot')
+@Property('_main_room', PROP_XMPP_ROOM_NAME, 'herald')
+@Property('_host', PROP_XMPP_SERVER, 'localhost')
+@Property('_port', PROP_XMPP_PORT, 5222)
+class MonitorBotWrapper(object):
+    """
+    An iPOPO component which wraps a MonitorBot instance
+    """
+    def __init__(self):
+        """
+        Sets up members
+        """
+        # Component properties
+        self._jid = None
+        self._password = None
+        self._nick = 'HeraldMonitorBot'
+        self._main_room = 'herald'
+        self._host = 'localhost'
+        self._port = 5222
+
+        # The wrapped monitor bot
+        self.__bot = None
+
+    @Validate
+    def _validate(self, context):
+        """
+        Component validated
+        """
+        self.__bot = MonitorBot(self._jid, self._password, self._nick)
+        self.__bot.connect(self._host, self._port, use_tls=False)
+        self.__bot.create_main_room(self._main_room)
+
+    @Invalidate
+    def _invalidate(self, context):
+        """
+        Component invalidated
+        """
+        self.__bot.disconnect()
+        self.__bot = None
+
+    def create_main_room(self, room, callback=None):
+        """
+        Creates a room and use it as the main one
+
+        :param room: Main room name
+        :param callback: Method to call back when the room has been created
+        """
+        return self.__bot.create_main_room(room, callback)
+
+    def create_rooms(self, rooms, callback=None):
+        """
+        Creates or joins the given rooms
+
+        :param rooms: A list of rooms to join / create
+        :param callback: Method to call back when all rooms have been created
+        :raise ValueError: No Multi-User Chat service available
+        """
+        return self.__bot.create_rooms(rooms, callback)
+
+    def make_key(self):
+        """
+        Prepares a key to accept other robots in rooms
+
+        :return: A 256 bits integer hexadecimal string
+        """
+        return self.__bot.make_key()
+
+
+def main(args=None):
     """
     Standalone  monitor entry point
     """
-    xmpp = MonitorBot("bot@phenomtwo3000/messenger", "bot", "Bender")
-    xmpp.connect(host, use_tls=False)
+    import argparse
+    if not args:
+        args = sys.argv[1:]
 
-    xmpp.create_main_room('cohorte')
-    xmpp.create_rooms(('herald', 'cohorte', 'monitors', 'node'))
+    # Define arguments
+    parser = argparse.ArgumentParser(description="Herald XMPP Monitor Bot")
 
-    for _ in range(5):
-        _logger.warning("NEW KEY: %s", xmpp.make_key())
+    # Server configuration
+    group = parser.add_argument_group("XMPP server",
+                                      "Access to the XMPP server")
+    group.add_argument("-s", "--server", action="store", default="localhost",
+                       dest="xmpp_server", help="Host of the XMPP server")
+    group.add_argument("-p", "--port", action="store", type=int, default=5222,
+                       dest="xmpp_port", help="Port of the XMPP server")
+
+    # Bot account configuration
+    group = parser.add_argument_group("Monitor bot account",
+                                      "Definition of the bot's credentials")
+    group.add_argument("--jid", action="store", default=None,
+                       dest="jid", help="Full JID to use")
+    group.add_argument("--password", action="store", default=None,
+                       dest="password", help="Password associated to the JID")
+    group.add_argument("--nick", action="store", default="HeraldMonitorBot",
+                       dest="nick", help="Nickname to use in chat rooms")
+
+    # Main Room configuration
+    group = parser.add_argument_group("Herald configuration")
+    group.add_argument("-r", "--room", action="store",
+                       default="herald", dest="main_room",
+                       help="Main chat room (XMPP MUC) to use for Herald")
+
+    # Parse arguments
+    args = parser.parse_args(args)
+
+    # Prepare properties
+    properties = {
+        PROP_XMPP_SERVER: args.xmpp_server,
+        PROP_XMPP_PORT: args.xmpp_port,
+        PROP_MONITOR_JID: args.jid,
+        PROP_MONITOR_PASSWORD: args.password,
+        PROP_MONITOR_NICK: args.nick,
+        PROP_XMPP_ROOM_NAME: args.main_room
+    }
+
+    # Start a Pelix framework
+    framework = pelix.framework.create_framework(('pelix.ipopo.core',
+                                                  'pelix.shell.core',
+                                                  'pelix.shell.ipopo',
+                                                  'pelix.shell.console'))
+    framework.start()
+
+    context = framework.get_bundle_context()
+    with use_ipopo(context) as ipopo:
+        # Register the component factory
+        ipopo.register_factory(context, MonitorBotWrapper)
+
+        # Create the component
+        ipopo.instantiate(FACTORY_MONITOR, 'herald-xmpp-monitor', properties)
 
     try:
-        try:
-            # pylint: disable=E0602
-            raw_input("Press enter to stop...")
-        except NameError:
-            input("Press enter to stop...")
+        framework.wait_for_stop()
     except (KeyboardInterrupt, EOFError):
-        _logger.debug("Got interruption")
-
-    xmpp.disconnect()
-    _logger.info("Bye!")
+        framework.stop()
 
 if __name__ == '__main__':
-    import sys
+    # Setup logger and start the monitor with default arguments
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-8s %(message)s')
-    logging.debug("Running on Python: %s", sys.version)
-    main("127.0.0.1")
+    main()

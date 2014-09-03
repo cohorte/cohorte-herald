@@ -43,6 +43,11 @@ SERVICE_XMPP_DIRECTORY = "herald.xmpp.directory"
 Specification of the XMPP transport directory
 """
 
+SERVICE_MONITOR_BOT = "herald.xmpp.monitor"
+"""
+Specification of the XMPP Monitor bot service, provided by the wrapper
+"""
+
 # ------------------------------------------------------------------------------
 
 PROP_XMPP_SERVER = "xmpp.server"
@@ -70,9 +75,30 @@ PROP_XMPP_ROOM_JID = "xmpp.room.jid"
 Full JID of the Herald main room
 """
 
+PROP_XMPP_ROOM_NAME = "xmpp.room.name"
+"""
+Simple name of the Herald main room
+"""
+
+PROP_MONITOR_PASSWORD = 'xmpp.monitor.password'
+"""
+Password of the account of the Monitor Bot
+"""
+
+PROP_MONITOR_NICK = 'xmpp.monitor.nick'
+"""
+Nickname used by the Monitor Bot in the Multi-User Chat
+"""
+
+
 # ------------------------------------------------------------------------------
 
 FACTORY_TRANSPORT = "herald-xmpp-transport-factory"
 """
 Name of the XMPP transport implementation factory
+"""
+
+FACTORY_MONITOR = "herald-xmpp-monitor-factory"
+"""
+Name of the XMPP monitor bot wrapper component factory
 """
