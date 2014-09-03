@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -- Content-Encoding: UTF-8 --
 """
-Pelix remote services implementation based on Herald messaging and jsonrpclib-pelix
+Pelix remote services implementation based on Herald messaging and
+jsonrpclib-pelix
 
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
@@ -219,7 +220,7 @@ class _JsonRpcEndpointProxy(object):
         """
         return self.__cache.setdefault(
             name, _JsonRpcMethod("{0}.{1}".format(self.__name, name),
-                                self.__peer, self.__subject, self.__send))
+                                 self.__peer, self.__subject, self.__send))
 
 
 class _JsonRpcMethod(object):
@@ -308,7 +309,7 @@ class HeraldRpcServiceImporter(commons.AbstractRpcServiceImporter):
 
         # Return the proxy
         return _JsonRpcEndpointProxy(endpoint.name, peer_uid, subject,
-                                    self.__call)
+                                     self.__call)
 
     def clear_service_proxy(self, endpoint):
         """
