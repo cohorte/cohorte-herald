@@ -108,7 +108,7 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
         groups_str = ",".join(str(group)
                               for group in groups if group) if groups else ""
         msg = beans.Message("boostrap.invite",
-                            ":".join(("invite", key, groups_str)))
+                            ":".join(("invite", str(key or ''), groups_str)))
         self.__send_message("chat", monitor_jid, msg)
 
     def __send_message(self, msgtype, target, message, body=None):
