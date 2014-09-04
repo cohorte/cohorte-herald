@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.cohorte.herald</groupId>
+	<artifactId>cohorte-herald</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>org.cohorte.herald.api</module>
+	</modules>
+
+	<properties>
+		<osgi-version>5.0.0</osgi-version>
+		<ipojo-version>1.12.0</ipojo-version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<!-- iPOJO annotations definition -->
+			<dependency>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>org.apache.felix.ipojo.annotations</artifactId>
+				<version>${ipojo-version}</version>
+			</dependency>
+
+			<!-- OSGi API -->
+			<dependency>
+				<groupId>org.osgi</groupId>
+				<artifactId>org.osgi.core</artifactId>
+				<version>${osgi-version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.osgi</groupId>
+				<artifactId>org.osgi.compendium</artifactId>
+				<version>${osgi-version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<!-- Java version -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+
+		<pluginManagement>
+			<plugins>
+				<!-- Felix bundle plugin -->
+				<plugin>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>maven-bundle-plugin</artifactId>
+					<version>2.5.2</version>
+				</plugin>
+
+				<!-- iPOJO manipulation -->
+				<plugin>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>maven-ipojo-plugin</artifactId>
+					<version>${ipojo-version}</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>ipojo-bundle</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+</project>

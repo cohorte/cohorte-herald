@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.cohorte.herald</groupId>
+		<artifactId>cohorte-herald</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	<artifactId>org.cohorte.herald.api</artifactId>
+	<packaging>bundle</packaging>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-Name>COHORTE :: Herald :: API</Bundle-Name>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
+						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
+						<Export-Package>
+							org.cohorte.herald;version=${project.version},
+							org.cohorte.herald.exceptions;version=${project.version}
+						</Export-Package>
+					</instructions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
