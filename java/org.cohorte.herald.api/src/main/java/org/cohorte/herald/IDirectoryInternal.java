@@ -25,14 +25,26 @@ package org.cohorte.herald;
 public interface IDirectoryInternal {
 
     /**
+     * Called by a Peer bean when one of its accesses has been set
+     *
+     * @param aPeer
+     *            The updated peer
      * @param aAccessId
+     *            The ID of the modified access
      * @param aData
+     *            The access data
      */
-    void peerAccessSet(String aAccessId, Access aData);
+    void peerAccessSet(Peer aPeer, String aAccessId, Access aData);
 
     /**
+     * Called by a Peer bean when one of its accesses has been removed
+     *
+     * @param aPeer
+     *            The updated peer
      * @param aAccessId
+     *            The ID of the modified access
      * @param aData
+     *            The access data
      */
-    void peerAccessUnset(String aAccessId, Access aData);
+    void peerAccessUnset(Peer aPeer, String aAccessId, Access aData);
 }

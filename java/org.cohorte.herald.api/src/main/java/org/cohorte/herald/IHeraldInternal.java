@@ -31,5 +31,5 @@ public interface IHeraldInternal {
      * @param aMessage
      *            A {@link MessageReceived} bean forged by a transport
      */
-    void handle_message(MessageReceived aMessage);
+    void handleMessage(MessageReceived aMessage);
 }
