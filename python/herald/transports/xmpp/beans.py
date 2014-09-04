@@ -57,6 +57,12 @@ class XMPPAccess(object):
         """
         self.__jid = jid
 
+    def __hash__(self):
+        """
+        Hash is based on JID
+        """
+        return hash(self.__jid)
+
     def __eq__(self, other):
         """
         Equality based on JID
@@ -82,14 +88,14 @@ class XMPPAccess(object):
     @property
     def access_id(self):
         """
-        Retrieves the access ID associated to this kind of access
+        Returns the access ID associated to this kind of access
         """
         return ACCESS_ID
 
     @property
     def jid(self):
         """
-        Retrieves the JID of the associated peer
+        Returns the JID of the associated peer
         """
         return self.__jid
 

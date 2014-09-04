@@ -65,6 +65,12 @@ class HTTPAccess(object):
         self.__port = int(port)
         self.__path = path
 
+    def __hash__(self):
+        """
+        Hash is based on the access tuple
+        """
+        return hash(self.access)
+
     def __eq__(self, other):
         """
         Equality based on JID
@@ -100,14 +106,14 @@ class HTTPAccess(object):
         """
         Returns the access to the peer as a 3-tuple (host, port, path)
         """
-        return (self.__host, self.__port, self.__path)
+        return self.__host, self.__port, self.__path
 
     @property
     def address(self):
         """
         Returns the address of the HTTP server to access the peer (host, port)
         """
-        return (self.__host, self.__port)
+        return self.__host, self.__port
 
     @property
     def host(self):
