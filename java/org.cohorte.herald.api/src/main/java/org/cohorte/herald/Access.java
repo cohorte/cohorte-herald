@@ -31,26 +31,10 @@ public abstract class Access implements Comparable<Access> {
      */
     public abstract Object dump();
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public abstract boolean equals(final Object aObj);
-
     /**
      * Returns the access ID associated to this kind of access
      *
      * @return An access ID
      */
     public abstract String getAccessId();
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
-    public abstract int hashCode();
 }
