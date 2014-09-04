@@ -12,13 +12,6 @@
 	<artifactId>org.cohorte.herald.api</artifactId>
 	<packaging>bundle</packaging>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.osgi</groupId>
-			<artifactId>org.osgi.core</artifactId>
-		</dependency>
-	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
