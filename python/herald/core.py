@@ -152,7 +152,7 @@ class _WaitingPost(object):
         :param herald_svc: Herald service instance
         :param message: Received answer message
         """
-        if self.__errback is not None:
+        if self.__callback is not None:
             try:
                 # pylint: disable=W0703
                 self.__callback(herald_svc, message)
