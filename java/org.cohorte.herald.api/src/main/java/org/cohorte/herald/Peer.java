@@ -17,9 +17,11 @@
 package org.cohorte.herald;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.cohorte.herald.exceptions.ValueError;
 
@@ -102,6 +104,28 @@ public class Peer implements Comparable<Peer> {
         return pUid.compareTo(aOther.pUid);
     }
 
+    /**
+     * Dumps the content of this Peer into a dictionary
+     *
+     * @return A dictionary describing this peer
+     */
+    public Map<String, Object> dump() {
+
+        final Map<String, Object> dump = new LinkedHashMap<String, Object>();
+        dump.put("uid", pUid);
+        dump.put("name", pName);
+        dump.put("node_uid", pNodeUid);
+        dump.put("node_name", pNodeName);
+        dump.put("groups", pGroups.toArray(new String[pGroups.size()]));
+
+        final Map<String, Object> accesses = new LinkedHashMap<>();
+        for (final Entry<String, Access> entry : pAccesses.entrySet()) {
+            accesses.put(entry.getKey(), entry.getValue().dump());
+        }
+        dump.put("accesses", accesses);
+        return dump;
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -135,7 +159,7 @@ public class Peer implements Comparable<Peer> {
      */
     public Collection<String> getAccesses() {
 
-        return pAccesses.keySet();
+        return new HashSet<>(pAccesses.keySet());
     }
 
     /**
@@ -143,7 +167,7 @@ public class Peer implements Comparable<Peer> {
      */
     public Collection<String> getGroups() {
 
-        return pGroups;
+        return new HashSet<>(pGroups);
     }
 
     /**
@@ -225,7 +249,7 @@ public class Peer implements Comparable<Peer> {
         final Access oldData = pAccesses.remove(aAccessId);
         if (oldData == null || !oldData.equals(aData)) {
             pAccesses.put(aAccessId, aData);
-            pDirectory.peerAccessSet(aAccessId, aData);
+            pDirectory.peerAccessSet(this, aAccessId, aData);
         }
     }
 
@@ -237,7 +261,11 @@ public class Peer implements Comparable<Peer> {
      */
     public void setName(final String aName) {
 
-        pName = aName;
+        if (aName == null || aName.isEmpty()) {
+            pName = pUid;
+        } else {
+            pName = aName;
+        }
     }
 
     /**
@@ -248,7 +276,11 @@ public class Peer implements Comparable<Peer> {
      */
     public void setNodeName(final String aNodeName) {
 
-        pNodeName = aNodeName;
+        if (aNodeName == null || aNodeName.isEmpty()) {
+            pNodeName = pNodeUid;
+        } else {
+            pNodeName = aNodeName;
+        }
     }
 
     /*
@@ -281,7 +313,7 @@ public class Peer implements Comparable<Peer> {
         }
 
         final Access data = pAccesses.remove(aAccessId);
-        pDirectory.peerAccessUnset(aAccessId, data);
+        pDirectory.peerAccessUnset(this, aAccessId, data);
         return data;
     }
 }
