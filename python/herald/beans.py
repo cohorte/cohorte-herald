@@ -264,14 +264,6 @@ class Peer(object):
                 self.__callback("peer_access_unset", access_id, data)
                 return data
 
-    def set_directory(self, directory):
-        """
-        Sets the directory associated to this peer
-
-        :param directory: The directory to call back on update
-        """
-        self.__directory = directory
-
 # ------------------------------------------------------------------------------
 
 
