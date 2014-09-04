@@ -155,7 +155,7 @@ class HeraldDirectory(object):
         A directory listener has been bound
         """
         for peer in list(self._peers.values()):
-            svc.peer_added(peer)
+            svc.peer_registered(peer)
 
     def __notify_peer_registered(self, peer):
         """
