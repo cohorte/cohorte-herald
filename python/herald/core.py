@@ -642,7 +642,7 @@ class Herald(object):
         """
         Fires (and forget) the given message to the given group of peers
 
-        :param group: A group of peer
+        :param group: The name of a group of peers
         :param message: A Message bean
         :return: A tuple: the UID of the message sent and the list of peers
         :raise KeyError: Unknown group
@@ -800,7 +800,7 @@ class Herald(object):
 
         If no timeout is given, the message UID must be forgotten manually.
 
-        :param group: A group of peer
+        :param group: The name of a group of peers
         :param message: A Message bean
         :param callback: Method to call back when a reply is received
         :param errback: Method to call back if an error occurs
