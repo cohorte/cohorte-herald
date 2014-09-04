@@ -85,7 +85,7 @@ class HeraldDirectory(object):
         # Name -> Set of Peer UIDs
         self._names = {}
 
-        # Group name -> Set of Peer UIDs
+        # Group name -> Set of Peers
         self._groups = {}
 
         # Thread safety
@@ -131,13 +131,14 @@ class HeraldDirectory(object):
         """
         # Clean up remaining data (if any)
         self._peers.clear()
+        self._names.clear()
         self._groups.clear()
 
         # Prepare local peer
         self._local = self.__make_local_peer(context)
         for group in self._local.groups:
             # Create (empty) groups
-            self._groups.setdefault(group, set())
+            self._groups[group] = set()
 
     @Invalidate
     def _invalidate(self, context):
@@ -146,6 +147,7 @@ class HeraldDirectory(object):
         """
         # Clean all up
         self._peers.clear()
+        self._names.clear()
         self._groups.clear()
         self._local = None
 
@@ -357,8 +359,11 @@ class HeraldDirectory(object):
         """
         for uid, description in dump.items():
             if uid not in self._peers:
-                # Do not reload already known peer
-                self.register(description)
+                try:
+                    # Do not reload already known peer
+                    self.register(description)
+                except ValueError as ex:
+                    _logger.warning("Error loading dump: %s", ex)
 
     def register(self, description):
         """
@@ -366,6 +371,7 @@ class HeraldDirectory(object):
 
         :param description: Description of the peer, in the format of dump()
         :return: The registered Peer bean
+        :raise ValueError: Invalid peer UID
         """
         with self.__lock:
             uid = description['uid']
@@ -387,7 +393,7 @@ class HeraldDirectory(object):
 
                 # Store the peer
                 self._peers[uid] = peer
-                self._names.setdefault(peer.name, set()).add(peer)
+                self._names.setdefault(peer.name, set()).add(peer.uid)
 
                 # Set up groups
                 for group in peer.groups:
@@ -426,7 +432,7 @@ class HeraldDirectory(object):
                 # Remove it from other dictionaries
                 try:
                     uids = self._names[peer.name]
-                    uids.remove(peer)
+                    uids.remove(uid)
                     if not uids:
                         del self._names[peer.name]
                 except KeyError:
@@ -435,9 +441,9 @@ class HeraldDirectory(object):
 
                 for group in peer.groups:
                     try:
-                        uids = self._groups[group]
-                        uids.remove(peer)
-                        if not uids and group != 'all':
+                        peers = self._groups[group]
+                        peers.remove(peer)
+                        if not peers and group != 'all':
                             del self._groups[group]
                     except KeyError:
                         # Peer wasn't in that group
