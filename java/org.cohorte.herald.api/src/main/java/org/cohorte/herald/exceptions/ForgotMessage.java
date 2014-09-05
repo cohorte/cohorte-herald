@@ -16,8 +16,6 @@
 
 package org.cohorte.herald.exceptions;
 
-import org.cohorte.herald.Target;
-
 /**
  * Exception given to callback methods waiting for a message that has been
  * declared to be forgotten by forget().
@@ -35,14 +33,12 @@ public class ForgotMessage extends HeraldException {
     /**
      * Sets up the exception
      *
-     * @param aTarget
-     *            Targeted peer(s)
      * @param aMessageUid
      *            Original message UID
      */
-    public ForgotMessage(final Target aTarget, final String aMessageUid) {
+    public ForgotMessage(final String aMessageUid) {
 
-        super(aTarget, "Forgot message " + aMessageUid);
+        super(null, "Forgot message " + aMessageUid);
         pMessageUid = aMessageUid;
     }
 

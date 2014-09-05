@@ -16,12 +16,14 @@
 
 package org.cohorte.herald.exceptions;
 
+import org.cohorte.herald.Target;
+
 /**
  * No peer matches the UID used in a call
  *
  * @author Thomas Calmant
  */
-public class UnknownPeer extends Exception {
+public class UnknownPeer extends HeraldException {
 
     /** Serialization version UID */
     private static final long serialVersionUID = 1L;
@@ -34,6 +36,6 @@ public class UnknownPeer extends Exception {
      */
     public UnknownPeer(final String aUid) {
 
-        super("Unknown peer: " + aUid);
+        super(new Target(aUid), "Unknown peer: " + aUid);
     }
 }
