@@ -265,7 +265,7 @@ class HeraldDirectory(object):
 
     def get_peers_for_group(self, group):
         """
-        Returns the Peer beans of the peers having the given name
+        Returns the Peer beans of the peers belonging to the given group
 
         :param group: The name of a group
         :return: A list of Peer beans

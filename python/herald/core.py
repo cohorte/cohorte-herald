@@ -260,7 +260,7 @@ class Herald(object):
         for event in tuple(self.__waiting_events.values()):
             event.set(None)
 
-        exception = HeraldTimeout(None, "Herald stops listening to messages",
+        exception = HeraldTimeout(None, "Herald stops to listen to messages",
                                   None)
         with self.__gc_lock:
             for waiting_post in self.__waiting_posts.values():
@@ -486,9 +486,13 @@ class Herald(object):
             # A new peer appears: register it
             self._directory.register(message.content)
 
-            # Reply to it
-            self.reply(message, self._directory.get_local_peer().dump(),
-                       'herald/directory/welcome')
+            try:
+                # Reply to it
+                self.reply(message, self._directory.get_local_peer().dump(),
+                           'herald/directory/welcome')
+            except Exception as ex:
+                _logger.warning("Can't send a welcome message back to the "
+                                "sender: %s", ex)
 
         elif kind == 'welcome':
             # A peer replied to our 'newcomer' event
@@ -546,10 +550,13 @@ class Herald(object):
                     # Invalid listener
                     pass
         else:
-            # No listener found: send an error message
-            self.reply(message,
-                       {'uid': message.uid, 'subject': message.subject},
-                       'herald/error/no-listener')
+            try:
+                # No listener found: send an error message
+                self.reply(message,
+                           {'uid': message.uid, 'subject': message.subject},
+                           'herald/error/no-listener')
+            except Exception as ex:
+                _logger.error("Can't send an error back to the sender: %s", ex)
 
     def _fire_reply(self, message, reply_to):
         """
@@ -557,7 +564,7 @@ class Herald(object):
 
         :param message: Message to send as a reply
         :param reply_to: Message the first argument replies to
-        :return: The UID of the sent message, None
+        :return: The UID of the sent message
         """
         # Use the message source peer
         try:
@@ -792,6 +799,9 @@ class Herald(object):
             except KeyError:
                 pass
 
+            # Propagate the error
+            raise
+
     def post_group(self, group, message, callback, errback,
                    timeout=180):
         """
@@ -863,7 +873,7 @@ class Herald(object):
 
     def forget(self, uid):
         """
-        Tells Herald to forget informations about the given message UIDs.
+        Tells Herald to forget information about the given message UIDs.
 
         This can be used to clean up references to a component being
         invalidated.
