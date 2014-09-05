@@ -228,6 +228,7 @@ class HttpTransport(object):
         :param peers: Peers to communicate with
         :param message: Message to send
         :return: The list of reached peers
+
         """
         # Prepare the message
         headers, content = self.__prepare_message(message)
@@ -251,16 +252,15 @@ class HttpTransport(object):
         for peer in peers:
             # Try to read extra information
             url = self.__get_access(peer)
-            if not url:
+            if url:
+                # Send the HTTP requests (from the thread pool)
+                future = self.__pool.enqueue(self.__session.post, url, content,
+                                             headers=headers)
+                future.set_callback(peer_result, peer)
+            else:
                 # No HTTP access description
-                raise InvalidPeerAccess(beans.Target(uid=peer.uid),
-                                        "No '{0}' access found"
-                                        .format(self._access_id))
-
-            # Send the HTTP requests (from the thread pool)
-            future = self.__pool.enqueue(self.__session.post, url, content,
-                                         headers=headers)
-            future.set_callback(peer_result, peer)
+                _logger.debug("No '%s' access found for %s", self._access_id,
+                              peer)
 
         # Wait for the requests to be sent (no more than 30s)
         if not countdown.wait(10):
