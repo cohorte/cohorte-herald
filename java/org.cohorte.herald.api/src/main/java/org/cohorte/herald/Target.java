@@ -38,6 +38,17 @@ public class Target {
     /**
      * Sets up a single-peer target
      *
+     * @param aPeer
+     *            The targeted bean
+     */
+    public Target(final Peer aPeer) {
+
+        this(aPeer.getUid());
+    }
+
+    /**
+     * Sets up a single-peer target
+     *
      * @param aUid
      *            The UID of targeted peer
      */
