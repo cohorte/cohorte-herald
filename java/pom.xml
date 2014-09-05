@@ -10,6 +10,7 @@
 
 	<modules>
 		<module>org.cohorte.herald.api</module>
+		<module>org.cohorte.herald.core</module>
 	</modules>
 
 	<properties>
