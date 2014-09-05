@@ -47,7 +47,7 @@ import functools
 @functools.total_ordering
 class HTTPAccess(object):
     """
-    Description of an XMPP access
+    Description of an HTTP access
     """
     def __init__(self, host, port, path):
         """

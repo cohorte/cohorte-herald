@@ -74,7 +74,7 @@ _logger = logging.getLogger(__name__)
 @Instantiate('herald-http-transport')
 class HttpTransport(object):
     """
-    XMPP Messenger for Herald.
+    HTTP sender for Herald.
     """
     def __init__(self):
         """
