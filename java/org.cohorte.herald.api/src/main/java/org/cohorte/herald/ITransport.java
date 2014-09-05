@@ -35,7 +35,7 @@ public interface ITransport {
      * @param aMessage
      *            Message to send
      * @throws HeraldException
-     *             Error sending the request or error on the server side
+     *             Error sending the message or error on the server side
      */
     void fire(Peer aPeer, Message aMessage) throws HeraldException;
 
@@ -49,7 +49,7 @@ public interface ITransport {
      * @param aExtra
      *            Extra information used in case of a reply
      * @throws HeraldException
-     *             Error sending the request or error on the server side
+     *             Error sending the message or error on the server side
      */
     void fire(Peer aPeer, Message aMessage, Object aExtra)
             throws HeraldException;
@@ -64,7 +64,9 @@ public interface ITransport {
      * @param aMessage
      *            Message to send
      * @return The list of reached peers (if available), never null
+     * @throws HeraldException
+     *             Error sending the message
      */
     Collection<Peer> fireGroup(String aGroup, Collection<Peer> aPeers,
-            Message aMessage);
+            Message aMessage) throws HeraldException;
 }

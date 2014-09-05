@@ -18,10 +18,11 @@ package org.cohorte.herald;
 
 import java.util.Collection;
 
+import org.cohorte.herald.exceptions.HeraldException;
 import org.cohorte.herald.exceptions.HeraldTimeout;
-import org.cohorte.herald.exceptions.NoListener;
 import org.cohorte.herald.exceptions.NoTransport;
 import org.cohorte.herald.exceptions.UnknownPeer;
+import org.cohorte.herald.exceptions.ValueError;
 
 /**
  * Specification of the Herald core services
@@ -57,7 +58,7 @@ public interface IHerald {
      *             Unknown peer UID
      */
     String fire(String aPeerUid, Message aMessage) throws NoTransport,
-            UnknownPeer;
+    UnknownPeer;
 
     /**
      * Fires (and forget) the given message to the given group of peers
@@ -146,7 +147,7 @@ public interface IHerald {
      */
     String post(Peer aPeer, Message aMessage, IPostCallback aCallback,
             IPostErrback aErrback, Long aTimeout, boolean aForgetOnFirst)
-            throws NoTransport;
+                    throws NoTransport;
 
     /**
      * Posts a message. The given methods will be called back as soon as a
@@ -211,7 +212,30 @@ public interface IHerald {
      */
     String post(String aPeerUid, Message aMessage, IPostCallback aCallback,
             IPostErrback aErrback, Long aTimeout, boolean aForgetOnFirst)
-            throws UnknownPeer, NoTransport;
+                    throws UnknownPeer, NoTransport;
+
+    /**
+     * Posts a message to a group of peers
+     *
+     * @param aGroupName
+     *            The name of a group of peers
+     * @param aMessage
+     *            A Message bean
+     * @param aCallback
+     *            Method to call back when a reply is received
+     * @param aErrback
+     *            Method to call back if an error occurs
+     * @param aTimeout
+     *            Time after which the message will be forgotten
+     * @return The message UID
+     * @throws ValueError
+     *             Unknown group
+     * @throws NoTransport
+     *             No transport found to send the message
+     */
+    String postGroup(String aGroupName, Message aMessage,
+            IPostCallback aCallback, IPostErrback aErrback, Long aTimeout)
+                    throws ValueError, NoTransport;
 
     /**
      * Replies to a message. The subject will be the one of the original
@@ -221,8 +245,11 @@ public interface IHerald {
      *            Message to reply to
      * @param aContent
      *            Content of the response
+     * @throws HeraldException
+     *             Error sending the reply
      */
-    void reply(MessageReceived aMessage, Object aContent);
+    void reply(MessageReceived aMessage, Object aContent)
+            throws HeraldException;
 
     /**
      * Replies to a message. If no subject is given, it will be the one of the
@@ -234,8 +261,11 @@ public interface IHerald {
      *            Content of the response
      * @param aSubject
      *            Subject of the response message
+     * @throws HeraldException
+     *             Error sending the reply
      */
-    void reply(MessageReceived aMessage, Object aContent, String aSubject);
+    void reply(MessageReceived aMessage, Object aContent, String aSubject)
+            throws HeraldException;
 
     /**
      * Sends a message, and waits for its reply
@@ -245,13 +275,10 @@ public interface IHerald {
      * @param aMessage
      *            The message to send
      * @return The UID of the message
-     * @throws NoTransport
-     *             No transport found to send the message
-     * @throws NoListener
-     *             Message received, but nobody was registered to listen to it
+     * @throws HeraldException
+     *             Error sending the message
      */
-    MessageReceived send(Peer aPeer, Message aMessage) throws NoTransport,
-            NoListener;
+    Object send(Peer aPeer, Message aMessage) throws HeraldException;
 
     /**
      * Sends a message, and waits for its reply
@@ -262,16 +289,14 @@ public interface IHerald {
      *            The message to send
      * @param aTimeout
      *            Maximum time to wait for an answer
-     * @return The UID of the message
-     * @throws NoTransport
-     *             No transport found to send the message
-     * @throws NoListener
-     *             Message received, but nobody was registered to listen to it
+     * @return The content of the reply
+     * @throws HeraldException
+     *             Error sending the message
      * @throws HeraldTimeout
      *             Timeout raised before getting an answer
      */
-    MessageReceived send(Peer aPeer, Message aMessage, Long aTimeout)
-            throws NoTransport, NoListener, HeraldTimeout;
+    Object send(Peer aPeer, Message aMessage, Long aTimeout)
+            throws HeraldException;
 
     /**
      * Sends a message, and waits for its reply
@@ -280,16 +305,13 @@ public interface IHerald {
      *            The UID of the peer to send the message to
      * @param aMessage
      *            The message to send
-     * @return The UID of the message
-     * @throws NoTransport
-     *             No transport found to send the message
-     * @throws NoListener
-     *             Message received, but nobody was registered to listen to it
+     * @return The content of the reply
+     * @throws HeraldException
+     *             Error sending the message
      * @throws UnknownPeer
      *             Unknown peer UID
      */
-    MessageReceived send(String aPeerUid, Message aMessage) throws UnknownPeer,
-            NoTransport, NoListener;
+    Object send(String aPeerUid, Message aMessage) throws HeraldException;
 
     /**
      * Sends a message, and waits for its reply
@@ -300,16 +322,14 @@ public interface IHerald {
      *            The message to send
      * @param aTimeout
      *            Maximum time to wait for an answer
-     * @return The UID of the message
-     * @throws NoTransport
-     *             No transport found to send the message
-     * @throws NoListener
-     *             Message received, but nobody was registered to listen to it
+     * @return The content of the reply
+     * @throws HeraldException
+     *             Error sending the message
      * @throws HeraldTimeout
      *             Timeout raised before getting an answer
      * @throws UnknownPeer
      *             Unknown peer UID
      */
-    MessageReceived send(String aPeerUid, Message aMessage, Long aTimeout)
-            throws UnknownPeer, NoTransport, NoListener, HeraldTimeout;
+    Object send(String aPeerUid, Message aMessage, Long aTimeout)
+            throws HeraldException;
 }
