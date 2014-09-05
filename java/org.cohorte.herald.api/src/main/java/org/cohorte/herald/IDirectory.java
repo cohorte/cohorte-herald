@@ -16,6 +16,7 @@
 
 package org.cohorte.herald;
 
+import java.util.Collection;
 import java.util.Map;
 
 import org.cohorte.herald.exceptions.UnknownPeer;
@@ -65,7 +66,34 @@ public interface IDirectory {
      *
      * @return all known peers
      */
-    Peer[] getPeers();
+    Collection<Peer> getPeers();
+
+    /**
+     * Returns the Peer beans of the peers belonging to the given group
+     *
+     * @param aGroupName
+     *            The name of a group
+     * @return A list of Peer beans
+     */
+    Collection<Peer> getPeersForGroup(String aGroupName);
+
+    /**
+     * Returns the Peer beans of the peers having the given name
+     *
+     * @param aName
+     *            The name of a peer
+     * @return The peers having the given name
+     */
+    Collection<Peer> getPeersForName(String aName);
+
+    /**
+     * Returns the Peer beans of the peers hosted on the given node
+     *
+     * @param aNodeUid
+     *            The UID of a node
+     * @return The peers hosted on the node
+     */
+    Collection<Peer> getPeersForNode(String aNodeUid);
 
     /**
      * Loads the content of a dump
