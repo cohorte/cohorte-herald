@@ -16,6 +16,11 @@
 
 package org.cohorte.herald;
 
+import java.util.Map;
+
+import org.cohorte.herald.exceptions.UnknownPeer;
+import org.cohorte.herald.exceptions.ValueError;
+
 /**
  * Specification of the Herald core directory service
  *
@@ -23,4 +28,70 @@ package org.cohorte.herald;
  */
 public interface IDirectory {
 
+    /**
+     * Dumps the content of the local directory in a dictionary
+     *
+     * @return A UID -&gt; description dictionary
+     */
+    Map<String, Map<String, Object>> dump();
+
+    /**
+     * Returns the bean representing the local peer
+     *
+     * @return the local Peer bean
+     */
+    Peer getLocalPeer();
+
+    /**
+     * Easy access to the local peer UID
+     *
+     * @return the UID of the local UID
+     */
+    String getLocalUid();
+
+    /**
+     * Returns the Peer bean matching the given peer UID
+     *
+     * @param aUid
+     *            The UID of a peer
+     * @return The corresponding Peer bean
+     * @throws UnknownPeer
+     *             Unknown peer UID
+     */
+    Peer getPeer(String aUid) throws UnknownPeer;
+
+    /**
+     * Returns all known peers
+     *
+     * @return all known peers
+     */
+    Peer[] getPeers();
+
+    /**
+     * Loads the content of a dump
+     *
+     * @param aDump
+     *            The dictionary result of a call to {@link #dump()}
+     */
+    void load(Map<String, Map<String, Object>> aDump);
+
+    /**
+     * Registers a peer
+     *
+     * @param aDescription
+     *            Description of the peer, in the format of {@link #dump()}
+     * @return The registered Peer bean (null if UID matches local peer)
+     * @throws ValueError
+     *             Invalid peer UID
+     */
+    Peer register(Map<String, Object> aDescription) throws ValueError;
+
+    /**
+     * Unregisters a peer from the directory
+     *
+     * @param aUid
+     *            UID of the peer
+     * @return The Peer bean if it was known, else null
+     */
+    Peer unregister(String aUid);
 }
