@@ -67,9 +67,17 @@ public class LoopTimer extends Thread {
         pFinished = new Event();
     }
 
+    /**
+     * Cancels/stops the loop timer
+     */
+    public void cancel() {
+
+        pFinished.set();
+    }
+
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Thread#run()
      */
     @Override
