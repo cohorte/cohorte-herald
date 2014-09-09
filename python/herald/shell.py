@@ -209,13 +209,12 @@ class HeraldCommands(object):
         """
         Prints information about the given peer
         """
-        lines = []
-        lines.append("Peer {0}".format(peer.uid))
-        lines.append("\t- UID......: {0}".format(peer.uid))
-        lines.append("\t- Name.....: {0}".format(peer.name))
-        lines.append("\t- Node UID.: {0}".format(peer.node_uid))
-        lines.append("\t- Node Name: {0}".format(peer.node_name))
-        lines.append("\t- Groups...:")
+        lines = ["Peer {0}".format(peer.uid),
+                 "\t- UID......: {0}".format(peer.uid),
+                 "\t- Name.....: {0}".format(peer.name),
+                 "\t- Node UID.: {0}".format(peer.node_uid),
+                 "\t- Node Name: {0}".format(peer.node_name),
+                 "\t- Groups...:"]
         for group in sorted(peer.groups):
             lines.append("\t\t- {0}".format(group))
         lines.append("\t- Accesses.:")

@@ -36,7 +36,7 @@ __docformat__ = "restructuredtext en"
 # ------------------------------------------------------------------------------
 
 # Herald HTTP
-from . import ACCESS_ID, SERVICE_HTTP_DIRECTORY, SERVICE_HTTP_RECEIVER
+from . import ACCESS_ID, SERVICE_HTTP_RECEIVER
 
 # HTTP requests
 import requests
@@ -232,13 +232,13 @@ class HttpTransport(object):
         accessed_peers = set()
         countdown = pelix.utilities.CountdownEvent(len(peers))
 
-        def peer_result(result, exception, peer):
+        def peer_result(result, exception, target_peer):
             """
             Called back once the request has been posted
             """
             if exception is None:
                 # No exception => success
-                accessed_peers.add(peer)
+                accessed_peers.add(target_peer)
 
             # In any case: update the count down
             countdown.step()

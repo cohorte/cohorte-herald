@@ -243,7 +243,7 @@ def create_multicast_socket(address, port, join=True):
             # Allow multicast packets to get back on this host
             sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, 1)
 
-    return (sock, addr_info[4][0])
+    return sock, addr_info[4][0]
 
 
 def close_multicast_socket(sock, address):
@@ -404,6 +404,10 @@ class MulticastReceiver(object):
             port = -1
             path = None
 
+        else:
+            _logger.warning("Unknown kind of packet: %d", kind)
+            return
+
         try:
             self._callback(uid, kind, sender[0], port, path)
         except Exception as ex:
@@ -422,7 +426,7 @@ class MulticastReceiver(object):
         """
         size = struct.calcsize(fmt)
         read, unread = data[:size], data[size:]
-        return (struct.unpack(fmt, read), unread)
+        return struct.unpack(fmt, read), unread
 
     def _unpack_string(self, data):
         """
@@ -439,7 +443,7 @@ class MulticastReceiver(object):
         string_bytes = data[:size]
 
         # Convert it
-        return (to_unicode(string_bytes), data[size:])
+        return to_unicode(string_bytes), data[size:]
 
     def __read(self):
         """
@@ -603,7 +607,7 @@ class MulticastHeartbeat(object):
 
     def __discover_peer(self, host, port, path):
         """
-        Grab the description of a peer using the Herald servlet
+        Grabs the description of a peer using the Herald servlet
 
         :param host: Address which sent the heart beat
         :param port: Port of the Herald HTTP server

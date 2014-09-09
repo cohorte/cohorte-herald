@@ -43,7 +43,7 @@ import herald.beans as beans
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, RequiresMap, \
-    Provides, BindField, Validate, Invalidate, Instantiate
+    Provides, BindField, UnbindField, Validate, Invalidate, Instantiate
 from pelix.utilities import is_string
 import pelix.constants
 

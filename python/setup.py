@@ -44,6 +44,7 @@ except ImportError:
 
 # ------------------------------------------------------------------------------
 
+
 def read(fname):
     """
     Utility method to read the content of a whole file
@@ -51,7 +52,6 @@ def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname)) as fd:
         return fd.read()
 
-# ------------------------------------------------------------------------------
 
 setup(name='Cohorte-Herald',
       version=__version__,
@@ -62,7 +62,7 @@ setup(name='Cohorte-Herald',
       author_email='thomas.calmant@isandlatech.com',
       url='https://github.com/isandlaTech/cohorte-herald',
       download_url=
-            'https://github.com/isandlaTech/cohorte-herald/archive/master.zip',
+          'https://github.com/isandlaTech/cohorte-herald/archive/master.zip',
       packages=['herald',
                 'herald.remote',
                 'herald.transports',

@@ -114,7 +114,7 @@ class HeraldServlet(object):
 
         :return: An (host, port, path) tuple
         """
-        return (self._host, self._port, self._servlet_path)
+        return self._host, self._port, self._servlet_path
 
     def bound_to(self, path, parameters):
         """

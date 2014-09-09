@@ -44,9 +44,9 @@ from . import FACTORY_MONITOR, SERVICE_MONITOR_BOT, \
     PROP_XMPP_SERVER, PROP_XMPP_PORT, PROP_XMPP_ROOM_NAME
 
 # Pelix
-from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
+from pelix.ipopo.decorators import ComponentFactory, Provides, \
     Property, Validate, Invalidate
-from pelix.ipopo.constants import use_ipopo, use_waiting_list
+from pelix.ipopo.constants import use_ipopo
 import pelix.framework
 import pelix.misc.xmpp as pelixmpp
 
@@ -368,7 +368,9 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
                         Invites the requester in the rooms it requested, as
                         soon as they are ready
 
-                        :param rooms_jids: JIDs of the usable rooms
+                        :param successes: JIDs of the usable rooms
+                        :param failures: JIDs of the rooms which
+                        failed
                         """
                         for room_jid in rooms_jids.difference(failures):
                             # Invite to valid rooms (old and new ones)
