@@ -37,6 +37,7 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.ServiceProperty;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.IConstants;
@@ -55,7 +56,6 @@ import org.cohorte.herald.utils.PelixFuture.Callable;
 import org.cohorte.herald.utils.PelixFuture.Callback;
 import org.jabsorb.ng.JSONSerializer;
 import org.jabsorb.ng.serializer.MarshallException;
-import org.osgi.framework.BundleException;
 import org.osgi.service.log.LogService;
 
 /**
@@ -72,6 +72,10 @@ public class HttpTransport implements ITransport {
     @ServiceProperty(name = IConstants.PROP_ACCESS_ID,
             value = IHttpConstants.ACCESS_ID)
     private String pAccessId;
+
+    /** The service controller */
+    @ServiceController
+    private boolean pController;
 
     /** Herald core directory */
     @Requires
@@ -449,28 +453,29 @@ public class HttpTransport implements ITransport {
 
     /**
      * Component validated
-     *
-     * @throws BundleException
-     *             Critical error setting up the JSON serializer
      */
     @Validate
-    public void validate() throws BundleException {
-
-        // Store the UID of the local peer
-        pLocalUid = pDirectory.getLocalUid();
+    public void validate() {
 
         // Prepare the JSON serializer
         pSerializer = new JSONSerializer(this.getClass().getClassLoader());
         try {
             pSerializer.registerDefaultSerializers();
         } catch (final Exception ex) {
+            // Error setting up the serializer: abandon
             pLogger.log(LogService.LOG_ERROR,
                     "Error setting up the JSON serializer: " + ex, ex);
-            throw new BundleException("Error setting up the JSON serializer",
-                    ex);
+            pController = false;
+            return;
         }
+
+        // Store the UID of the local peer
+        pLocalUid = pDirectory.getLocalUid();
 
         // Start the thread pool
         pExecutor = Executors.newFixedThreadPool(5);
+
+        // Everything is OK
+        pController = true;
     }
 }
