@@ -26,6 +26,12 @@ public interface IHttpConstants {
     /** Access ID used by the HTTP transport implementation */
     String ACCESS_ID = "http";
 
+    /** Name of the encoding charset */
+    String CHARSET_UTF8 = "UTF-8";
+
+    /** Name of the content type */
+    String CONTENT_TYPE_JSON = "application/json";
+
     /** Name of the Multicast discovery component factory */
     String FACTORY_DISCOVERY_MULTICAST = "herald-http-discovery-multicast-factory";
 
