@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 isandlaTech
+ * Copyright 2014 isandlaTech
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ import java.net.InetSocketAddress;
 
 /**
  * Defines a UDP packets listener
- * 
+ *
  * @author Thomas Calmant
  */
 public interface IPacketListener {
 
     /**
      * Handles an exception thrown while waiting or a packet
-     * 
+     *
      * @param aException
      *            The thrown exception
      * @return True to continue the thread loop, else false
@@ -35,7 +35,7 @@ public interface IPacketListener {
 
     /**
      * Handles a received UDP packet
-     * 
+     *
      * @param aSender
      *            Address of the packet sender
      * @param aContent

@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 isandlaTech
+ * Copyright 2014 isandlaTech
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,9 @@ import org.osgi.service.log.LogService;
 
 /**
  * A multicast receiver
- * 
+ *
  * @author Thomas Calmant
- * 
+ *
  * @see <a
  *      href="http://atastypixel.com/blog/the-making-of-talkie-multi-interface-broadcasting-and-multicast/">The
  *      Making of Talkie: Multi-interface broadcasting and multicast</a>
@@ -87,7 +87,7 @@ public class MulticastHandler {
 
     /**
      * Sets up the receiver
-     * 
+     *
      * @param aListener
      *            The multicast packets listener
      * @param aAddress
@@ -107,7 +107,7 @@ public class MulticastHandler {
 
     /**
      * Leaves the group and closes the multicast socket.
-     * 
+     *
      * @throws IOException
      *             Error reading the address or leaving the group
      */
@@ -132,7 +132,7 @@ public class MulticastHandler {
 
     /**
      * Retrieves all network interfaces that supports multicast
-     * 
+     *
      * @return All network interfaces that supports multicast
      * @throws SocketException
      *             An error occurred retrieving network interfaces
@@ -165,7 +165,7 @@ public class MulticastHandler {
 
     /**
      * Logs an entry if a logger is present, else prints on the error output
-     * 
+     *
      * @param aLevel
      *            Log level
      * @param aMessage
@@ -178,7 +178,7 @@ public class MulticastHandler {
 
     /**
      * Logs an entry if a logger is present, else prints on the error output
-     * 
+     *
      * @param aLevel
      *            Log level
      * @param aMessage
@@ -290,7 +290,7 @@ public class MulticastHandler {
 
     /**
      * Sends the given packet to the multicast group
-     * 
+     *
      * @param aData
      *            Data to be sent
      * @throws IOException
@@ -303,7 +303,7 @@ public class MulticastHandler {
 
     /**
      * Sends the given packet to the given address
-     * 
+     *
      * @param aData
      *            Data to be sent
      * @param aAddress
@@ -323,7 +323,7 @@ public class MulticastHandler {
 
     /**
      * Sets the log service to use
-     * 
+     *
      * @param aLogService
      *            A log service instance, or null
      */
@@ -334,7 +334,7 @@ public class MulticastHandler {
 
     /**
      * Sets up the multicast channel
-     * 
+     *
      * @throws IOException
      *             Something wrong occurred (bad address, bad port, ...)
      */
@@ -375,7 +375,7 @@ public class MulticastHandler {
 
     /**
      * Creates the multicast socket and starts the listening thread
-     * 
+     *
      * @return True if the socket was created, false if it was already opened
      * @throws IOException
      *             Error creating the socket
@@ -420,7 +420,7 @@ public class MulticastHandler {
 
     /**
      * Stops the multicast receiver
-     * 
+     *
      * @throws IOException
      *             Error closing the socket
      */
