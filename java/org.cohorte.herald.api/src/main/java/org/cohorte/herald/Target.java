@@ -26,6 +26,27 @@ import java.util.LinkedHashSet;
  */
 public class Target {
 
+    /**
+     * Converts a list of peers to a list of UIDs
+     *
+     * @param aPeers
+     *            A list of peers
+     * @return A list of UIDs
+     */
+    public static Collection<String> toUids(final Collection<Peer> aPeers) {
+
+        final Collection<String> uids = new LinkedHashSet<>();
+        if (aPeers == null) {
+            return uids;
+        }
+
+        for (final Peer peer : aPeers) {
+            uids.add(peer.getUid());
+        }
+
+        return uids;
+    }
+
     /** The name of a group */
     private final String pGroup;
 
