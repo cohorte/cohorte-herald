@@ -47,6 +47,7 @@ from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property
 from pelix.utilities import to_bytes, to_unicode
 import pelix.http
+import pelix.misc.jabsorb as jabsorb
 
 # Standard library
 import json
@@ -193,7 +194,8 @@ class HeraldServlet(object):
             reply_to = request.get_header('herald-reply-to')
             timestamp = request.get_header('herald-timestamp')
             sender_uid = request.get_header('herald-sender-uid')
-            json_content = json.loads(to_unicode(request.read_data()))
+            json_content = to_unicode(request.read_data())
+            msg_content = jabsorb.from_jabsorb(json.loads(json_content))
 
             # Store sender information
             host = request.get_client_address()[0]
@@ -211,7 +213,7 @@ class HeraldServlet(object):
                 sender_uid = "<unknown>"
 
             # Let Herald handle the message
-            message = herald.beans.MessageReceived(uid, subject, json_content,
+            message = herald.beans.MessageReceived(uid, subject, msg_content,
                                                    sender_uid, reply_to,
                                                    ACCESS_ID, timestamp, extra)
             self._core.handle_message(message)

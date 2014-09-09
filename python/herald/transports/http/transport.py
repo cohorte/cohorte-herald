@@ -52,6 +52,7 @@ from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, BindField, Validate, Invalidate, Instantiate
 import pelix.utilities
 import pelix.threadpool
+import pelix.misc.jabsorb as jabsorb
 
 # Standard library
 import json
@@ -184,7 +185,7 @@ class HttpTransport(object):
 
         # Convert content to JSON
         content = json.dumps(message.content, default=utils.json_converter)
-        return headers, content
+        return headers, jabsorb.to_jabsorb(content)
 
     def fire(self, peer, message, extra=None):
         """
