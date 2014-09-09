@@ -182,9 +182,9 @@ class HeraldServlet(object):
         # Check content type
         content_type = request.get_header('content-type')
         if content_type not in (None, CONTENT_TYPE_JSON):
-            # Unknown content type
+            # Unknown content type -> Error 412 "Precondition failed"
             _logger.critical("Bad content type: %s", content_type)
-            code, content = _make_json_result(500, "Unknown content type")
+            code, content = _make_json_result(412, "Unknown content type")
 
         else:
             # Extract headers
