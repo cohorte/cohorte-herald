@@ -35,9 +35,6 @@ public interface IHttpConstants {
     /** Name of the Multicast discovery component factory */
     String FACTORY_DISCOVERY_MULTICAST = "herald-http-discovery-multicast-factory";
 
-    /** Name of the HTTP reception servlet factory */
-    String FACTORY_SERVLET = "herald-http-servlet-factory";
-
     /** Name of the multicast group configuration property */
     String PROP_MULTICAST_GROUP = "multicast.group";
 

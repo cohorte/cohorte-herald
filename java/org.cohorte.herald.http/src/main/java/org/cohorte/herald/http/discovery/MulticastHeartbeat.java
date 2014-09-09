@@ -41,7 +41,7 @@ import org.osgi.service.log.LogService;
  *
  * @author Thomas Calmant
  */
-@Component
+@Component(name = IHttpConstants.FACTORY_DISCOVERY_MULTICAST)
 public class MulticastHeartbeat implements IPacketListener {
 
     /** UDP Packet: Peer heart beat */
@@ -158,7 +158,7 @@ public class MulticastHeartbeat implements IPacketListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
      * .Exception)
@@ -224,7 +224,7 @@ public class MulticastHeartbeat implements IPacketListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handlePacket(java.
      * net.InetSocketAddress, byte[])

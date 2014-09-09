@@ -29,34 +29,33 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
+import org.cohorte.herald.http.IHttpConstants;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.log.LogService;
 
 /**
- * Multicast broadcaster component instantiator
- * 
+ * Multicast broadcaster component instantiation helper
+ *
  * @author Thomas Calmant
  */
-@Component(name = "multicast-starter-factory")
-@Instantiate(name = "multicast-starter")
+@Component
+@Instantiate(name = "herald-http-discovery-multicast-starter")
 public class MulticastStarter {
 
     /**
      * Default multicast group: IPv4 site multicast
-     * 
-     * @see http://fr.wikipedia.org/wiki/Multicast
+     *
+     * @see http://en.wikipedia.org/wiki/Multicast
      */
     private static final String DEFAULT_GROUP = "239.0.0.1";
 
     /**
      * Default component instance name
      */
-    private static final String DEFAULT_NAME = "cohorte-remote-multicast";
+    private static final String DEFAULT_NAME = "herald-http-discovery-multicast";
 
     /**
      * Default listening port (must be opened in firewall, UDP mode)
-     * 
-     * @see H2G2
      */
     private static final String DEFAULT_PORT = "42000";
 
@@ -73,34 +72,36 @@ public class MulticastStarter {
     /**
      * Multicast group system property
      */
-    private static final String SYSPROP_GROUP = "remote.multicast.group";
+    private static final String SYSPROP_GROUP = "herald.multicast.group";
 
     /**
      * Component name system property
      */
-    private static final String SYSPROP_NAME = "remote.multicast.component.name";
+    private static final String SYSPROP_NAME = "herald.multicast.component.name";
 
     /**
      * Multicast port system property
      */
-    private static final String SYSPROP_PORT = "remote.multicast.port";
+    private static final String SYSPROP_PORT = "herald.multicast.port";
 
+    /** The bundle context, to access framework properties */
     private final BundleContext pContext;
 
     /** The multicast component instance */
     private ComponentInstance pInstance;
 
     /** The logger */
-    @Requires
+    @Requires(optional = true)
     private LogService pLogger;
 
-    @Requires(
-            filter = "(factory.name=cohorte-remote-discovery-muticast-factory)")
+    /** The multicast component factory */
+    @Requires(filter = "(factory.name="
+            + IHttpConstants.FACTORY_DISCOVERY_MULTICAST + ")")
     private Factory pMulticastFactory;
 
     /**
      * Sets up members
-     * 
+     *
      * @param aContext
      *            The bundle context
      */
@@ -111,7 +112,7 @@ public class MulticastStarter {
 
     /**
      * Gets a bundle context / system / default property
-     * 
+     *
      * @param aKey
      *            Property name
      * @param aDefault
@@ -120,8 +121,14 @@ public class MulticastStarter {
      */
     private String getProperty(final String aKey, final String aDefault) {
 
-        final String value = pContext.getProperty(aKey);
+        String value = pContext.getProperty(aKey);
         if (value == null) {
+            // In Equinox, we also have to check system properties
+            value = System.getProperty(aKey);
+        }
+
+        if (value == null) {
+            // No value found
             return aDefault;
         }
 
@@ -145,7 +152,7 @@ public class MulticastStarter {
     private void startComponent() {
 
         if (pInstance != null) {
-            pLogger.log(LogService.LOG_ERROR, "Can't run twice");
+            pLogger.log(LogService.LOG_ERROR, "Can't run component twice");
             return;
         }
 
@@ -160,26 +167,21 @@ public class MulticastStarter {
             // Create the instance
             pInstance = pMulticastFactory.createComponentInstance(props);
 
-            final StringBuilder builder = new StringBuilder(
-                    "Multicast broadcaster instantiated: ");
-            builder.append("iPOJO Instance=").append(pInstance);
-
+            String logStr = "Herald Multicast discovery instantiated: "
+                    + pInstance;
             if (pInstance instanceof InstanceManager) {
                 // Try to grab more details
                 final InstanceManager instMan = (InstanceManager) pInstance;
                 final Object realComponent = instMan.getPojoObject();
-                builder.append(" - ").append(realComponent);
+                logStr += " - " + realComponent;
             }
-
-            pLogger.log(LogService.LOG_DEBUG, builder.toString());
+            pLogger.log(LogService.LOG_DEBUG, logStr);
 
         } catch (UnacceptableConfiguration | MissingHandlerException
                 | ConfigurationException ex) {
             // What a Terrible Failure
-            pLogger.log(
-                    LogService.LOG_ERROR,
-                    "Multicast broadcaster instantiation error: "
-                            + ex.getMessage(), ex);
+            pLogger.log(LogService.LOG_ERROR,
+                    "Multicast broadcaster instantiation error: " + ex, ex);
         }
     }
 
@@ -196,9 +198,6 @@ public class MulticastStarter {
 
         pInstance.dispose();
         pInstance = null;
-
-        pLogger.log(LogService.LOG_DEBUG,
-                "Multicast broadcaster gone with the wind");
     }
 
     /**
