@@ -16,6 +16,12 @@
 
 package org.cohorte.herald.http.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 
 import org.apache.felix.ipojo.annotations.Bind;
@@ -179,15 +185,126 @@ public class HttpReceiver implements IHttpReceiver {
         return pDirectory.getLocalPeer();
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see
+     * org.cohorte.herald.http.impl.IHttpReceiver#grabPeer(java.lang.String,
+     * int, java.lang.String)
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, Object> grabPeer(final String aHostAddress,
+            final int aPort, final String aPath) {
+
+        // Compute the URL to the peer
+        final URL url;
+        try {
+            url = new URL("http", aHostAddress, aPort, aPath);
+
+        } catch (final MalformedURLException ex) {
+            // Bad URL
+            pLogger.log(LogService.LOG_ERROR,
+                    "Error computing Peer access URL: " + ex);
+            return null;
+        }
+
+        // Open the HTTP connection
+        HttpURLConnection httpConnection = null;
+        try {
+            httpConnection = (HttpURLConnection) url.openConnection();
+
+            // POST message
+            httpConnection.setRequestMethod("GET");
+
+            // Connect
+            httpConnection.connect();
+
+            // Read content
+            final int responseCode = httpConnection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // Error
+                pLogger.log(LogService.LOG_ERROR, "Error on peer's side: "
+                        + responseCode);
+                return null;
+            }
+
+            // Read the response
+            final byte[] rawData = inputStreamToBytes(httpConnection
+                    .getInputStream());
+
+            // Parse it
+            final String data = new String(rawData,
+                    httpConnection.getContentEncoding());
+            final Object dump = deserialize(data);
+
+            if (dump instanceof Map) {
+                // It's map, as expected: return it
+                return (Map<String, Object>) dump;
+            }
+
+        } catch (final IOException ex) {
+            // Error connection to the peer
+            pLogger.log(LogService.LOG_ERROR, "Error connecting to the peer: "
+                    + ex, ex);
+
+        } catch (final UnmarshallException ex) {
+            // Bad string
+            pLogger.log(LogService.LOG_ERROR,
+                    "Error parsing peer description: " + ex, ex);
+
+        } finally {
+            // Clean up
+            if (httpConnection != null) {
+                httpConnection.disconnect();
+            }
+        }
+
+        // Something bad or wrong occurred
+        return null;
+    }
+
     /**
      * Lets Herald handle the received message
-     * 
+     *
      * @param aMessage
      *            The received message
      */
     public void handleMessage(final MessageReceived aMessage) {
 
         pHerald.handleMessage(aMessage);
+    }
+
+    /**
+     * Converts an input stream into a byte array
+     *
+     * @param aInputStream
+     *            An input stream
+     * @return The input stream content, null on error
+     * @throws IOException
+     *             Something went wrong
+     */
+    public byte[] inputStreamToBytes(final InputStream aInputStream)
+            throws IOException {
+
+        if (aInputStream == null) {
+            return null;
+        }
+
+        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        final byte[] buffer = new byte[8192];
+        int read = 0;
+
+        do {
+            read = aInputStream.read(buffer);
+            if (read > 0) {
+                outStream.write(buffer, 0, read);
+            }
+
+        } while (read > 0);
+
+        outStream.close();
+        return outStream.toByteArray();
     }
 
     /**

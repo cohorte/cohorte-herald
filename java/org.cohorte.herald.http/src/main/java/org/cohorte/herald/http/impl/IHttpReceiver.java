@@ -16,6 +16,8 @@
 
 package org.cohorte.herald.http.impl;
 
+import java.util.Map;
+
 import org.cohorte.herald.http.HTTPAccess;
 
 /**
@@ -31,4 +33,17 @@ public interface IHttpReceiver {
      * @return The description of the local access
      */
     HTTPAccess getAccessInfo();
+
+    /**
+     * Grabs the description of the peer with the given information.
+     *
+     * @param aHostAddress
+     *            The address of the peer
+     * @param aPort
+     *            The HTTP port of the peer
+     * @param aPath
+     *            The path to the Herald servlet
+     * @return The result of the Peer's dump() method, or null
+     */
+    Map<String, Object> grabPeer(String aHostAddress, int aPort, String aPath);
 }

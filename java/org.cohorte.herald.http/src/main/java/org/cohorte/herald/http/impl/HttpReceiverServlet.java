@@ -16,9 +16,7 @@
 
 package org.cohorte.herald.http.impl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -161,7 +159,8 @@ public class HttpReceiverServlet extends HttpServlet {
         }
 
         // Parse the content
-        final byte[] rawData = inputStreamToBytes(aReq.getInputStream());
+        final byte[] rawData = pReceiver.inputStreamToBytes(aReq
+                .getInputStream());
 
         String charsetName = aReq.getCharacterEncoding();
         if (charsetName == null) {
@@ -191,37 +190,5 @@ public class HttpReceiverServlet extends HttpServlet {
             aResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Error parsing message content: " + ex);
         }
-    }
-
-    /**
-     * Converts an input stream into a byte array
-     *
-     * @param aInputStream
-     *            An input stream
-     * @return The input stream content, null on error
-     * @throws IOException
-     *             Something went wrong
-     */
-    private byte[] inputStreamToBytes(final InputStream aInputStream)
-            throws IOException {
-
-        if (aInputStream == null) {
-            return null;
-        }
-
-        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        final byte[] buffer = new byte[8192];
-        int read = 0;
-
-        do {
-            read = aInputStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-
-        } while (read > 0);
-
-        outStream.close();
-        return outStream.toByteArray();
     }
 }
