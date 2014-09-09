@@ -43,4 +43,7 @@ public interface IHttpConstants {
 
     /** Name of the multicast port configuration property */
     String PROP_MULTICAST_PORT = "multicast.port";
+
+    /** The default/fixed path to the Herald servlet */
+    String SERVLET_PATH = "/herald";
 }
