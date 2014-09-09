@@ -11,6 +11,7 @@
 	<modules>
 		<module>org.cohorte.herald.api</module>
 		<module>org.cohorte.herald.core</module>
+		<module>org.cohorte.herald.http</module>
 	</modules>
 
 	<properties>
