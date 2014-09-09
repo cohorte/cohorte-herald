@@ -37,12 +37,10 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.ServiceProperty;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.IConstants;
 import org.cohorte.herald.IDirectory;
-import org.cohorte.herald.IHeraldInternal;
 import org.cohorte.herald.ITransport;
 import org.cohorte.herald.Message;
 import org.cohorte.herald.Peer;
@@ -75,24 +73,12 @@ public class HttpTransport implements ITransport {
             value = IHttpConstants.ACCESS_ID)
     private String pAccessId;
 
-    /** Service controller */
-    @ServiceController(value = false)
-    private boolean pController;
-
     /** Herald core directory */
     @Requires
     private IDirectory pDirectory;
 
     /** The thread pool */
     private ExecutorService pExecutor;
-
-    /** Herald core service (internal: always on) */
-    @Requires
-    private IHeraldInternal pHerald;
-
-    /** HTTP directory */
-    @Requires
-    private IHttpDirectory pHttpDirectory;
 
     /** Local peer UID */
     private String pLocalUid;
@@ -110,7 +96,7 @@ public class HttpTransport implements ITransport {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -123,7 +109,7 @@ public class HttpTransport implements ITransport {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, java.lang.Object)
      */
@@ -156,14 +142,14 @@ public class HttpTransport implements ITransport {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fireGroup(java.lang.String,
      * java.util.Collection, org.cohorte.herald.Message)
      */
     @Override
     public Collection<Peer> fireGroup(final String aGroup,
             final Collection<Peer> aPeers, final Message aMessage)
-                    throws HeraldException {
+            throws HeraldException {
 
         // Prepare the message
         final Map<String, String> headers = makeHeaders(aMessage, null);
@@ -185,7 +171,7 @@ public class HttpTransport implements ITransport {
 
             /*
              * (non-Javadoc)
-             * 
+             *
              * @see
              * org.cohorte.herald.utils.PelixFuture.Callback#run(java.lang.Object
              * , java.lang.Throwable, java.lang.Object)
@@ -390,7 +376,7 @@ public class HttpTransport implements ITransport {
      */
     private void sendRequest(final Peer aPeer, final URL aUrl,
             final Map<String, String> aHeaders, final String aContent)
-            throws HeraldException {
+                    throws HeraldException {
 
         // Open the connection
         HttpURLConnection httpConnection = null;

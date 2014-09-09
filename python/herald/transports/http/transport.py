@@ -50,6 +50,7 @@ import herald.utils as utils
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, BindField, Validate, Invalidate, Instantiate
+import pelix.utilities
 import pelix.threadpool
 
 # Standard library
@@ -65,11 +66,9 @@ _logger = logging.getLogger(__name__)
 
 
 @ComponentFactory('herald-http-transport-factory')
-@Requires('_core', herald.SERVICE_HERALD_INTERNAL)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
-@Requires('_http_directory', SERVICE_HTTP_DIRECTORY)
 @Requires('_local_recv', SERVICE_HTTP_RECEIVER)
-@Provides(herald.SERVICE_TRANSPORT, '_controller')
+@Provides(herald.SERVICE_TRANSPORT)
 @Property('_access_id', herald.PROP_ACCESS_ID, ACCESS_ID)
 @Instantiate('herald-http-transport')
 class HttpTransport(object):
@@ -80,14 +79,8 @@ class HttpTransport(object):
         """
         Sets up the transport
         """
-        # Herald core service
-        self._core = None
-
         # Herald Core directory
         self._directory = None
-
-        # Herald HTTP directory
-        self._http_directory = None
 
         # Properties
         self._access_id = ACCESS_ID
