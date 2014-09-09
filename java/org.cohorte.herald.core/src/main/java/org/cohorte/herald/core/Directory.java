@@ -109,6 +109,19 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
         // Store the service
         pDirectories.put(accessId, aDirectory);
+
+        // Load corresponding accesses
+        for (final Peer peer : pPeers.values()) {
+            final Access currentAccess = peer.getAccess(accessId);
+            if (currentAccess instanceof RawAccess) {
+                // We need to convert a raw access
+                final Access parsedAccess = aDirectory
+                        .loadAccess(((RawAccess) currentAccess).getRawData());
+
+                // Update the peer access
+                peer.setAccess(accessId, parsedAccess);
+            }
+        }
     }
 
     /**
@@ -564,6 +577,15 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
         // Forget about the service
         pDirectories.remove(accessId);
+
+        // Update accesses
+        for (final Peer peer : pPeers.values()) {
+            final Access currentAccess = peer.getAccess(accessId);
+            if (currentAccess != null) {
+                peer.setAccess(accessId,
+                        new RawAccess(accessId, currentAccess.dump()));
+            }
+        }
     }
 
     /*
