@@ -183,10 +183,11 @@ class HttpTransport(object):
         headers = {'herald-subject': message.subject,
                    'herald-uid': message.uid,
                    'herald-sender-uid': self.__peer_uid,
-                   'herald-reply-to': parent_uid or "",
                    'herald-timestamp': int(time.time() * 1000),
                    'herald-port': self.__access_port,
                    'herald-path': self.__access_path}
+        if parent_uid:
+            headers['herald-reply-to'] = parent_uid
 
         # Convert content to JSON
         content = json.dumps(message.content, default=utils.json_converter)
