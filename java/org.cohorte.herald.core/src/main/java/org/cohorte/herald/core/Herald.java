@@ -116,7 +116,7 @@ public class Herald implements IHerald, IHeraldInternal {
     private final Map<String, Long> pTreatedMessages = new LinkedHashMap<>();
 
     /** Events used to block "send()" methods: UID -&gt; EventData */
-    private final Map<String, EventData> pWaitingEvents = new LinkedHashMap<>();
+    private final Map<String, EventData<Object>> pWaitingEvents = new LinkedHashMap<>();
 
     /** Events used for "post()" methods: UID -&gt; WaitingPost */
     private final Map<String, WaitingPost> pWaitingPosts = new LinkedHashMap<>();
@@ -190,7 +190,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -238,7 +238,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#fire(java.lang.String,
      * org.cohorte.herald.Message)
      */
@@ -251,7 +251,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#fireGroup(java.lang.String,
      * org.cohorte.herald.Message)
      */
@@ -265,13 +265,8 @@ public class Herald implements IHerald, IHeraldInternal {
 
         if (pTransports.isEmpty()) {
             // Make the list of UIDs
-            final Set<String> uids = new LinkedHashSet<>();
-            for (final Peer peer : allPeers) {
-                uids.add(peer.getUid());
-            }
-
-            throw new NoTransport(new Target(aGroupName, uids),
-                    "No transport bound yet.");
+            throw new NoTransport(new Target(aGroupName,
+                    Target.toUids(allPeers)), "No transport bound yet.");
         }
 
         // Group peers by accesses
@@ -388,7 +383,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#forget(java.lang.String)
      */
     @Override
@@ -398,7 +393,7 @@ public class Herald implements IHerald, IHeraldInternal {
         final ForgotMessage exception = new ForgotMessage(aMessageUid);
 
         // Release the send() call
-        final EventData event = pWaitingEvents.remove(aMessageUid);
+        final EventData<?> event = pWaitingEvents.remove(aMessageUid);
         if (event != null) {
             event.raiseException(exception);
             result = true;
@@ -553,7 +548,7 @@ public class Herald implements IHerald, IHeraldInternal {
                     aMessage.getSender()), uid, subject);
 
             // Unlock the original message sender
-            final EventData eventData = pWaitingEvents.remove(uid);
+            final EventData<?> eventData = pWaitingEvents.remove(uid);
             if (eventData != null) {
                 eventData.raiseException(exception);
             }
@@ -576,7 +571,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHeraldInternal#handleMessage(org.cohorte.herald.
      * MessageReceived)
      */
@@ -640,7 +635,7 @@ public class Herald implements IHerald, IHeraldInternal {
         pPool.shutdownNow();
 
         // Clear waiting events
-        for (final EventData event : pWaitingEvents.values()) {
+        for (final EventData<?> event : pWaitingEvents.values()) {
             event.set(null);
         }
 
@@ -670,7 +665,7 @@ public class Herald implements IHerald, IHeraldInternal {
         if (repliesTo != null && !repliesTo.isEmpty()) {
             // This message is a reply: unlock the sender of the original
             // message
-            final EventData event = pWaitingEvents.remove(repliesTo);
+            final EventData<Object> event = pWaitingEvents.remove(repliesTo);
             if (event != null) {
                 // Set the data
                 event.set(aMessage.getContent());
@@ -730,7 +725,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#post(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback)
@@ -738,14 +733,14 @@ public class Herald implements IHerald, IHeraldInternal {
     @Override
     public String post(final Peer aPeer, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback)
-            throws NoTransport {
+                    throws NoTransport {
 
         return post(aPeer, aMessage, aCallback, aErrback, 180L, true);
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#post(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long)
@@ -760,7 +755,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#post(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long, boolean)
@@ -769,7 +764,7 @@ public class Herald implements IHerald, IHeraldInternal {
     public String post(final Peer aPeer, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback,
             final Long aTimeout, final boolean aForgetOnFirst)
-            throws NoTransport {
+                    throws NoTransport {
 
         // Prepare an entry in the waiting posts
         pWaitingPosts.put(aMessage.getUid(), new WaitingPost(aCallback,
@@ -788,7 +783,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#post(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback)
@@ -796,14 +791,14 @@ public class Herald implements IHerald, IHeraldInternal {
     @Override
     public String post(final String aPeerUid, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback)
-            throws UnknownPeer, NoTransport {
+                    throws UnknownPeer, NoTransport {
 
         return post(aPeerUid, aMessage, aCallback, aErrback, 180L, true);
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#post(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long)
@@ -818,7 +813,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#post(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long, boolean)
@@ -827,7 +822,7 @@ public class Herald implements IHerald, IHeraldInternal {
     public String post(final String aPeerUid, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback,
             final Long aTimeout, final boolean aForgetOnFirst)
-            throws UnknownPeer, NoTransport {
+                    throws UnknownPeer, NoTransport {
 
         return post(pDirectory.getPeer(aPeerUid), aMessage, aCallback,
                 aErrback, aTimeout, aForgetOnFirst);
@@ -835,7 +830,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#postGroup(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long)
@@ -854,13 +849,8 @@ public class Herald implements IHerald, IHeraldInternal {
 
         if (pTransports.isEmpty()) {
             // Make the list of UIDs
-            final Set<String> uids = new LinkedHashSet<>();
-            for (final Peer peer : allPeers) {
-                uids.add(peer.getUid());
-            }
-
-            throw new NoTransport(new Target(aGroupName, uids),
-                    "No transport bound yet.");
+            throw new NoTransport(new Target(aGroupName,
+                    Target.toUids(allPeers)), "No transport bound yet.");
         }
 
         // Prepare an entry in the waiting posts
@@ -924,7 +914,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#reply(org.cohorte.herald.MessageReceived,
      * java.lang.Object)
      */
@@ -937,7 +927,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#reply(org.cohorte.herald.MessageReceived,
      * java.lang.Object, java.lang.String)
      */
@@ -967,7 +957,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#send(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -986,7 +976,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#send(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, java.lang.Long)
      */
@@ -995,7 +985,7 @@ public class Herald implements IHerald, IHeraldInternal {
             final Long aTimeout) throws HeraldException {
 
         // Prepare the event bean
-        final EventData event = new EventData();
+        final EventData<Object> event = new EventData<>();
         pWaitingEvents.put(aMessage.getUid(), event);
 
         try {
@@ -1036,7 +1026,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#send(java.lang.String,
      * org.cohorte.herald.Message)
      */
@@ -1055,7 +1045,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IHerald#send(java.lang.String,
      * org.cohorte.herald.Message, java.lang.Long)
      */
