@@ -27,6 +27,8 @@ Herald Core directory
 """
 
 # Module version
+import pelix.ipopo.decorators
+
 __version_info__ = (0, 0, 1)
 __version__ = ".".join(str(x) for x in __version_info__)
 
@@ -150,6 +152,40 @@ class HeraldDirectory(object):
         self._names.clear()
         self._groups.clear()
         self._local = None
+
+    @BindField('_directories')
+    def _bind_directory(self, _, svc, svc_ref):
+        """
+        A transport directory has been bound
+        """
+        access_id = svc_ref.get_property(herald.PROP_ACCESS_ID)
+        if not access_id:
+            return
+
+        with self.__lock:
+            for peer in self._peers.values():
+                access = peer.get_access(access_id)
+                if isinstance(access, beans.RawAccess):
+                    # We need to convert a raw access bean
+                    parsed = svc.load_access(access.dump())
+                    peer.set_access(access_id, parsed)
+
+    @UnbindField('_directories')
+    def _unbind_directory(self, _, svc, svc_ref):
+        """
+        A transport directory has gone away
+        """
+        access_id = svc_ref.get_property(herald.PROP_ACCESS_ID)
+        if not access_id:
+            return
+
+        with self.__lock:
+            for peer in self._peers.values():
+                access = peer.get_access(access_id)
+                if access is not None:
+                    # Convert to a RawAccess bean
+                    peer.set_access(access_id,
+                                    beans.RawAccess(access_id, access.dump()))
 
     @BindField('_listeners', if_valid=True)
     def _bind_listener(self, _, svc, svc_ref):
@@ -404,10 +440,10 @@ class HeraldDirectory(object):
                 try:
                     data = self._directories[access_id].load_access(data)
                 except KeyError:
-                    # Access not available for parsing
-                    pass
+                    # Access not available for parsing: keep a RawAccess bean
+                    data = beans.RawAccess(access_id, data)
 
-                # Store the parsed data, or keep it as is
+                # Store the parsed data
                 peer.set_access(access_id, data)
 
         # Notify listeners

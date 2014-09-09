@@ -307,6 +307,43 @@ class Target(object):
 # ------------------------------------------------------------------------------
 
 
+class RawAccess(object):
+    """
+    A peer access stored while no transport directory can load it
+    """
+    def __init__(self, access_id, raw_data):
+        """
+        Sets up the bean
+
+        :param access_id: Access ID associated to the data
+        :param raw_data: Raw data to store
+        """
+        self.__access_id = access_id
+        self.__raw_data = raw_data
+
+    @property
+    def access_id(self):
+        """
+        The access ID associated to the data
+        """
+        return self.__access_id
+
+    @property
+    def data(self):
+        """
+        The stored data
+        """
+        return self.__raw_data
+
+    def dump(self):
+        """
+        The dump method returns the raw data as-is
+        """
+        return self.__raw_data
+
+# ------------------------------------------------------------------------------
+
+
 class Message(object):
     """
     Represents a message to be sent
