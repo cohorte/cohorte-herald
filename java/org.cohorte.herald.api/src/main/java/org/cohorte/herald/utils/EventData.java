@@ -21,10 +21,10 @@ package org.cohorte.herald.utils;
  *
  * @author Thomas Calmant
  */
-public class EventData {
+public class EventData<T> {
 
     /** Data associated to the event */
-    private Object pData;
+    private T pData;
 
     /** Internal event */
     private final Event pEvent;
@@ -55,7 +55,7 @@ public class EventData {
     /**
      * @return the data
      */
-    public Object getData() {
+    public T getData() {
 
         return pData;
     }
@@ -106,7 +106,7 @@ public class EventData {
      * @param aData
      *            Data to associate to the event
      */
-    public synchronized void set(final Object aData) {
+    public synchronized void set(final T aData) {
 
         pData = aData;
         pException = null;
