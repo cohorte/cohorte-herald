@@ -46,6 +46,7 @@ import herald
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
     Invalidate, Property
 from pelix.utilities import to_bytes, to_unicode
+import pelix.misc.jabsorb as jabsorb
 
 # Standard library
 import logging
@@ -622,7 +623,7 @@ class MulticastHeartbeat(object):
             _logger.error("Error contacting peer: %s", ex)
         else:
             # Forge the access to the HTTP server
-            dump = response.json()
+            dump = jabsorb.from_jabsorb(response.json())
             dump['accesses'][ACCESS_ID] = HTTPAccess(host, port, path).dump()
 
             # Register the peer

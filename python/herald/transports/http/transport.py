@@ -184,8 +184,9 @@ class HttpTransport(object):
             headers['herald-reply-to'] = parent_uid
 
         # Convert content to JSON
-        content = json.dumps(message.content, default=utils.json_converter)
-        return headers, jabsorb.to_jabsorb(content)
+        jabsorb_content = jabsorb.to_jabsorb(message.content)
+        content = json.dumps(jabsorb_content, default=utils.json_converter)
+        return headers, content
 
     def fire(self, peer, message, extra=None):
         """

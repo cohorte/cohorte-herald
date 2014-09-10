@@ -165,7 +165,8 @@ class HeraldServlet(object):
         """
         # pylint: disable=C0103
         peer_dump = self._directory.get_local_peer().dump()
-        content = json.dumps(peer_dump, default=utils.json_converter)
+        jabsorb_content = jabsorb.to_jabsorb(peer_dump)
+        content = json.dumps(jabsorb_content, default=utils.json_converter)
         response.send_content(200, content, CONTENT_TYPE_JSON)
 
     def do_POST(self, request, response):
@@ -219,6 +220,9 @@ class HeraldServlet(object):
             self._core.handle_message(message)
 
         # Convert content (Python 3)
+        if content:
+            content = jabsorb.to_jabsorb(content)
+
         content = to_bytes(content)
 
         # Send response
