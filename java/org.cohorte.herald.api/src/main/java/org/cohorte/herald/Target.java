@@ -64,7 +64,7 @@ public class Target {
      */
     public Target(final Peer aPeer) {
 
-        this(aPeer.getUid());
+        this(aPeer != null ? aPeer.getUid() : "<unknown>");
     }
 
     /**
