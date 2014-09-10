@@ -64,12 +64,13 @@
 						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
 						<Import-Package>
-							org.cohorte.herald;version=${project.version},
-							org.cohorte.herald.exceptions;version=${project.version},
-							org.cohorte.herald.utils;version=${project.version},
+							org.cohorte.herald;version=${pkg-version},
+							org.cohorte.herald.exceptions;version=${pkg-version},
+							org.cohorte.herald.utils;version=${pkg-version},
 							javax.servlet;version=2.5,
 							org.osgi.service.http;version=1.2
 						</Import-Package>
+						<Export-Package>!*</Export-Package>
 					</instructions>
 				</configuration>
 			</plugin>

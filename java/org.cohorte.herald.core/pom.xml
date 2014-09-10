@@ -50,10 +50,11 @@
 						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
 						<Import-Package>
-							org.cohorte.herald;version=${project.version},
-							org.cohorte.herald.exceptions;version=${project.version},
-							org.cohorte.herald.utils;version=${project.version}
+							org.cohorte.herald;version=${pkg-version},
+							org.cohorte.herald.exceptions;version=${pkg-version},
+							org.cohorte.herald.utils;version=${pkg-version}
 						</Import-Package>
+						<Export-Package>!*</Export-Package>
 					</instructions>
 				</configuration>
 			</plugin>
