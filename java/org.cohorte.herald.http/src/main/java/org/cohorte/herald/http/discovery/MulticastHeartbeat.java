@@ -144,7 +144,7 @@ public class MulticastHeartbeat implements IPacketListener {
     private String extractString(final ByteBuffer aBuffer) {
 
         // Get the length
-        final short length = aBuffer.getShort();
+        final int length = getUnsignedShort(aBuffer);
 
         // Get the bytes
         final byte[] buffer = new byte[length];
@@ -166,9 +166,23 @@ public class MulticastHeartbeat implements IPacketListener {
         }
     }
 
+    /**
+     * Gets the next <strong>unsigned</strong> short in the byte buffer
+     *
+     * @param aBuffer
+     *            The byte buffer to read from
+     * @return The unsigned short, boxed in an integer
+     */
+    private int getUnsignedShort(final ByteBuffer aBuffer) {
+
+        // Get the short, box it to an int then only keep the short value and
+        // ignore the sign bit
+        return aBuffer.getShort() & 0xffff;
+    }
+
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
      * .Exception)
@@ -234,7 +248,7 @@ public class MulticastHeartbeat implements IPacketListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handlePacket(java.
      * net.InetSocketAddress, byte[])
@@ -251,7 +265,7 @@ public class MulticastHeartbeat implements IPacketListener {
         switch (packetType) {
         case PACKET_TYPE_HEARTBEAT: {
             // Extract content
-            final int port = buffer.getShort();
+            final int port = getUnsignedShort(buffer);
             final String path = extractString(buffer);
             final String peerUid = extractString(buffer);
 
