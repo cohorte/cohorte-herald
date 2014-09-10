@@ -64,11 +64,15 @@
 						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
 						<Import-Package>
+						    javax.servlet;version="2.5",
+						    javax.servlet.http;version="2.5",
+						    org.osgi.framework;version="1.3.0",
+						    org.osgi.service.http;version="1.2.1",
+						    org.jabsorb.ng,
+						    org.jabsorb.ng.serializer,
 							org.cohorte.herald;version=${pkg-version},
 							org.cohorte.herald.exceptions;version=${pkg-version},
-							org.cohorte.herald.utils;version=${pkg-version},
-							javax.servlet;version=2.5,
-							org.osgi.service.http;version=1.2
+							org.cohorte.herald.utils;version=${pkg-version}
 						</Import-Package>
 						<Export-Package>!*</Export-Package>
 					</instructions>
