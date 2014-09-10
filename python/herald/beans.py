@@ -244,7 +244,9 @@ class Peer(object):
             if data != old_data:
                 # Update only if necessary
                 self.__accesses[access_id] = data
-                self.__callback("peer_access_set", access_id, data)
+
+                if not isinstance(data, RawAccess):
+                    self.__callback("peer_access_set", access_id, data)
 
     def unset_access(self, access_id):
         """
