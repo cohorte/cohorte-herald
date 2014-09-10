@@ -93,6 +93,10 @@ public class Herald implements IHerald, IHeraldInternal {
     /** The garbage collection timer */
     private LoopTimer pGarbageTimer;
 
+    /** Internal service controller */
+    @ServiceController(value = true)
+    private boolean pInternalController;
+
     /** Time stamp of the last garbage collection */
     private long pLastGarbage = -1;
 
