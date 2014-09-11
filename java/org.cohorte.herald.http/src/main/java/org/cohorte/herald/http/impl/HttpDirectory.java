@@ -59,7 +59,7 @@ public class HttpDirectory implements ITransportDirectory, IHttpDirectory {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.http.impl.IHttpDirectory#checkAccess(java.lang.String,
      * java.lang.String, int)
