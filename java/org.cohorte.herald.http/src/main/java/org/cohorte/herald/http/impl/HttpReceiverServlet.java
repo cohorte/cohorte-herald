@@ -114,6 +114,7 @@ public class HttpReceiverServlet extends HttpServlet {
                     + contentType);
             aResp.sendError(HttpServletResponse.SC_PRECONDITION_FAILED,
                     "Unhandled content type");
+            return;
         }
 
         // Extract headers
