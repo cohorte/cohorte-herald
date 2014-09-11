@@ -58,7 +58,7 @@ public class HttpReceiverServlet extends HttpServlet {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest
      * , javax.servlet.http.HttpServletResponse)
@@ -98,7 +98,7 @@ public class HttpReceiverServlet extends HttpServlet {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * javax.servlet.http.HttpServlet#doPost(javax.servlet.http.HttpServletRequest
      * , javax.servlet.http.HttpServletResponse)
@@ -109,7 +109,9 @@ public class HttpReceiverServlet extends HttpServlet {
             IOException {
 
         final String contentType = aReq.getContentType();
-        if (!IHttpConstants.CONTENT_TYPE_JSON.equalsIgnoreCase(contentType)) {
+        if (contentType != null
+                && !IHttpConstants.CONTENT_TYPE_JSON
+                        .equalsIgnoreCase(contentType)) {
             pReceiver.log(LogService.LOG_WARNING, "Bad content type: "
                     + contentType);
             aResp.sendError(HttpServletResponse.SC_PRECONDITION_FAILED,
