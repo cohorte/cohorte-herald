@@ -233,11 +233,15 @@ public class HttpReceiver implements IHttpReceiver {
             final byte[] rawData = inputStreamToBytes(httpConnection
                     .getInputStream());
 
-            // Parse it
-            final String data = new String(rawData,
-                    httpConnection.getContentEncoding());
-            final Object dump = deserialize(data);
+            // Convert bytes to string, using the best encoding
+            String charsetName = httpConnection.getContentEncoding();
+            if (charsetName == null) {
+                charsetName = IHttpConstants.CHARSET_UTF8;
+            }
+            final String data = new String(rawData, charsetName);
 
+            // Parse it
+            final Object dump = deserialize(data);
             if (dump instanceof Map) {
                 // It's map, as expected: return it
                 return (Map<String, Object>) dump;
