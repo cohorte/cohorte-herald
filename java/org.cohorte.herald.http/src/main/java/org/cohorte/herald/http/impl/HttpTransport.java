@@ -175,7 +175,7 @@ public class HttpTransport implements ITransport {
 
             /*
              * (non-Javadoc)
-             *
+             * 
              * @see
              * org.cohorte.herald.utils.PelixFuture.Callback#run(java.lang.Object
              * , java.lang.Throwable, java.lang.Object)
@@ -380,7 +380,7 @@ public class HttpTransport implements ITransport {
      */
     private void sendRequest(final Peer aPeer, final URL aUrl,
             final Map<String, String> aHeaders, final String aContent)
-                    throws HeraldException {
+            throws HeraldException {
 
         // Open the connection
         HttpURLConnection httpConnection = null;

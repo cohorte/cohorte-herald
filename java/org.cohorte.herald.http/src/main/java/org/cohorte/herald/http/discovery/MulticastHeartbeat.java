@@ -182,7 +182,7 @@ public class MulticastHeartbeat implements IPacketListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
      * .Exception)

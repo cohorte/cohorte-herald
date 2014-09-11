@@ -80,7 +80,7 @@ public class HTTPAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
@@ -97,7 +97,7 @@ public class HTTPAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.Access#dump()
      */
     @Override
@@ -124,7 +124,7 @@ public class HTTPAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.Access#getAccessId()
      */
     @Override
@@ -165,7 +165,7 @@ public class HTTPAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -177,7 +177,7 @@ public class HTTPAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override

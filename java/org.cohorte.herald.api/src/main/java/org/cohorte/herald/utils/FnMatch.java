@@ -141,7 +141,7 @@ public class FnMatch {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override

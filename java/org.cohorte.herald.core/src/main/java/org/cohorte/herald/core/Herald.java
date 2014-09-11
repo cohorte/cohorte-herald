@@ -737,7 +737,7 @@ public class Herald implements IHerald, IHeraldInternal {
     @Override
     public String post(final Peer aPeer, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback)
-                    throws NoTransport {
+            throws NoTransport {
 
         return post(aPeer, aMessage, aCallback, aErrback, 180L, true);
     }
@@ -768,7 +768,7 @@ public class Herald implements IHerald, IHeraldInternal {
     public String post(final Peer aPeer, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback,
             final Long aTimeout, final boolean aForgetOnFirst)
-                    throws NoTransport {
+            throws NoTransport {
 
         // Prepare an entry in the waiting posts
         pWaitingPosts.put(aMessage.getUid(), new WaitingPost(aCallback,
@@ -795,7 +795,7 @@ public class Herald implements IHerald, IHeraldInternal {
     @Override
     public String post(final String aPeerUid, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback)
-                    throws UnknownPeer, NoTransport {
+            throws UnknownPeer, NoTransport {
 
         return post(aPeerUid, aMessage, aCallback, aErrback, 180L, true);
     }
@@ -826,7 +826,7 @@ public class Herald implements IHerald, IHeraldInternal {
     public String post(final String aPeerUid, final Message aMessage,
             final IPostCallback aCallback, final IPostErrback aErrback,
             final Long aTimeout, final boolean aForgetOnFirst)
-                    throws UnknownPeer, NoTransport {
+            throws UnknownPeer, NoTransport {
 
         return post(pDirectory.getPeer(aPeerUid), aMessage, aCallback,
                 aErrback, aTimeout, aForgetOnFirst);

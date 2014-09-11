@@ -122,7 +122,7 @@ public class PelixFuture<R, E> implements Runnable {
      *             Timeout reached before the execution ends
      */
     public R result(final Long aTimeout) throws EventException,
-    TimeoutException {
+            TimeoutException {
 
         if (pDoneEvent.waitEvent(aTimeout)) {
             return pDoneEvent.getData();

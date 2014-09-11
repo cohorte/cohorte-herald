@@ -58,7 +58,7 @@ public interface IHerald {
      *             Unknown peer UID
      */
     String fire(String aPeerUid, Message aMessage) throws NoTransport,
-    UnknownPeer;
+            UnknownPeer;
 
     /**
      * Fires (and forget) the given message to the given group of peers
@@ -147,7 +147,7 @@ public interface IHerald {
      */
     String post(Peer aPeer, Message aMessage, IPostCallback aCallback,
             IPostErrback aErrback, Long aTimeout, boolean aForgetOnFirst)
-                    throws NoTransport;
+            throws NoTransport;
 
     /**
      * Posts a message. The given methods will be called back as soon as a
@@ -212,7 +212,7 @@ public interface IHerald {
      */
     String post(String aPeerUid, Message aMessage, IPostCallback aCallback,
             IPostErrback aErrback, Long aTimeout, boolean aForgetOnFirst)
-                    throws UnknownPeer, NoTransport;
+            throws UnknownPeer, NoTransport;
 
     /**
      * Posts a message to a group of peers
@@ -235,7 +235,7 @@ public interface IHerald {
      */
     String postGroup(String aGroupName, Message aMessage,
             IPostCallback aCallback, IPostErrback aErrback, Long aTimeout)
-                    throws ValueError, NoTransport;
+            throws ValueError, NoTransport;
 
     /**
      * Replies to a message. The subject will be the one of the original
