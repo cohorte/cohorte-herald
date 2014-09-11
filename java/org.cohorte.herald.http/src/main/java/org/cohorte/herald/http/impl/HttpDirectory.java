@@ -41,7 +41,7 @@ import org.cohorte.herald.http.IHttpConstants;
  * @author Thomas Calmant
  */
 @Component
-@Provides(specifications = IHttpDirectory.class)
+@Provides(specifications = { ITransportDirectory.class, IHttpDirectory.class })
 @Instantiate(name = "herald-http-directory")
 public class HttpDirectory implements ITransportDirectory, IHttpDirectory {
 
