@@ -458,7 +458,7 @@ public class HttpTransport implements ITransport {
     public void validate() {
 
         // Prepare the JSON serializer
-        pSerializer = new JSONSerializer(this.getClass().getClassLoader());
+        pSerializer = new JSONSerializer();
         try {
             pSerializer.registerDefaultSerializers();
         } catch (final Exception ex) {

@@ -43,7 +43,6 @@ import org.cohorte.herald.http.IHttpConstants;
 import org.jabsorb.ng.JSONSerializer;
 import org.jabsorb.ng.serializer.MarshallException;
 import org.jabsorb.ng.serializer.UnmarshallException;
-import org.osgi.framework.BundleException;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.log.LogService;
 
@@ -187,7 +186,7 @@ public class HttpReceiver implements IHttpReceiver {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.http.impl.IHttpReceiver#grabPeer(java.lang.String,
      * int, java.lang.String)
@@ -368,13 +367,13 @@ public class HttpReceiver implements IHttpReceiver {
      * Component validated
      */
     @Validate
-    public void validate() throws BundleException {
+    public void validate() {
 
         // Disable the service
         pController = false;
 
         // Prepare the JSON serializer
-        pSerializer = new JSONSerializer(this.getClass().getClassLoader());
+        pSerializer = new JSONSerializer();
         try {
             pSerializer.registerDefaultSerializers();
         } catch (final Exception ex) {
