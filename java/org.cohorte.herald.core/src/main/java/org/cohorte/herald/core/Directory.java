@@ -64,6 +64,9 @@ public class Directory implements IDirectory, IDirectoryInternal {
     /** iPOJO requirement ID */
     private static final String ID_LISTENERS = "listeners";
 
+    /** The bundle context */
+    private final BundleContext pContext;
+
     /** Access ID -&gt; Transport directory */
     private final Map<String, ITransportDirectory> pDirectories = new LinkedHashMap<>();
 
@@ -88,6 +91,17 @@ public class Directory implements IDirectory, IDirectoryInternal {
     private final Map<String, Peer> pPeers = new LinkedHashMap<>();
 
     /**
+     * Component instantiation
+     *
+     * @param aBundleContext
+     *            The bundle context
+     */
+    public Directory(final BundleContext aBundleContext) {
+
+        pContext = aBundleContext;
+    }
+
+    /**
      * A transport directory has been bound
      *
      * @param aDirectory
@@ -104,6 +118,8 @@ public class Directory implements IDirectory, IDirectoryInternal {
                 .getProperty(IConstants.PROP_ACCESS_ID);
         if (accessId == null || accessId.isEmpty()) {
             // Ignore invalid access IDs
+            pLogger.log(LogService.LOG_WARNING, "Invalid access ID for "
+                    + aReference + " -- " + aDirectory);
             return;
         }
 
@@ -140,7 +156,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IDirectory#dump()
      */
     @Override
@@ -198,7 +214,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IDirectory#getPeer(java.lang.String)
      */
     @Override
@@ -343,19 +359,19 @@ public class Directory implements IDirectory, IDirectoryInternal {
      *            The bundle context
      * @return The local peer bean
      */
-    private Peer makeLocalPeer(final BundleContext aContext) {
+    private Peer makeLocalPeer() {
 
         // Get the peer UID
-        String peerUid = getProperty(aContext, IConstants.FWPROP_PEER_UID);
+        String peerUid = getProperty(pContext, IConstants.FWPROP_PEER_UID);
         if (peerUid == null || peerUid.isEmpty()) {
             peerUid = UUID.randomUUID().toString();
         }
 
         // Node UID
-        final String nodeUid = getProperty(aContext, IConstants.FWPROP_NODE_UID);
+        final String nodeUid = getProperty(pContext, IConstants.FWPROP_NODE_UID);
 
         // Groups
-        final String[] rawGroups = getListProperty(aContext,
+        final String[] rawGroups = getListProperty(pContext,
                 IConstants.FWPROP_PEER_GROUPS);
         final Set<String> groups = new LinkedHashSet<>(Arrays.asList(rawGroups));
 
@@ -377,8 +393,8 @@ public class Directory implements IDirectory, IDirectoryInternal {
         }
 
         // Setup node and name information
-        peer.setName(getProperty(aContext, IConstants.FWPROP_PEER_NAME));
-        peer.setNodeName(getProperty(aContext, IConstants.FWPROP_NODE_NAME));
+        peer.setName(getProperty(pContext, IConstants.FWPROP_PEER_NAME));
+        peer.setNodeName(getProperty(pContext, IConstants.FWPROP_NODE_NAME));
         return peer;
     }
 
@@ -590,7 +606,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.IDirectory#unregister(java.lang.String)
      */
     @Override
@@ -632,7 +648,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
      *            Bundle context
      */
     @Validate
-    public void validate(final BundleContext aContext) {
+    public void validate() {
 
         // Clean up everything (just in case)
         pPeers.clear();
@@ -640,7 +656,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
         pGroups.clear();
 
         // Prepare the local peer
-        pLocalPeer = makeLocalPeer(aContext);
+        pLocalPeer = makeLocalPeer();
         for (final String group : pLocalPeer.getGroups()) {
             pGroups.put(group, new LinkedHashSet<Peer>());
         }
