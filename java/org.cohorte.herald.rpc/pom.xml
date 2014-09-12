@@ -7,12 +7,8 @@
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	<artifactId>org.cohorte.herald.http</artifactId>
+	<artifactId>org.cohorte.herald.rpc</artifactId>
 	<packaging>bundle</packaging>
-	
-	<properties>
-	   <rs-version>1.2.0</rs-version>
-	</properties>
 
 	<dependencies>
 		<dependency>
@@ -75,9 +71,10 @@
 						<Import-Package>
 							org.osgi.framework;version="1.3.0",
 							org.jabsorb.ng,
+							org.jabsorb.ng.client,
 							org.jabsorb.ng.serializer,
-							org.cohorte.remote;version=${rs-version},
-							org.cohorte.remote.utilities;version=${rs-version},
+							org.cohorte.remote;version="1.2.0",
+							org.cohorte.remote.utilities;version="1.0.0",
 							org.cohorte.herald;version=${pkg-version},
 							org.cohorte.herald.exceptions;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version}
