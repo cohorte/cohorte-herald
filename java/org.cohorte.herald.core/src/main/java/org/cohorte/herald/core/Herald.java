@@ -705,7 +705,14 @@ public class Herald implements IHerald, IHeraldInternal {
                     @Override
                     public void run() {
 
-                        listener.heraldMessage(Herald.this, aMessage);
+                        try {
+                            listener.heraldMessage(Herald.this, aMessage);
+
+                        } catch (final HeraldException ex) {
+                            pLogger.log(LogService.LOG_WARNING,
+                                    "Error notifying listener " + listener
+                                            + ": " + ex, ex);
+                        }
                     }
                 });
             }

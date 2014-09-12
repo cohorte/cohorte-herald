@@ -16,6 +16,8 @@
 
 package org.cohorte.herald;
 
+import org.cohorte.herald.exceptions.HeraldException;
+
 /**
  * Specification of a message listener
  *
@@ -26,11 +28,14 @@ public interface IMessageListener {
     /**
      * Called by Herald core service when a message matching the subjects filter
      * is received
-     * 
+     *
      * @param aHerald
      *            The Herald core service
      * @param aMessage
      *            The received message
+     * @throws HeraldException
+     *             Error replying to the message
      */
-    void heraldMessage(IHerald aHerald, MessageReceived aMessage);
+    void heraldMessage(IHerald aHerald, MessageReceived aMessage)
+            throws HeraldException;
 }
