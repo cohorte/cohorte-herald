@@ -16,6 +16,7 @@
 
 package org.cohorte.herald.rpc;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,6 +61,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
     private static final String SUBJECT_PREFIX = "herald/rpc/discovery";
 
     /** The Herald core directory */
+    @Requires
     private IDirectory pDirectory;
 
     /** The remote services dispatcher */
@@ -72,6 +74,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
     private String[] pFilters;
 
     /** The herald core service */
+    @Requires
     private IHerald pHerald;
 
     /** The logger */
@@ -125,7 +128,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.IExportEndpointListener#endpointRemoved(org.cohorte
      * .remote.ExportEndpoint)
@@ -140,7 +143,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.IExportEndpointListener#endpointsAdded(org.cohorte
      * .remote.ExportEndpoint[])
@@ -153,7 +156,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.IExportEndpointListener#endpointUpdated(org.cohorte
      * .remote.ExportEndpoint, java.util.Map)
@@ -170,7 +173,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
      * IHerald, org.cohorte.herald.MessageReceived)
@@ -233,7 +236,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
             }
         } catch (final ClassCastException ex) {
             pLogger.log(LogService.LOG_ERROR, "Bad content of discovery '"
-                    + kind + "': " + ex);
+                    + kind + "': " + ex, ex);
         }
     }
 
@@ -250,8 +253,9 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
         final String uid = (String) aDump.get("uid");
         final String name = (String) aDump.get("name");
         final String frameworkUid = (String) aDump.get("peer");
-        final String[] configurations = (String[]) aDump.get("configurations");
-        final String[] specs = (String[]) aDump.get("specifications");
+        final String[] configurations = toStringArray(aDump
+                .get("configurations"));
+        final String[] specs = toStringArray(aDump.get("specifications"));
         final Map<String, Object> properties = (Map<String, Object>) aDump
                 .get("properties");
 
@@ -335,5 +339,49 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
             throws ClassCastException {
 
         return (Map<String, Object>) aObject;
+    }
+
+    /**
+     * Converts the given object to an array of strings
+     *
+     * @param aData
+     *            Object to convert
+     * @return A string array, or null
+     * @throws ClassCastException
+     *             Can't convert the object
+     */
+    private String[] toStringArray(final Object aData) {
+
+        if (aData instanceof String[]) {
+            // Nothing to do
+            return (String[]) aData;
+
+        } else if (aData instanceof Object[]) {
+            // Simply convert the array
+            final Object[] source = (Object[]) aData;
+            final String[] result = new String[source.length];
+            for (int i = 0; i < source.length; i++) {
+                result[i] = (String) source[i];
+            }
+            return result;
+
+        } else if (aData instanceof Collection) {
+            // Cast all elements of the collection
+            final Collection<?> source = (Collection<?>) aData;
+            final String[] result = new String[source.size()];
+            int i = 0;
+            for (final Object data : source) {
+                result[i++] = (String) data;
+            }
+            return result;
+
+        } else if (aData == null) {
+            // Keep null as is
+            return null;
+        } else {
+            // Unknown: let Java try to do the job
+            return (String[]) aData;
+        }
+
     }
 }
