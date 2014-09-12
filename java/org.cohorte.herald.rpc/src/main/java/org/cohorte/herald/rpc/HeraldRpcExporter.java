@@ -34,9 +34,7 @@ import org.cohorte.herald.IMessageListener;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.exceptions.HeraldException;
 import org.cohorte.remote.ExportEndpoint;
-import org.cohorte.remote.IRemoteServicesConstants;
 import org.cohorte.remote.IServiceExporter;
-import org.cohorte.remote.utilities.RSUtils;
 import org.jabsorb.ng.JSONRPCBridge;
 import org.json.JSONObject;
 import org.osgi.framework.BundleContext;
@@ -75,9 +73,6 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
             + IHeraldRpcConstants.SUBJECT_REQUEST + ","
             + IHeraldRpcConstants.SUBJECT_REPLY + "}")
     private String[] pFilters;
-
-    /** Framework UID */
-    private String pFrameworkUid;
 
     /** The JSON-RPC bridge (Jabsorb) */
     private JSONRPCBridge pJsonRpcBridge;
@@ -129,7 +124,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
         // Prepare the endpoint bean
         final ExportEndpoint endpoint = new ExportEndpoint(UUID.randomUUID()
-                .toString(), pFrameworkUid, pConfigurations, aName, aReference,
+                .toString(), pLocalUid, pConfigurations, aName, aReference,
                 extraProps);
 
         // Register the object in the Jabsorb bridge
@@ -224,7 +219,6 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
         }
 
         // Clean up
-        pFrameworkUid = null;
         pLocalUid = null;
         pJsonRpcBridge = null;
     }
@@ -284,10 +278,6 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
      */
     @Validate
     public void validate() {
-
-        // Setup the isolate UID
-        pFrameworkUid = RSUtils.setupUID(pContext,
-                IRemoteServicesConstants.ISOLATE_UID);
 
         pLocalUid = pDirectory.getLocalUid();
         pJsonRpcBridge = new JSONRPCBridge();
