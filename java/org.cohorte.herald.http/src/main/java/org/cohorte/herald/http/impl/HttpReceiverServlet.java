@@ -182,7 +182,8 @@ public class HttpReceiverServlet extends HttpServlet {
             pReceiver.handleMessage(message);
 
             // Send response
-            aResp.sendError(HttpServletResponse.SC_OK, "Message received");
+            aResp.setStatus(HttpServletResponse.SC_OK);
+            aResp.setContentLength(0);
 
         } catch (final UnmarshallException ex) {
             // Error parsing the message
