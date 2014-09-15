@@ -385,7 +385,6 @@ public class HttpTransport implements ITransport {
             // POST message
             httpConnection.setRequestMethod("POST");
             httpConnection.setUseCaches(false);
-            httpConnection.setDoInput(false);
             httpConnection.setDoOutput(true);
 
             // Headers
