@@ -44,7 +44,7 @@ import herald.utils as utils
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property
+    Property, Validate
 from pelix.utilities import to_bytes, to_unicode
 import pelix.http
 import pelix.misc.jabsorb as jabsorb
@@ -106,6 +106,15 @@ class HeraldServlet(object):
         self._port = None
         self._servlet_path = None
 
+    @Validate
+    def validate(self, context):
+        """
+        Component validated
+        """
+        # Normalize the servlet path
+        if not self._servlet_path.startswith('/'):
+            self._servlet_path = '/' + self._servlet_path
+
     def get_access_info(self):
         """
         Retrieves the (host, port) tuple to access this signal receiver.
@@ -124,7 +133,7 @@ class HeraldServlet(object):
         :param parameters: The server & servlet parameters
         """
         if self._host is None and path == self._servlet_path:
-            # Update our access informations
+            # Update our access information
             self._host = parameters[pelix.http.PARAM_ADDRESS]
             self._port = int(parameters[pelix.http.PARAM_PORT])
 

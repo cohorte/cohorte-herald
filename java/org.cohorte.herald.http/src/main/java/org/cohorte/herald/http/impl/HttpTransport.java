@@ -100,7 +100,7 @@ public class HttpTransport implements ITransport {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -113,7 +113,7 @@ public class HttpTransport implements ITransport {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, java.lang.Object)
      */
@@ -146,7 +146,7 @@ public class HttpTransport implements ITransport {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.ITransport#fireGroup(java.lang.String,
      * java.util.Collection, org.cohorte.herald.Message)
      */
@@ -175,7 +175,7 @@ public class HttpTransport implements ITransport {
 
             /*
              * (non-Javadoc)
-             * 
+             *
              * @see
              * org.cohorte.herald.utils.PelixFuture.Callback#run(java.lang.Object
              * , java.lang.Throwable, java.lang.Object)
@@ -289,11 +289,6 @@ public class HttpTransport implements ITransport {
         // No port given, remove it from the URL
         if (port == 0) {
             port = -1;
-        }
-
-        // Remove starting slash
-        if (path.startsWith("/")) {
-            path = path.substring(1);
         }
 
         try {

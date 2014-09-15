@@ -71,8 +71,8 @@ public class HTTPAccess extends Access {
         pHost = aHost;
         pPort = aPort;
 
-        if (aPath.startsWith("/")) {
-            pPath = aPath.substring(1);
+        if (!aPath.startsWith("/")) {
+            pPath = "/" + aPath;
         } else {
             pPath = aPath;
         }
@@ -144,7 +144,8 @@ public class HTTPAccess extends Access {
     }
 
     /**
-     * Retrieves the path to the Herald service
+     * Retrieves the path to the Herald service. The returned path always has a
+     * starting slash.
      *
      * @return the path
      */
@@ -183,6 +184,6 @@ public class HTTPAccess extends Access {
     @Override
     public String toString() {
 
-        return "http://" + pHost + ":" + pPort + "/" + pPath;
+        return "http://" + pHost + ":" + pPort + pPath;
     }
 }

@@ -614,6 +614,10 @@ class MulticastHeartbeat(object):
         :param port: Port of the Herald HTTP server
         :param path: Path to the Herald HTTP servlet
         """
+        if path.startswith('/'):
+            # Remove the starting /, as it is added while forging the URL
+            path = path[1:]
+
         response = requests.get("http://{0}:{1}/{2}".format(host, port, path))
         try:
             # Check status code
