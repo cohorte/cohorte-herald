@@ -77,7 +77,7 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
-class _JsonRpcDispatcher(SimpleJSONRPCDispatcher):
+class JsonRpcDispatcher(SimpleJSONRPCDispatcher):
     """
     A JSON-RPC dispatcher with a custom dispatch method
 
@@ -104,7 +104,11 @@ class _JsonRpcDispatcher(SimpleJSONRPCDispatcher):
             return self.funcs[name](*params)
         except KeyError:
             # Other method
-            return self._dispatch_method(name, params)
+            pass
+
+        # Call the other method outside the except block, to avoid messy logs
+        # in case of error
+        return self._dispatch_method(name, params)
 
     def dispatch(self, data):
         """
@@ -169,7 +173,7 @@ class HeraldRpcServiceExporter(commons.AbstractRpcServiceExporter):
         super(HeraldRpcServiceExporter, self).validate(context)
 
         # Setup the dispatcher
-        self._dispatcher = _JsonRpcDispatcher(self.dispatch)
+        self._dispatcher = JsonRpcDispatcher(self.dispatch)
 
     @Invalidate
     def invalidate(self, context):

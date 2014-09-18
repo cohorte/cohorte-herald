@@ -28,6 +28,8 @@ jsonrpclib-pelix, and using the Jabsorb format
 """
 
 # Module version
+import herald.remote.herald_jsonrpc
+
 __version_info__ = (0, 0, 1)
 __version__ = ".".join(str(x) for x in __version_info__)
 
@@ -39,6 +41,7 @@ __docformat__ = "restructuredtext en"
 # Herald
 import herald.beans as beans
 import herald.remote
+import herald.remote.herald_jsonrpc as herald_jsonrpc
 
 # iPOPO decorators
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
@@ -76,46 +79,6 @@ SUBJECT_REPLY = 'herald/rpc/jabsorbrpc/reply'
 _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
-
-
-class _JsonRpcDispatcher(SimpleJSONRPCDispatcher):
-    """
-    A JSON-RPC dispatcher with a custom dispatch method
-
-    Calls the dispatch method given in the constructor
-    """
-    def __init__(self, dispatch_method, encoding=None):
-        """
-        Sets up the servlet
-        """
-        SimpleJSONRPCDispatcher.__init__(self, encoding=encoding)
-
-        # Register the system.* functions
-        self.register_introspection_functions()
-
-        # Make a link to the dispatch method
-        self._dispatch_method = dispatch_method
-
-    def _simple_dispatch(self, name, params):
-        """
-        Dispatch method
-        """
-        try:
-            # Internal method
-            return self.funcs[name](*params)
-        except KeyError:
-            # Other method
-            return self._dispatch_method(name, params)
-
-    def dispatch(self, data):
-        """
-        Handles a HTTP POST request
-
-        :param data: The string content of the request
-        :return: The JSON-RPC response as a string
-        """
-        # Dispatch
-        return self._marshaled_dispatch(data, self._simple_dispatch)
 
 
 @ComponentFactory(herald.remote.FACTORY_HERALD_JSONRPC_EXPORTER)
@@ -169,8 +132,8 @@ class HeraldRpcServiceExporter(commons.AbstractRpcServiceExporter):
         # Call parent
         super(HeraldRpcServiceExporter, self).validate(context)
 
-        # Setup the dispatcher
-        self._dispatcher = _JsonRpcDispatcher(self.dispatch)
+        # Setup the dispatcher (use JSON-RPC ones)
+        self._dispatcher = herald_jsonrpc.JsonRpcDispatcher(self.dispatch)
 
     @Invalidate
     def invalidate(self, context):
