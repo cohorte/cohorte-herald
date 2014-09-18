@@ -418,8 +418,10 @@ class HeraldDirectory(object):
             try:
                 # Check if the peer is known
                 peer = self._peers[uid]
+                peer_update = True
             except KeyError:
                 # Make a new bean
+                peer_update = False
                 peer = beans.Peer(uid, description['node_uid'],
                                   description['groups'], self)
 
@@ -428,7 +430,6 @@ class HeraldDirectory(object):
                     setattr(peer, name, description[name])
 
                 # Store the peer
-                self._peers[uid] = peer
                 self._names.setdefault(peer.name, set()).add(peer.uid)
 
                 # Set up groups
@@ -443,11 +444,18 @@ class HeraldDirectory(object):
                     # Access not available for parsing: keep a RawAccess bean
                     data = beans.RawAccess(access_id, data)
 
-                # Store the parsed data
+                # Store the parsed data: listeners will be notified IF the peer
+                # was already stored
                 peer.set_access(access_id, data)
 
-        # Notify listeners
-        self.__notify_peer_registered(peer)
+            if not peer_update:
+                # Store the peer after accesses have been set
+                # (avoids to notify about update before registration)
+                self._peers[uid] = peer
+
+                # Notify about registration only once (ignore access updates)
+                self.__notify_peer_registered(peer)
+
         return peer
 
     def unregister(self, uid):
