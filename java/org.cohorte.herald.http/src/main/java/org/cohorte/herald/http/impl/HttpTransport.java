@@ -271,19 +271,19 @@ public class HttpTransport implements ITransport {
             path = extraAccess.getPath();
         }
 
-        if (host == null || host.isEmpty()) {
+        if (aPeer != null && (host == null || host.isEmpty())) {
             // Use the peer description, if any
             final HTTPAccess peerAccess = (HTTPAccess) aPeer
                     .getAccess(IHttpConstants.ACCESS_ID);
             host = peerAccess.getHost();
             port = peerAccess.getPort();
             path = peerAccess.getPath();
+        }
 
-            // If we have nothing at this point, we can't compute an access
-            if (host == null || host.isEmpty()) {
-                throw new InvalidPeerAccess(new Target(aPeer), "No "
-                        + IHttpConstants.ACCESS_ID + " access found");
-            }
+        // If we have nothing at this point, we can't compute an access
+        if (host == null || host.isEmpty()) {
+            throw new InvalidPeerAccess(new Target(aPeer), "No "
+                    + IHttpConstants.ACCESS_ID + " access found");
         }
 
         // No port given, remove it from the URL
@@ -415,7 +415,6 @@ public class HttpTransport implements ITransport {
             // Write the event in the request body, if any
             if (rawContent.length > 0) {
                 final OutputStream outStream = httpConnection.getOutputStream();
-
                 try {
                     outStream.write(rawContent);
                     outStream.flush();
