@@ -429,13 +429,6 @@ class HeraldDirectory(object):
                 for name in ('name', 'node_name'):
                     setattr(peer, name, description[name])
 
-                # Store the peer
-                self._names.setdefault(peer.name, set()).add(peer.uid)
-
-                # Set up groups
-                for group in peer.groups:
-                    self._groups.setdefault(group, set()).add(peer)
-
             # In any case, parse and store (new/updated) accesses
             for access_id, data in description['accesses'].items():
                 try:
@@ -452,6 +445,13 @@ class HeraldDirectory(object):
                 # Store the peer after accesses have been set
                 # (avoids to notify about update before registration)
                 self._peers[uid] = peer
+
+                # Store the peer
+                self._names.setdefault(peer.name, set()).add(peer.uid)
+
+                # Set up groups
+                for group in peer.groups:
+                    self._groups.setdefault(group, set()).add(peer)
 
                 # Notify about registration only once (ignore access updates)
                 self.__notify_peer_registered(peer)
