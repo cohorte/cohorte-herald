@@ -181,8 +181,9 @@ class HeraldDiscovery(object):
         :param peer: The new peer
         """
         # Send a contact message, with our list of endpoints
-        self.__send_message(
-            'contact', self._dump_endpoints(self._dispatcher.get_endpoints()))
+        endpoints = self._dump_endpoints(self._dispatcher.get_endpoints())
+        self._herald.fire(peer,
+                          beans.Message(self.__subject('contact'), endpoints))
 
     def peer_updated(self, peer, access_id, data, previous):
         """

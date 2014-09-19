@@ -273,7 +273,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
     @Override
     public void peerRegistered(final Peer aPeer) {
 
-        sendMessage("contact", dumpEndpoints(pDispatcher.getEndpoints()));
+        sendMessage(aPeer, "contact", dumpEndpoints(pDispatcher.getEndpoints()));
     }
 
     /*
@@ -303,6 +303,27 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
             final Access aData, final Access aPrevious) {
 
         // Do nothing
+    }
+
+    /**
+     * Sends a message to the given peer
+     *
+     * @param aKind
+     *            Kind of discovery message
+     * @param aData
+     *            Content of the message
+     */
+    private void sendMessage(final Peer aPeer, final String aKind,
+            final Object aData) {
+
+        try {
+            pHerald.fire(aPeer,
+                    new Message(SUBJECT_PREFIX + "/" + aKind, aData));
+
+        } catch (final NoTransport ex) {
+            pLogger.log(LogService.LOG_ERROR, "Error sending message to peer: "
+                    + aPeer + ": " + ex);
+        }
     }
 
     /**
