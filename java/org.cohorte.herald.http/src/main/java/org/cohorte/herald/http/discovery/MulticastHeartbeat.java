@@ -32,13 +32,23 @@ import java.util.Map.Entry;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Property;
+import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.ServiceProperty;
 import org.apache.felix.ipojo.annotations.Validate;
+import org.cohorte.herald.IConstants;
 import org.cohorte.herald.IDirectory;
+import org.cohorte.herald.IHerald;
+import org.cohorte.herald.IMessageListener;
+import org.cohorte.herald.ITransport;
+import org.cohorte.herald.Message;
+import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
+import org.cohorte.herald.exceptions.HeraldException;
 import org.cohorte.herald.exceptions.UnknownPeer;
 import org.cohorte.herald.exceptions.ValueError;
 import org.cohorte.herald.http.HTTPAccess;
+import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
 import org.cohorte.herald.http.impl.IHttpReceiver;
 import org.cohorte.herald.utils.Event;
@@ -52,7 +62,8 @@ import org.osgi.service.log.LogService;
  * @author Thomas Calmant
  */
 @Component(name = IHttpConstants.FACTORY_DISCOVERY_MULTICAST)
-public class MulticastHeartbeat implements IPacketListener {
+@Provides(specifications = IMessageListener.class)
+public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /** UDP Packet: Peer heart beat */
     private static final byte PACKET_TYPE_HEARTBEAT = 1;
@@ -67,8 +78,18 @@ public class MulticastHeartbeat implements IPacketListener {
     @Requires
     private IDirectory pDirectory;
 
+    /** Herald messages filter */
+    @ServiceProperty(name = IConstants.PROP_FILTERS,
+            value = "{herald/http/discovery/*}")
+    private String[] pFilters;
+
     /** The heart beat thread */
     private Thread pHeartThread;
+
+    /** The HTTP transport implementation */
+    @Requires(filter = "(" + IConstants.PROP_ACCESS_ID + "="
+            + IHttpConstants.ACCESS_ID + ")")
+    private ITransport pHttpTransport;
 
     /** The logger */
     @Requires(optional = true)
@@ -109,28 +130,22 @@ public class MulticastHeartbeat implements IPacketListener {
      * @param aPath
      *            Path to the Herald HTTP servlet
      */
-    @SuppressWarnings("unchecked")
     private void discoverPeer(final String aHostAddress, final int aPort,
             final String aPath) {
 
-        // Grab the description of the peer
-        final Map<String, Object> dump = pReceiver.grabPeer(aHostAddress,
-                aPort, aPath);
-        if (dump != null) {
-            // Set the HTTP access to the peer
-            final Map<String, Object> accesses = (Map<String, Object>) dump
-                    .get("accesses");
-            accesses.put(IHttpConstants.ACCESS_ID, new HTTPAccess(aHostAddress,
-                    aPort, aPath).dump());
+        // Prepare extra information like for a reply
+        final HTTPExtra extra = new HTTPExtra(aHostAddress, aPort, aPath, null);
 
-            // Register the peer
-            try {
-                pDirectory.register(dump);
+        try {
+            // Fire the message, using the HTTP transport directly
+            // Peer registration will be done after it responds
+            pHttpTransport.fire(null, new Message(
+                    "herald/http/discovery/contact", pDirectory.getLocalPeer()
+                            .dump()), extra);
 
-            } catch (final ValueError ex) {
-                pLogger.log(LogService.LOG_ERROR,
-                        "Error registering discovered peer: " + ex, ex);
-            }
+        } catch (final HeraldException ex) {
+            pLogger.log(LogService.LOG_ERROR, "Error contacting peer: " + ex,
+                    ex);
         }
     }
 
@@ -315,6 +330,45 @@ public class MulticastHeartbeat implements IPacketListener {
                         + ex, ex);
             }
         } while (!pStopEvent.waitEvent(20000L));
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see
+     * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
+     * IHerald, org.cohorte.herald.MessageReceived)
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public void heraldMessage(final IHerald aHerald,
+            final MessageReceived aMessage) throws HeraldException {
+
+        final Map<String, Object> remoteDump = (Map<String, Object>) aMessage
+                .getContent();
+
+        if (aMessage.getAccess().equals(IHttpConstants.ACCESS_ID)) {
+            // Forge the access to the HTTP server using extra information
+            final HTTPExtra extra = (HTTPExtra) aMessage.getExtra();
+            final HTTPAccess updatedAccess = new HTTPAccess(extra.getHost(),
+                    extra.getPort(), extra.getPath());
+            remoteDump.put(IHttpConstants.ACCESS_ID, updatedAccess.dump());
+        }
+
+        try {
+            // Register the peer
+            pDirectory.register(remoteDump);
+        } catch (final ValueError ex) {
+            pLogger.log(LogService.LOG_ERROR,
+                    "Error registering peer discovered by multicast: " + ex, ex);
+            return;
+        }
+
+        if (aMessage.getSubject().equals("herald/http/discovery/contact")) {
+            // Reply with our dump
+            aHerald.reply(aMessage, pDirectory.getLocalPeer().dump(),
+                    "herald/http/discovery/welcome");
+        }
     }
 
     /**
