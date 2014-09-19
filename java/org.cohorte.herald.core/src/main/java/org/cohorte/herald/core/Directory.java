@@ -36,6 +36,7 @@ import org.apache.felix.ipojo.annotations.Unbind;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.Access;
 import org.cohorte.herald.IConstants;
+import org.cohorte.herald.IDelayedNotification;
 import org.cohorte.herald.IDirectory;
 import org.cohorte.herald.IDirectoryInternal;
 import org.cohorte.herald.IDirectoryListener;
@@ -404,7 +405,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
      * @param aPeer
      *            The registered peer
      */
-    private void notifyPeerRegistered(final Peer aPeer) {
+    void notifyPeerRegistered(final Peer aPeer) {
 
         for (final IDirectoryListener listener : pListeners) {
             listener.peerRegistered(aPeer);
@@ -504,14 +505,28 @@ public class Directory implements IDirectory, IDirectoryInternal {
      * @see org.cohorte.herald.IDirectory#register(java.util.Map)
      */
     @Override
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public synchronized Peer register(final Map<String, Object> aDescription)
+    public Peer register(final Map<String, Object> aDescription)
             throws ValueError {
+
+        final IDelayedNotification notification = registerDelayed(aDescription);
+        notification.notifyListeners();
+        return notification.getPeer();
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.cohorte.herald.IDirectory#registerDelayed(java.util.Map)
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized IDelayedNotification registerDelayed(
+            final Map<String, Object> aDescription) throws ValueError {
 
         final String uid = (String) aDescription.get("uid");
         if (pLocalPeer.getUid().equals(uid)) {
-            // Ignore local peer
-            return null;
+            // Ignore local peer (but don't return null here)
+            return new DelayedNotification(null, null);
         }
 
         boolean peerUpdate = true;
@@ -526,7 +541,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
             if (rawGroups instanceof String[]) {
                 groups.addAll(Arrays.asList((String[]) rawGroups));
             } else if (rawGroups instanceof Collection) {
-                groups.addAll((Collection) rawGroups);
+                groups.addAll((Collection<String>) rawGroups);
             }
 
             // Make the new peer bean
@@ -574,11 +589,12 @@ public class Directory implements IDirectory, IDirectoryInternal {
                 peers.add(peer);
             }
 
-            // Notify about registration only once (ignore access updates)
-            notifyPeerRegistered(peer);
+            // Let listeners be notified
+            return new DelayedNotification(peer, this);
         }
 
-        return peer;
+        // Return an empty runnable
+        return new DelayedNotification(peer, null);
     }
 
     /**

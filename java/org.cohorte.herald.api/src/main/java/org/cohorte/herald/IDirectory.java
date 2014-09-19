@@ -115,6 +115,18 @@ public interface IDirectory {
     Peer register(Map<String, Object> aDescription) throws ValueError;
 
     /**
+     * Registers a peer, but lets the caller choose when to notify the listeners
+     *
+     * @param aDescription
+     *            Description of the peer, in the format of {@link #dump()}
+     * @return An object to notify peer registration listeners later
+     * @throws ValueError
+     *             Invalid peer UID
+     */
+    IDelayedNotification registerDelayed(final Map<String, Object> aDescription)
+            throws ValueError;
+
+    /**
      * Unregisters a peer from the directory
      *
      * @param aUid
