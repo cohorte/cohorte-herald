@@ -38,8 +38,17 @@ public class HTTPAccess extends Access {
 
             final Object[] dump = (Object[]) aDump;
             final String host = (String) dump[0];
-            final int port = (Integer) dump[1];
+            final Object rawPort = dump[1];
             final String path = (String) dump[2];
+
+            // Convert the port to an integer
+            final int port;
+            if (rawPort instanceof Integer) {
+                port = (Integer) rawPort;
+            } else {
+                port = Integer.valueOf((String) rawPort);
+            }
+
             return new HTTPAccess(host, port, path);
         }
 
