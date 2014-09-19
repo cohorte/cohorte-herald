@@ -514,8 +514,12 @@ public class Directory implements IDirectory, IDirectoryInternal {
             return null;
         }
 
+        boolean peerUpdate = true;
         Peer peer = pPeers.get(uid);
         if (peer == null) {
+            // Peer is unknown: full registration
+            peerUpdate = false;
+
             // Extract groups
             final Set<String> groups = new LinkedHashSet<>();
             final Object rawGroups = aDescription.get("groups");
@@ -530,19 +534,6 @@ public class Directory implements IDirectory, IDirectoryInternal {
                     this);
             peer.setName((String) aDescription.get("name"));
             peer.setNodeName((String) aDescription.get("node_name"));
-
-            // Store it
-            pPeers.put(uid, peer);
-
-            final Set<String> names = Utilities.setDefault(pNames,
-                    peer.getName(), new LinkedHashSet<String>());
-            names.add(uid);
-
-            for (final String group : peer.getGroups()) {
-                final Set<Peer> peers = Utilities.setDefault(pGroups, group,
-                        new LinkedHashSet<Peer>());
-                peers.add(peer);
-            }
         }
 
         // In any case, parse and store (new/updated) accesses
@@ -566,8 +557,27 @@ public class Directory implements IDirectory, IDirectoryInternal {
             peer.setAccess(accessId, data);
         }
 
-        // Notify listeners
-        notifyPeerRegistered(peer);
+        if (peerUpdate) {
+            // Store the peer after accesses have been set
+            // (avoids to notify about update before registration)
+            pPeers.put(uid, peer);
+
+            // Store in names
+            final Set<String> names = Utilities.setDefault(pNames,
+                    peer.getName(), new LinkedHashSet<String>());
+            names.add(uid);
+
+            // Store in groups
+            for (final String group : peer.getGroups()) {
+                final Set<Peer> peers = Utilities.setDefault(pGroups, group,
+                        new LinkedHashSet<Peer>());
+                peers.add(peer);
+            }
+
+            // Notify about registration only once (ignore access updates)
+            notifyPeerRegistered(peer);
+        }
+
         return peer;
     }
 
