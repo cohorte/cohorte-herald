@@ -36,6 +36,8 @@ import org.cohorte.herald.exceptions.HeraldException;
 import org.cohorte.remote.ExportEndpoint;
 import org.cohorte.remote.IServiceExporter;
 import org.jabsorb.ng.JSONRPCBridge;
+import org.jabsorb.ng.JSONRPCResult;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -175,22 +177,30 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
         // Check content type
         final Object rawContent = aMessage.getContent();
-        if (!(rawContent instanceof Map)) {
-            // Invalid content
-            pLogger.log(LogService.LOG_DEBUG,
-                    "Invalid RPC message: content is not a map");
-            return;
+        if (!(rawContent instanceof String)) {
+            // Didn't got a string
+            pLogger.log(LogService.LOG_ERROR,
+                    "Herald Jabsorb-RPC message content is not a string");
         }
 
         // Convert the content of the message (request map) to a JSONObject
-        final JSONObject jsonReq = new JSONObject((Map<?, ?>) rawContent);
+        JSONObject jsonReq;
+        try {
+            jsonReq = new JSONObject((String) rawContent);
+        } catch (final JSONException ex) {
+            pLogger.log(LogService.LOG_ERROR,
+                    "Error parsing the Jabsorb-RPC request: " + ex, ex);
+            return;
+        }
 
         // Call the method, without context
-        final Object result = pJsonRpcBridge.call(new Object[0], jsonReq);
+        final JSONRPCResult result = pJsonRpcBridge
+                .call(new Object[0], jsonReq);
 
         // Send the result
         try {
-            aHerald.reply(aMessage, result, IHeraldRpcConstants.SUBJECT_REPLY);
+            aHerald.reply(aMessage, result.toString(),
+                    IHeraldRpcConstants.SUBJECT_REPLY);
 
         } catch (final HeraldException ex) {
             pLogger.log(LogService.LOG_ERROR, "Error sending RPC result: " + ex);
