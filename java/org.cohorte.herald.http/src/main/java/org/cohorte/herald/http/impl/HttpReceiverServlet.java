@@ -152,13 +152,12 @@ public class HttpReceiverServlet extends HttpServlet {
 
         try {
             // Check sender access
-            pReceiver.checkAccess(senderUid, host, port);
-
+            if (!pReceiver.checkAccess(senderUid, host, port)) {
+                // Check failed: invalid UID
+                senderUid = "<invalid>";
+            }
         } catch (final ValueError ex) {
-            // Unknown peer ?
-            pReceiver.log(LogService.LOG_WARNING, "Sender UID check failed: "
-                    + ex);
-            senderUid = "<unknown>";
+            // Unknown peer: keep the sender UID as is
         }
 
         // Parse the content

@@ -70,18 +70,13 @@ public class HttpDirectory implements ITransportDirectory, IHttpDirectory {
 
         final HTTPAccess access = pUidAddress.get(aPeerUid);
         if (access == null) {
+            // Unknown peer: throw an exception
             throw new ValueError("Unknown peer: " + aPeerUid);
         }
 
-        if (access.getPort() == aPort) {
-            // Validation is based upon the port only (to avoid IPv4/v6
-            // differences)
-            return true;
-        }
-
-        // Invalid port
-        throw new ValueError("Given port (" + aPort + ") doesn't match peer "
-                + aPeerUid + " (" + access.getPort() + ")");
+        // Validation is based upon the port only (to avoid IPv4/v6
+        // differences)
+        return access.getPort() == aPort;
     }
 
     /**

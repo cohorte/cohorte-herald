@@ -217,10 +217,13 @@ class HeraldServlet(object):
             try:
                 # Check the sender UID port
                 # (not perfect, but can avoid spoofing)
-                self._http_directory.check_access(sender_uid, host, port)
+                if not self._http_directory.check_access(sender_uid,
+                                                         host, port):
+                    # Port doesn't match: invalid UID
+                    sender_uid = "<invalid>"
             except ValueError as ex:
-                _logger.warning("Sender UID check failed: %s", ex)
-                sender_uid = "<unknown>"
+                # Unknown peer UID: keep it as is
+                pass
 
             # Let Herald handle the message
             message = herald.beans.MessageReceived(uid, subject, msg_content,

@@ -131,10 +131,6 @@ class HTTPDirectory(object):
         """
         try:
             peer_port = self._uid_address[uid][1]
-            if peer_port == port:
-                return True
-            else:
-                raise ValueError("Given port (%d) doesn't match peer %s (%d)"
-                                 .format(port, uid, peer_port))
+            return peer_port == port
         except KeyError:
             raise ValueError("Unknown peer: {0}".format(uid))

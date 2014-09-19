@@ -34,9 +34,9 @@ public interface IHttpDirectory {
      *            The tested peer host
      * @param aPort
      *            The tested HTTP port
-     * @return True if the given access matches the peer UID
+     * @return True if the given access matches the peer UID, else false
      * @throws ValueError
-     *             The access doesn't match the peer
+     *             Unknown peer UID
      */
     boolean checkAccess(String aPeerUid, String aHost, int aPort)
             throws ValueError;

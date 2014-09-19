@@ -138,13 +138,14 @@ public class HttpReceiver implements IHttpReceiver {
      *            The checked host
      * @param aPort
      *            The checked port
+     * @return True if the peer matches the given information
      * @throws ValueError
-     *             The Peer information and the given ones doesn't match
+     *             Unknown peer UID
      */
-    public void checkAccess(final String aPeerUid, final String aHost,
+    public boolean checkAccess(final String aPeerUid, final String aHost,
             final int aPort) throws ValueError {
 
-        pHttpDirectory.checkAccess(aPeerUid, aHost, aPort);
+        return pHttpDirectory.checkAccess(aPeerUid, aHost, aPort);
     }
 
     /**
@@ -164,7 +165,7 @@ public class HttpReceiver implements IHttpReceiver {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.http.impl.IHttpReceiver#getAccessInfo()
      */
     @Override
@@ -186,7 +187,7 @@ public class HttpReceiver implements IHttpReceiver {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.http.impl.IHttpReceiver#grabPeer(java.lang.String,
      * int, java.lang.String)
