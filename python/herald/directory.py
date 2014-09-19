@@ -409,11 +409,23 @@ class HeraldDirectory(object):
         :return: The registered Peer bean
         :raise ValueError: Invalid peer UID
         """
+        notification = self.register_delayed(description)
+        notification.notify()
+        return notification.peer
+
+    def register_delayed(self, description):
+        """
+        Registers a peer
+
+        :param description: Description of the peer, in the format of dump()
+        :return: A DelayedNotification bean
+        :raise ValueError: Invalid peer UID
+        """
         with self.__lock:
             uid = description['uid']
             if uid == self._local.uid:
                 # Ignore local peer
-                return
+                return beans.DelayedNotification(None, None)
 
             try:
                 # Check if the peer is known
@@ -453,10 +465,10 @@ class HeraldDirectory(object):
                 for group in peer.groups:
                     self._groups.setdefault(group, set()).add(peer)
 
-                # Notify about registration only once (ignore access updates)
-                self.__notify_peer_registered(peer)
-
-        return peer
+                return beans.DelayedNotification(peer,
+                                                 self.__notify_peer_registered)
+            else:
+                return beans.DelayedNotification(peer, None)
 
     def unregister(self, uid):
         """
