@@ -557,7 +557,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
             peer.setAccess(accessId, data);
         }
 
-        if (peerUpdate) {
+        if (!peerUpdate) {
             // Store the peer after accesses have been set
             // (avoids to notify about update before registration)
             pPeers.put(uid, peer);
