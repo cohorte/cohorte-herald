@@ -74,13 +74,24 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
     /** Maximum time without peer notification : 30 seconds */
     private static final long PEER_TTL = 30000;
 
+    /** Contact message */
+    private static final String SUBJECT_CONTACT = MulticastHeartbeat.SUBJECT_PREFIX
+            + "/contact";
+
+    /** Prefix to all multicast discovery messages */
+    private static final String SUBJECT_PREFIX = "herald/http/discovery";
+
+    /** Welcome message (reply to contact) */
+    private static final String SUBJECT_WELCOME = MulticastHeartbeat.SUBJECT_PREFIX
+            + "/welcome";
+
     /** The Herald directory */
     @Requires
     private IDirectory pDirectory;
 
     /** Herald messages filter */
-    @ServiceProperty(name = IConstants.PROP_FILTERS,
-            value = "{herald/http/discovery/*}")
+    @ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
+            + SUBJECT_PREFIX + "/*}")
     private String[] pFilters;
 
     /** The heart beat thread */
@@ -139,9 +150,8 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
         try {
             // Fire the message, using the HTTP transport directly
             // Peer registration will be done after it responds
-            pHttpTransport.fire(null, new Message(
-                    "herald/http/discovery/contact", pDirectory.getLocalPeer()
-                            .dump()), extra);
+            pHttpTransport.fire(null, new Message(SUBJECT_CONTACT, pDirectory
+                    .getLocalPeer().dump()), extra);
 
         } catch (final HeraldException ex) {
             pLogger.log(LogService.LOG_ERROR, "Error contacting peer: " + ex,
@@ -364,10 +374,10 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
             return;
         }
 
-        if (aMessage.getSubject().equals("herald/http/discovery/contact")) {
+        if (SUBJECT_CONTACT.equals(aMessage.getSubject())) {
             // Reply with our dump
             aHerald.reply(aMessage, pDirectory.getLocalPeer().dump(),
-                    "herald/http/discovery/welcome");
+                    SUBJECT_WELCOME);
         }
     }
 

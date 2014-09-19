@@ -65,6 +65,15 @@ PACKET_TYPE_HEARTBEAT = 1
 # Last beat packet type
 PACKET_TYPE_LASTBEAT = 2
 
+# Prefix to all multicast discovery messages
+SUBJECT_PREFIX = "herald/http/discovery"
+
+# Contact message
+SUBJECT_CONTACT = SUBJECT_PREFIX + "/contact"
+
+# Welcome message (reply to contact)
+SUBJECT_WELCOME = SUBJECT_PREFIX + "/welcome"
+
 _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
@@ -475,7 +484,7 @@ class MulticastReceiver(object):
 @Property('_group', PROP_MULTICAST_GROUP, '239.0.0.1')
 @Property('_port', PROP_MULTICAST_PORT, 42000)
 @Property('_peer_ttl', 'peer.ttl', 30)
-@Property('_filters', herald.PROP_FILTERS, ["herald/http/discovery/*"])
+@Property('_filters', herald.PROP_FILTERS, [SUBJECT_PREFIX + "/*"])
 class MulticastHeartbeat(object):
     """
     Discovery of Herald peers based on multicast
@@ -626,11 +635,10 @@ class MulticastHeartbeat(object):
         # Register the peer
         self._directory.register(remote_dump)
 
-        if message.subject == 'herald/http/discovery/contact':
+        if message.subject == SUBJECT_CONTACT:
             # Reply with our dump
             local_dump = self._directory.get_local_peer().dump()
-            herald_svc.reply(message, local_dump,
-                             'herald/http/discovery/welcome')
+            herald_svc.reply(message, local_dump, SUBJECT_WELCOME)
 
     def __discover_peer(self, host, port, path):
         """
@@ -650,7 +658,7 @@ class MulticastHeartbeat(object):
         try:
             self._transport.fire(
                 None,
-                beans.Message('herald/http/discovery/contact', local_dump),
+                beans.Message(SUBJECT_CONTACT, local_dump),
                 extra)
         except Exception as ex:
             _logger.exception("Error contacting peer: %s", ex)
