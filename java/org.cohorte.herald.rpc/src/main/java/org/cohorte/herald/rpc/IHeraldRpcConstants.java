@@ -23,8 +23,8 @@ package org.cohorte.herald.rpc;
  */
 public interface IHeraldRpcConstants {
 
-    /** The exported configuration : herald-jabsorb-rpc */
-    String EXPORT_CONFIG = "herald-jabsorb-rpc";
+    /** The exported configuration : herald-jabsorbrpc */
+    String EXPORT_CONFIG = "herald-jabsorbrpc";
 
     /** UID of the peer exporting a service */
     String PROP_HERALDRPC_PEER = "herald.rpc.peer";
