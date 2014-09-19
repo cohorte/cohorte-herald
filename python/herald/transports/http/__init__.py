@@ -48,6 +48,11 @@ SERVICE_HTTP_RECEIVER = "herald.http.receiver"
 Specification of the HTTP transport servlet (reception side)
 """
 
+SERVICE_HTTP_TRANSPORT = "herald.http.transport"
+"""
+Specification of the HTTP transport implementation (sending side)
+"""
+
 # ------------------------------------------------------------------------------
 
 FACTORY_SERVLET = "herald-http-servlet-factory"

@@ -36,7 +36,7 @@ __docformat__ = "restructuredtext en"
 # ------------------------------------------------------------------------------
 
 # Herald HTTP
-from . import ACCESS_ID, SERVICE_HTTP_RECEIVER
+from . import ACCESS_ID, SERVICE_HTTP_RECEIVER, SERVICE_HTTP_TRANSPORT
 
 # HTTP requests
 import requests
@@ -69,7 +69,7 @@ _logger = logging.getLogger(__name__)
 @ComponentFactory('herald-http-transport-factory')
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_local_recv', SERVICE_HTTP_RECEIVER)
-@Provides(herald.SERVICE_TRANSPORT)
+@Provides((herald.SERVICE_TRANSPORT, SERVICE_HTTP_TRANSPORT))
 @Property('_access_id', herald.PROP_ACCESS_ID, ACCESS_ID)
 @Instantiate('herald-http-transport')
 class HttpTransport(object):

@@ -25,8 +25,6 @@ Herald HTTP transport discovery, based on a homemade multicast protocol
     See the License for the specific language governing permissions and
     limitations under the License.
 """
-from herald.transports.http import ACCESS_ID
-from herald.transports.http.beans import HTTPAccess
 
 # Module version
 __version_info__ = (0, 0, 1)
@@ -38,15 +36,16 @@ __docformat__ = "restructuredtext en"
 # ------------------------------------------------------------------------------
 
 # Herald
-from . import SERVICE_HTTP_RECEIVER, FACTORY_DISCOVERY_MULTICAST, \
-    PROP_MULTICAST_GROUP, PROP_MULTICAST_PORT
+from . import ACCESS_ID, SERVICE_HTTP_TRANSPORT, SERVICE_HTTP_RECEIVER, \
+    FACTORY_DISCOVERY_MULTICAST, PROP_MULTICAST_GROUP, PROP_MULTICAST_PORT
+from .beans import HTTPAccess
 import herald
+import herald.beans as beans
 
 # Pelix/iPOPO
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
-    Invalidate, Property
+    Invalidate, Property, Provides
 from pelix.utilities import to_bytes, to_unicode
-import pelix.misc.jabsorb as jabsorb
 
 # Standard library
 import logging
@@ -471,9 +470,12 @@ class MulticastReceiver(object):
 @ComponentFactory(FACTORY_DISCOVERY_MULTICAST)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_receiver', SERVICE_HTTP_RECEIVER)
+@Requires('_transport', SERVICE_HTTP_TRANSPORT)
+@Provides(herald.SERVICE_LISTENER)
 @Property('_group', PROP_MULTICAST_GROUP, '239.0.0.1')
 @Property('_port', PROP_MULTICAST_PORT, 42000)
 @Property('_peer_ttl', 'peer.ttl', 30)
+@Property('_filters', herald.PROP_FILTERS, ["herald/http/discovery/*"])
 class MulticastHeartbeat(object):
     """
     Discovery of Herald peers based on multicast
@@ -485,6 +487,7 @@ class MulticastHeartbeat(object):
         # Injected services
         self._directory = None
         self._receiver = None
+        self._transport = None
 
         # Local peer UID
         self._local_uid = None
@@ -606,6 +609,29 @@ class MulticastHeartbeat(object):
                 # The peer wasn't known, register it
                 self.__discover_peer(host, port, path)
 
+    def herald_message(self, herald_svc, message):
+        """
+        Handles a message received by Herald
+
+        :param herald_svc: Herald service
+        :param message: Received message
+        """
+        remote_dump = message.content
+        if message.access == ACCESS_ID:
+            # Forge the access to the HTTP server using extra information
+            extra = message.extra
+            remote_dump['accesses'][ACCESS_ID] = \
+                HTTPAccess(extra['host'], extra['port'], extra['path']).dump()
+
+        # Register the peer
+        self._directory.register(remote_dump)
+
+        if message.subject == 'herald/http/discovery/contact':
+            # Reply with our dump
+            local_dump = self._directory.get_local_peer().dump()
+            herald_svc.reply(message, local_dump,
+                             'herald/http/discovery/welcome')
+
     def __discover_peer(self, host, port, path):
         """
         Grabs the description of a peer using the Herald servlet
@@ -618,20 +644,16 @@ class MulticastHeartbeat(object):
             # Remove the starting /, as it is added while forging the URL
             path = path[1:]
 
-        response = requests.get("http://{0}:{1}/{2}".format(host, port, path))
+        # Prepare the "extra" information, like for a reply
+        extra = {'host': host, 'port': port, 'path': path}
+        local_dump = self._directory.get_local_peer().dump()
         try:
-            # Check status code
-            response.raise_for_status()
-        except requests.HTTPError as ex:
-            # Bad answer
-            _logger.error("Error contacting peer: %s", ex)
-        else:
-            # Forge the access to the HTTP server
-            dump = jabsorb.from_jabsorb(response.json())
-            dump['accesses'][ACCESS_ID] = HTTPAccess(host, port, path).dump()
-
-            # Register the peer
-            self._directory.register(dump)
+            self._transport.fire(
+                None,
+                beans.Message('herald/http/discovery/contact', local_dump),
+                extra)
+        except Exception as ex:
+            _logger.exception("Error contacting peer: %s", ex)
 
     def __heart_loop(self):
         """
