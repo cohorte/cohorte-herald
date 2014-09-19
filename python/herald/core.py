@@ -304,11 +304,11 @@ class Herald(object):
         """
         A message listener has been bound
         """
+        re_filters = set(self.__compile_pattern(fn_filter)
+                         for fn_filter
+                         in svc_ref.get_property(herald.PROP_FILTERS) or [])
+
         with self.__listeners_lock:
-            re_filters = set(self.__compile_pattern(fn_filter)
-                             for fn_filter
-                             in svc_ref.get_property(herald.PROP_FILTERS)
-                             or [])
             for re_filter in re_filters:
                 self.__msg_listeners.setdefault(re_filter, set()) \
                     .add(listener)
@@ -318,15 +318,15 @@ class Herald(object):
         """
         The properties of a message listener have been updated
         """
+        new_filters = set(self.__compile_pattern(fn_filter)
+                          for fn_filter
+                          in svc_ref.get_property(herald.PROP_FILTERS) or [])
+
         with self.__listeners_lock:
             # Get old and new filters as sets
             old_filters = set(self.__compile_pattern(fn_filter)
                               for fn_filter
                               in old_props.get(herald.PROP_FILTERS) or [])
-            new_filters = set(self.__compile_pattern(fn_filter)
-                              for fn_filter
-                              in svc_ref.get_property(herald.PROP_FILTERS)
-                              or [])
 
             # Compute differences
             added_filters = new_filters.difference(old_filters)
