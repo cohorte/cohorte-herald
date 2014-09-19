@@ -67,8 +67,6 @@ import org.osgi.service.log.LogService;
 /**
  * Implementation of the core service of Herald
  *
- * TODO: review locks/synchronization handling
- *
  * @author Thomas Calmant
  */
 @Component(publicFactory = false)
@@ -92,6 +90,9 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /** The garbage collection timer */
     private LoopTimer pGarbageTimer;
+
+    /** Object used to synchronize garbage collection */
+    private final Object pGarbageToken = new Object();
 
     /** Internal service controller */
     @ServiceController(value = true)
@@ -134,7 +135,7 @@ public class Herald implements IHerald, IHeraldInternal {
      *            The injected service reference
      */
     @Bind(id = ID_LISTENERS, aggregate = true, optional = true)
-    protected synchronized void bindListener(final IMessageListener aListener,
+    protected void bindListener(final IMessageListener aListener,
             final ServiceReference<IMessageListener> aReference) {
 
         final Object rawFilters = aReference
@@ -154,15 +155,17 @@ public class Herald implements IHerald, IHeraldInternal {
             return;
         }
 
-        for (final String filter : filters) {
-            // Compile the filter
-            final FnMatch match = new FnMatch(filter);
+        synchronized (pListeners) {
+            for (final String filter : filters) {
+                // Compile the filter
+                final FnMatch match = new FnMatch(filter);
 
-            // Associate the listener to the filter
-            Utilities.setDefault(pListeners, match,
-                    new LinkedHashSet<IMessageListener>()).add(aListener);
-            Utilities.setDefault(pListenersFilters, aListener,
-                    new LinkedHashSet<FnMatch>()).add(match);
+                // Associate the listener to the filter
+                Utilities.setDefault(pListeners, match,
+                        new LinkedHashSet<IMessageListener>()).add(aListener);
+                Utilities.setDefault(pListenersFilters, aListener,
+                        new LinkedHashSet<FnMatch>()).add(match);
+            }
         }
     }
 
@@ -175,7 +178,7 @@ public class Herald implements IHerald, IHeraldInternal {
      *            The injected service reference
      */
     @Bind(id = ID_TRANSPORTS, aggregate = true, optional = true)
-    protected synchronized void bindTransport(final ITransport aTransport,
+    protected void bindTransport(final ITransport aTransport,
             final ServiceReference<ITransport> aReference) {
 
         final String accessId = (String) aReference
@@ -185,11 +188,13 @@ public class Herald implements IHerald, IHeraldInternal {
             return;
         }
 
-        // Store the service
-        pTransports.put(accessId, aTransport);
+        synchronized (pTransports) {
+            // Store the service
+            pTransports.put(accessId, aTransport);
 
-        // We have at least one service: provide our service
-        pController = true;
+            // We have at least one service: provide our service
+            pController = true;
+        }
     }
 
     /*
@@ -391,7 +396,7 @@ public class Herald implements IHerald, IHeraldInternal {
      * @see org.cohorte.herald.IHerald#forget(java.lang.String)
      */
     @Override
-    public synchronized boolean forget(final String aMessageUid) {
+    public boolean forget(final String aMessageUid) {
 
         boolean result = false;
         final ForgotMessage exception = new ForgotMessage(aMessageUid);
@@ -403,11 +408,13 @@ public class Herald implements IHerald, IHeraldInternal {
             result = true;
         }
 
-        // Notify post() callers
-        final WaitingPost waitingPost = pWaitingPosts.remove(aMessageUid);
-        if (waitingPost != null) {
-            waitingPost.errback(this, exception);
-            result = true;
+        synchronized (pGarbageToken) {
+            // Notify post() callers
+            final WaitingPost waitingPost = pWaitingPosts.remove(aMessageUid);
+            if (waitingPost != null) {
+                waitingPost.errback(this, exception);
+                result = true;
+            }
         }
 
         return result;
@@ -417,46 +424,49 @@ public class Herald implements IHerald, IHeraldInternal {
      * Garbage collects dead waiting post beans. Calls on a regular basis by a
      * LoopTimer
      */
-    private synchronized void garbageCollect() {
+    private void garbageCollect() {
 
-        // Compute time since the last garbage collection
-        long delta;
-        if (pLastGarbage < 0) {
-            delta = 0;
-        } else {
-            delta = System.currentTimeMillis() - pLastGarbage;
-        }
-
-        // Delete timed out post message beans
-        final Set<String> toDelete = new LinkedHashSet<>();
-        for (final Entry<String, WaitingPost> entry : pWaitingPosts.entrySet()) {
-            if (entry.getValue().isDead()) {
-                toDelete.add(entry.getKey());
+        synchronized (pGarbageToken) {
+            // Compute time since the last garbage collection
+            long delta;
+            if (pLastGarbage < 0) {
+                delta = 0;
+            } else {
+                delta = System.currentTimeMillis() - pLastGarbage;
             }
-        }
-        for (final String uid : toDelete) {
-            pWaitingPosts.remove(uid);
-        }
 
-        // Delete UID of treated message of more than 5 minutes
-        toDelete.clear();
-        for (final Entry<String, Long> entry : pTreatedMessages.entrySet()) {
-            final String msgUid = entry.getKey();
-            final long newTTL = entry.getValue() + delta;
-            // Yes, I can *update* an entry while iterating
-            pTreatedMessages.put(msgUid, newTTL);
-
-            if (newTTL > 300000) {
-                // More than 5 minutes: forget about the message
-                toDelete.add(msgUid);
+            // Delete timed out post message beans
+            final Set<String> toDelete = new LinkedHashSet<>();
+            for (final Entry<String, WaitingPost> entry : pWaitingPosts
+                    .entrySet()) {
+                if (entry.getValue().isDead()) {
+                    toDelete.add(entry.getKey());
+                }
             }
-        }
-        for (final String msgUid : toDelete) {
-            pTreatedMessages.remove(msgUid);
-        }
+            for (final String uid : toDelete) {
+                pWaitingPosts.remove(uid);
+            }
 
-        // Update the last garbage collection time
-        pLastGarbage = System.currentTimeMillis();
+            // Delete UID of treated message of more than 5 minutes
+            toDelete.clear();
+            for (final Entry<String, Long> entry : pTreatedMessages.entrySet()) {
+                final String msgUid = entry.getKey();
+                final long newTTL = entry.getValue() + delta;
+                // Yes, I can *update* an entry while iterating
+                pTreatedMessages.put(msgUid, newTTL);
+
+                if (newTTL > 300000) {
+                    // More than 5 minutes: forget about the message
+                    toDelete.add(msgUid);
+                }
+            }
+            for (final String msgUid : toDelete) {
+                pTreatedMessages.remove(msgUid);
+            }
+
+            // Update the last garbage collection time
+            pLastGarbage = System.currentTimeMillis();
+        }
     }
 
     /**
@@ -580,14 +590,17 @@ public class Herald implements IHerald, IHeraldInternal {
      * MessageReceived)
      */
     @Override
-    public synchronized void handleMessage(final MessageReceived aMessage) {
+    public void handleMessage(final MessageReceived aMessage) {
 
-        if (pTreatedMessages.containsValue(aMessage.getUid())) {
-            // Message already handled, ignore it
-            return;
-        } else {
-            // Store the message UID
-            pTreatedMessages.put(aMessage.getUid(), System.currentTimeMillis());
+        synchronized (pGarbageToken) {
+            if (pTreatedMessages.containsValue(aMessage.getUid())) {
+                // Message already handled, ignore it
+                return;
+            } else {
+                // Store the message UID
+                pTreatedMessages.put(aMessage.getUid(),
+                        System.currentTimeMillis());
+            }
         }
 
         // Clean up the subject
@@ -630,7 +643,7 @@ public class Herald implements IHerald, IHeraldInternal {
      * Component invalidated
      */
     @Invalidate
-    public synchronized void invalidate() {
+    public void invalidate() {
 
         // Stop the garbage collector
         pGarbageTimer.cancel();
@@ -643,10 +656,12 @@ public class Herald implements IHerald, IHeraldInternal {
             event.set(null);
         }
 
-        final HeraldException exception = new HeraldTimeout(null,
-                "Herald stops to listen to messages", null);
-        for (final WaitingPost waiting : pWaitingPosts.values()) {
-            waiting.errback(this, exception);
+        synchronized (pGarbageToken) {
+            final HeraldException exception = new HeraldTimeout(null,
+                    "Herald stops to listen to messages", null);
+            for (final WaitingPost waiting : pWaitingPosts.values()) {
+                waiting.errback(this, exception);
+            }
         }
 
         // Clean up
@@ -675,13 +690,15 @@ public class Herald implements IHerald, IHeraldInternal {
                 event.set(aMessage.getContent());
             }
 
-            // Notify post() callers
-            final WaitingPost waitingPost = pWaitingPosts.get(repliesTo);
-            if (waitingPost != null) {
-                waitingPost.callback(this, aMessage);
-                if (waitingPost.isForgetOnFirst()) {
-                    // Forget about the message
-                    pWaitingPosts.remove(repliesTo);
+            synchronized (pGarbageToken) {
+                // Notify post() callers
+                final WaitingPost waitingPost = pWaitingPosts.get(repliesTo);
+                if (waitingPost != null) {
+                    waitingPost.callback(this, aMessage);
+                    if (waitingPost.isForgetOnFirst()) {
+                        // Forget about the message
+                        pWaitingPosts.remove(repliesTo);
+                    }
                 }
             }
         }
@@ -690,10 +707,12 @@ public class Herald implements IHerald, IHeraldInternal {
         final Set<IMessageListener> listeners = new LinkedHashSet<>();
         final String subject = aMessage.getSubject();
 
-        for (final Entry<FnMatch, Set<IMessageListener>> entry : pListeners
-                .entrySet()) {
-            if (entry.getKey().matches(subject)) {
-                listeners.addAll(entry.getValue());
+        synchronized (pListeners) {
+            for (final Entry<FnMatch, Set<IMessageListener>> entry : pListeners
+                    .entrySet()) {
+                if (entry.getKey().matches(subject)) {
+                    listeners.addAll(entry.getValue());
+                }
             }
         }
 
@@ -777,9 +796,11 @@ public class Herald implements IHerald, IHeraldInternal {
             final Long aTimeout, final boolean aForgetOnFirst)
             throws NoTransport {
 
-        // Prepare an entry in the waiting posts
-        pWaitingPosts.put(aMessage.getUid(), new WaitingPost(aCallback,
-                aErrback, aTimeout, aForgetOnFirst));
+        synchronized (pGarbageToken) {
+            // Prepare an entry in the waiting posts
+            pWaitingPosts.put(aMessage.getUid(), new WaitingPost(aCallback,
+                    aErrback, aTimeout, aForgetOnFirst));
+        }
 
         try {
             // Fire the message
@@ -787,7 +808,9 @@ public class Herald implements IHerald, IHeraldInternal {
 
         } catch (final HeraldException ex) {
             // Early clean up in case of exception
-            pWaitingPosts.remove(aMessage.getUid());
+            synchronized (pGarbageToken) {
+                pWaitingPosts.remove(aMessage.getUid());
+            }
             throw ex;
         }
     }
@@ -864,9 +887,11 @@ public class Herald implements IHerald, IHeraldInternal {
                     Target.toUids(allPeers)), "No transport bound yet.");
         }
 
-        // Prepare an entry in the waiting posts
-        pWaitingPosts.put(aMessage.getUid(), new WaitingPost(aCallback,
-                aErrback, aTimeout, false));
+        synchronized (pGarbageToken) {
+            // Prepare an entry in the waiting posts
+            pWaitingPosts.put(aMessage.getUid(), new WaitingPost(aCallback,
+                    aErrback, aTimeout, false));
+        }
 
         // Group peers by accesses
         final Map<String, Set<Peer>> accesses = new LinkedHashMap<>();
@@ -1076,24 +1101,25 @@ public class Herald implements IHerald, IHeraldInternal {
      *            The injected service reference
      */
     @Unbind(id = ID_LISTENERS)
-    protected synchronized void unbindListener(
-            final IMessageListener aListener,
+    protected void unbindListener(final IMessageListener aListener,
             final ServiceReference<IMessageListener> aReference) {
 
-        final Set<FnMatch> filters = pListenersFilters.remove(aListener);
-        if (filters == null) {
-            // Unknown listener
-            return;
-        }
+        synchronized (pListeners) {
+            final Set<FnMatch> filters = pListenersFilters.remove(aListener);
+            if (filters == null) {
+                // Unknown listener
+                return;
+            }
 
-        for (final FnMatch match : filters) {
-            // Forget about the listener
-            final Set<IMessageListener> listeners = pListeners.get(match);
-            listeners.remove(aListener);
+            for (final FnMatch match : filters) {
+                // Forget about the listener
+                final Set<IMessageListener> listeners = pListeners.get(match);
+                listeners.remove(aListener);
 
-            // Clean up
-            if (listeners.isEmpty()) {
-                pListeners.remove(match);
+                // Clean up
+                if (listeners.isEmpty()) {
+                    pListeners.remove(match);
+                }
             }
         }
     }
@@ -1107,7 +1133,7 @@ public class Herald implements IHerald, IHeraldInternal {
      *            The injected service reference
      */
     @Unbind(id = ID_TRANSPORTS)
-    protected synchronized void unbindTransport(final ITransport aTransport,
+    protected void unbindTransport(final ITransport aTransport,
             final ServiceReference<ITransport> aReference) {
 
         final String accessId = (String) aReference
@@ -1117,12 +1143,14 @@ public class Herald implements IHerald, IHeraldInternal {
             return;
         }
 
-        // Forget about the service
-        pTransports.remove(accessId);
+        synchronized (pTransports) {
+            // Forget about the service
+            pTransports.remove(accessId);
 
-        if (pTransports.isEmpty()) {
-            // No more transport service: we can't provide the service
-            pController = false;
+            if (pTransports.isEmpty()) {
+                // No more transport service: we can't provide the service
+                pController = false;
+            }
         }
     }
 
@@ -1135,8 +1163,7 @@ public class Herald implements IHerald, IHeraldInternal {
      *            The injected service reference
      */
     @Modified(id = ID_LISTENERS)
-    protected synchronized void updateListener(
-            final IMessageListener aListener,
+    protected void updateListener(final IMessageListener aListener,
             final ServiceReference<IMessageListener> aReference) {
 
         final Object rawFilters = aReference
@@ -1156,47 +1183,49 @@ public class Herald implements IHerald, IHeraldInternal {
             return;
         }
 
-        // Get current filters
-        final Set<FnMatch> currentFilters = Utilities.setDefault(
-                pListenersFilters, aListener, new LinkedHashSet<FnMatch>());
-        final Set<String> currentFiltersStrings = new LinkedHashSet<>(
-                currentFilters.size());
-        for (final FnMatch filter : currentFilters) {
-            currentFiltersStrings.add(filter.toString());
-        }
+        synchronized (pListeners) {
+            // Get current filters
+            final Set<FnMatch> currentFilters = Utilities.setDefault(
+                    pListenersFilters, aListener, new LinkedHashSet<FnMatch>());
+            final Set<String> currentFiltersStrings = new LinkedHashSet<>(
+                    currentFilters.size());
+            for (final FnMatch filter : currentFilters) {
+                currentFiltersStrings.add(filter.toString());
+            }
 
-        // Compare with known state
-        final Set<String> addedFilters = new LinkedHashSet<>(newFilters);
-        addedFilters.removeAll(currentFiltersStrings);
+            // Compare with known state
+            final Set<String> addedFilters = new LinkedHashSet<>(newFilters);
+            addedFilters.removeAll(currentFiltersStrings);
 
-        final Set<String> removedFilters = new LinkedHashSet<>(
-                currentFiltersStrings);
-        removedFilters.removeAll(newFilters);
+            final Set<String> removedFilters = new LinkedHashSet<>(
+                    currentFiltersStrings);
+            removedFilters.removeAll(newFilters);
 
-        // Add new filters
-        for (final String filter : addedFilters) {
-            // Compile the filter
-            final FnMatch match = new FnMatch(filter);
+            // Add new filters
+            for (final String filter : addedFilters) {
+                // Compile the filter
+                final FnMatch match = new FnMatch(filter);
 
-            // Associate the listener to the filter
-            Utilities.setDefault(pListeners, match,
-                    new LinkedHashSet<IMessageListener>()).add(aListener);
-            Utilities.setDefault(pListenersFilters, aListener,
-                    new LinkedHashSet<FnMatch>()).add(match);
-        }
+                // Associate the listener to the filter
+                Utilities.setDefault(pListeners, match,
+                        new LinkedHashSet<IMessageListener>()).add(aListener);
+                Utilities.setDefault(pListenersFilters, aListener,
+                        new LinkedHashSet<FnMatch>()).add(match);
+            }
 
-        // Clean up removed ones
-        for (final String filter : removedFilters) {
-            // Compile the filter
-            final FnMatch match = new FnMatch(filter);
+            // Clean up removed ones
+            for (final String filter : removedFilters) {
+                // Compile the filter
+                final FnMatch match = new FnMatch(filter);
 
-            // Remove the listener from the registry
-            final Set<IMessageListener> listeners = pListeners.get(match);
-            listeners.remove(aListener);
+                // Remove the listener from the registry
+                final Set<IMessageListener> listeners = pListeners.get(match);
+                listeners.remove(aListener);
 
-            // Clean up
-            if (listeners.isEmpty()) {
-                pListeners.remove(match);
+                // Clean up
+                if (listeners.isEmpty()) {
+                    pListeners.remove(match);
+                }
             }
         }
     }
