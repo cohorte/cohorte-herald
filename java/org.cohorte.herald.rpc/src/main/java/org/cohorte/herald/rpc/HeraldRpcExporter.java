@@ -184,7 +184,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
         }
 
         // Convert the content of the message (request map) to a JSONObject
-        JSONObject jsonReq;
+        final JSONObject jsonReq;
         try {
             jsonReq = new JSONObject((String) rawContent);
         } catch (final JSONException ex) {
@@ -197,9 +197,12 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
         final JSONRPCResult result = pJsonRpcBridge
                 .call(new Object[0], jsonReq);
 
+        // Convert the result as a JSON string containing the JSON object
+        final String strResult = JSONObject.quote(result.toString());
+
         // Send the result
         try {
-            aHerald.reply(aMessage, result.toString(),
+            aHerald.reply(aMessage, strResult,
                     IHeraldRpcConstants.SUBJECT_REPLY);
 
         } catch (final HeraldException ex) {
