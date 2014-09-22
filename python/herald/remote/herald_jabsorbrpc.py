@@ -81,6 +81,24 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
+class JabsorbRpcDispatcher(herald_jsonrpc.JsonRpcDispatcher):
+    """
+    A JSON-RPC dispatcher with a custom dispatch method
+
+    Calls the dispatch method given in the constructor
+    """
+    def _simple_dispatch(self, name, params):
+        """
+        Dispatch method
+        """
+        # Normalize parameters
+        if params:
+            params = [jabsorb.from_jabsorb(param) for param in params]
+
+        # Dispatch like JSON-RPC
+        return super(JabsorbRpcDispatcher, self)._simple_dispatch(name, params)
+
+
 @ComponentFactory(herald.remote.FACTORY_HERALD_JSONRPC_EXPORTER)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 # SERVICE_EXPORT_PROVIDER is provided by the parent class
@@ -133,7 +151,7 @@ class HeraldRpcServiceExporter(commons.AbstractRpcServiceExporter):
         super(HeraldRpcServiceExporter, self).validate(context)
 
         # Setup the dispatcher (use JSON-RPC ones)
-        self._dispatcher = herald_jsonrpc.JsonRpcDispatcher(self.dispatch)
+        self._dispatcher = JabsorbRpcDispatcher(self.dispatch)
 
     @Invalidate
     def invalidate(self, context):
@@ -153,8 +171,7 @@ class HeraldRpcServiceExporter(commons.AbstractRpcServiceExporter):
         :param herald_svc: The Herald service
         :param message: A message bean
         """
-        converted = jabsorb.from_jabsorb(message.content)
-        result = self._dispatcher.dispatch(converted)
+        result = self._dispatcher.dispatch(message.content)
         herald_svc.reply(message, jabsorb.to_jabsorb(result), SUBJECT_REPLY)
 
 # ------------------------------------------------------------------------------
@@ -211,11 +228,13 @@ class _JsonRpcMethod(object):
         Method is being called
         """
         # Forge the request
+        if args:
+            args = [jabsorb.to_jabsorb(arg) for arg in args]
+
         request = jsonrpclib.dumps(args, self.__name, encoding='utf-8')
 
         # Send it
-        reply_message = self.__send(self.__peer, self.__subject,
-                                    jabsorb.to_jabsorb(request))
+        reply_message = self.__send(self.__peer, self.__subject, request)
 
         # Parse the reply and check for errors
         result = jabsorb.from_jabsorb(jsonrpclib.loads(reply_message.content))
