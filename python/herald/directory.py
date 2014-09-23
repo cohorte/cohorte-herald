@@ -63,6 +63,8 @@ _logger = logging.getLogger(__name__)
 @RequiresMap('_directories', herald.SERVICE_TRANSPORT_DIRECTORY,
              herald.PROP_ACCESS_ID, False, False, True)
 @Requires('_listeners', herald.SERVICE_DIRECTORY_LISTENER, True, True)
+@Requires('_group_listeners', herald.SERVICE_DIRECTORY_GROUP_LISTENER,
+          True, True)
 @Instantiate("herald-directory")
 class HeraldDirectory(object):
     """
@@ -77,6 +79,9 @@ class HeraldDirectory(object):
 
         # Directory listeners
         self._listeners = []
+
+        # Directory group listeners
+        self._group_listeners = []
 
         # Local bean description
         self._local = None
@@ -113,8 +118,7 @@ class HeraldDirectory(object):
                       if group.strip)
         groups = set(groups)
 
-        # Add pre-configured groups: 'all' and node
-        groups.add('all')
+        # Add pre-configured group: node UID
         if node_uid:
             groups.add(node_uid)
 
@@ -194,6 +198,42 @@ class HeraldDirectory(object):
         """
         for peer in list(self._peers.values()):
             svc.peer_registered(peer)
+
+    @BindField('_group_listeners', if_valid=True)
+    def _bind_group_listener(self, _, svc, svc_ref):
+        """
+        A directory group listener has been bound
+        """
+        for group in self._groups:
+            svc.group_set(group)
+
+    def __notify_group_set(self, group):
+        """
+        Notify listeners about a new group of peers
+
+        :param group: Name of the group
+        """
+        if self._group_listeners:
+            for listener in self._group_listeners[:]:
+                try:
+                    # pylint: disable=W0703
+                    listener.group_set(group)
+                except Exception as ex:
+                    _logger.exception("Error notifying listener: %s", ex)
+
+    def __notify_group_unset(self, group):
+        """
+        Notify listeners about the removal of a group
+
+        :param group: Name of the group
+        """
+        if self._group_listeners:
+            for listener in self._group_listeners[:]:
+                try:
+                    # pylint: disable=W0703
+                    listener.group_unset(group)
+                except Exception as ex:
+                    _logger.exception("Error notifying listener: %s", ex)
 
     def __notify_peer_registered(self, peer):
         """
@@ -462,8 +502,21 @@ class HeraldDirectory(object):
                 self._names.setdefault(peer.name, set()).add(peer.uid)
 
                 # Set up groups
+                new_groups = set()
                 for group in peer.groups:
-                    self._groups.setdefault(group, set()).add(peer)
+                    try:
+                        # Get the group
+                        peers = self._groups[group]
+                    except KeyError:
+                        # Group must be created: notify about it
+                        peers = self._groups[group] = set()
+                        new_groups.add(group)
+
+                    peers.add(peer)
+
+                # Notify about new groups
+                for group in new_groups:
+                    self.__notify_group_set(group)
 
                 return beans.DelayedNotification(peer,
                                                  self.__notify_peer_registered)
@@ -499,8 +552,11 @@ class HeraldDirectory(object):
                     try:
                         peers = self._groups[group]
                         peers.remove(peer)
-                        if not peers and group != 'all':
+                        if not peers:
+                            # Remove the group and notify listeners
                             del self._groups[group]
+                            self.__notify_group_unset(group)
+
                     except KeyError:
                         # Peer wasn't in that group
                         pass

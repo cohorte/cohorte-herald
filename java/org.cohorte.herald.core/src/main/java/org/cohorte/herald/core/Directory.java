@@ -38,6 +38,7 @@ import org.cohorte.herald.Access;
 import org.cohorte.herald.IConstants;
 import org.cohorte.herald.IDelayedNotification;
 import org.cohorte.herald.IDirectory;
+import org.cohorte.herald.IDirectoryGroupListener;
 import org.cohorte.herald.IDirectoryInternal;
 import org.cohorte.herald.IDirectoryListener;
 import org.cohorte.herald.ITransportDirectory;
@@ -63,6 +64,9 @@ public class Directory implements IDirectory, IDirectoryInternal {
     private static final String ID_DIRECTORIES = "directories";
 
     /** iPOJO requirement ID */
+    private static final String ID_GROUP_LISTENERS = "group_listeners";
+
+    /** iPOJO requirement ID */
     private static final String ID_LISTENERS = "listeners";
 
     /** The bundle context */
@@ -70,6 +74,10 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /** Access ID -&gt; Transport directory */
     private final Map<String, ITransportDirectory> pDirectories = new LinkedHashMap<>();
+
+    /** Directory group event listeners */
+    @Requires(id = ID_GROUP_LISTENERS, optional = true)
+    private IDirectoryGroupListener[] pGroupListeners;
 
     /** Group Name -&gt; Peers */
     private final Map<String, Set<Peer>> pGroups = new LinkedHashMap<>();
@@ -138,6 +146,21 @@ public class Directory implements IDirectory, IDirectoryInternal {
                 // Update the peer access
                 peer.setAccess(accessId, parsedAccess);
             }
+        }
+    }
+
+    /**
+     * A group listener has been bound
+     *
+     * @param aListener
+     *            A directory group listener
+     */
+    @Bind(id = ID_GROUP_LISTENERS)
+    protected synchronized void bindGroupListener(
+            final IDirectoryGroupListener aListener) {
+
+        for (final String group : pGroups.keySet()) {
+            aListener.groupSet(group);
         }
     }
 
@@ -247,6 +270,11 @@ public class Directory implements IDirectory, IDirectoryInternal {
      */
     @Override
     public Collection<Peer> getPeersForGroup(final String aGroupName) {
+
+        if ("all".equals(aGroupName)) {
+            // Special group 'all'
+            return new ArrayList<>(pPeers.values());
+        }
 
         final Set<Peer> peers = pGroups.get(aGroupName);
         if (peers == null) {
@@ -377,7 +405,6 @@ public class Directory implements IDirectory, IDirectoryInternal {
         final Set<String> groups = new LinkedHashSet<>(Arrays.asList(rawGroups));
 
         // Add pre-configured groups
-        groups.add("all");
         if (nodeUid != null && !nodeUid.isEmpty()) {
             groups.add(nodeUid);
         }
@@ -397,6 +424,32 @@ public class Directory implements IDirectory, IDirectoryInternal {
         peer.setName(getProperty(pContext, IConstants.FWPROP_PEER_NAME));
         peer.setNodeName(getProperty(pContext, IConstants.FWPROP_NODE_NAME));
         return peer;
+    }
+
+    /**
+     * Notifies all listeners that a group of peers has been found
+     *
+     * @param aGroup
+     *            The name of the group
+     */
+    private void notifyGroupSet(final String aGroup) {
+
+        for (final IDirectoryGroupListener listener : pGroupListeners) {
+            listener.groupSet(aGroup);
+        }
+    }
+
+    /**
+     * Notifies all listeners that a group of peers has been deleted
+     *
+     * @param aGroup
+     *            The name of the group
+     */
+    private void notifyGroupUnset(final String aGroup) {
+
+        for (final IDirectoryGroupListener listener : pGroupListeners) {
+            listener.groupUnset(aGroup);
+        }
     }
 
     /**
@@ -583,10 +636,23 @@ public class Directory implements IDirectory, IDirectoryInternal {
             names.add(uid);
 
             // Store in groups
+            final Set<String> newGroups = new LinkedHashSet<>();
             for (final String group : peer.getGroups()) {
-                final Set<Peer> peers = Utilities.setDefault(pGroups, group,
-                        new LinkedHashSet<Peer>());
+
+                Set<Peer> peers = pGroups.get(group);
+                if (peers == null) {
+                    // New group of peers
+                    peers = new LinkedHashSet<>();
+                    pGroups.put(group, peers);
+                    newGroups.add(group);
+                }
+
                 peers.add(peer);
+            }
+
+            // Notify about new groups
+            for (final String group : newGroups) {
+                notifyGroupSet(group);
             }
 
             // Let listeners be notified
@@ -656,9 +722,10 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
             final Set<Peer> peers = pGroups.get(group);
             peers.remove(peer);
-            if (!"all".equals(group) && peers.isEmpty()) {
+            if (peers.isEmpty()) {
                 // No more peers for this group: clean up
                 pGroups.remove(group);
+                notifyGroupUnset(group);
             }
         }
 

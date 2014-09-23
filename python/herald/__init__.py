@@ -59,6 +59,11 @@ SERVICE_DIRECTORY_LISTENER = "herald.directory.listener"
 Specification of a directory listener
 """
 
+SERVICE_DIRECTORY_GROUP_LISTENER = "herald.directory.group_listener"
+"""
+Specification of a directory group listener
+"""
+
 SERVICE_TRANSPORT = "herald.transport"
 """
 Specification of a transport implementation for Herald
