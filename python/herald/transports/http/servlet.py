@@ -52,6 +52,7 @@ import pelix.misc.jabsorb as jabsorb
 # Standard library
 import json
 import logging
+import threading
 
 # ------------------------------------------------------------------------------
 
@@ -100,6 +101,8 @@ class HeraldServlet(object):
 
         # Service controller (set once bound)
         self._controller = False
+        self._can_provide = False
+        self.__lock = threading.Lock()
 
         # Local information
         self._host = None
@@ -125,6 +128,13 @@ class HeraldServlet(object):
         """
         return self._host, self._port, self._servlet_path
 
+    def __set_controller(self):
+        """
+        Sets the service controller to True if possible
+        """
+        with self.__lock:
+            self._controller = self._can_provide
+
     def bound_to(self, path, parameters):
         """
         Servlet bound to a HTTP service
@@ -141,8 +151,12 @@ class HeraldServlet(object):
             access = beans.HTTPAccess(self._host, self._port, path)
             self._directory.get_local_peer().set_access(ACCESS_ID, access)
 
-            # Register our service
-            self._controller = True
+            with self.__lock:
+                # Register our service: use a different thread to let the
+                # HTTP service register this servlet
+                self._can_provide = True
+                threading.Thread(target=self.__set_controller,
+                                 name="Herald-HTTP-Servlet-Bound").start()
             return True
         else:
             return False
@@ -155,6 +169,10 @@ class HeraldServlet(object):
         :param parameters: The server & servlet parameters
         """
         if path == self._servlet_path:
+            with self.__lock:
+                # Lock next provide
+                self._can_provide = False
+
             # Unregister our service
             self._controller = False
 
