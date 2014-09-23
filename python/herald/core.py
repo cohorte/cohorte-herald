@@ -657,6 +657,9 @@ class Herald(object):
         """
         # Get all peers known in the group
         all_peers = self._directory.get_peers_for_group(group)
+        if not all_peers:
+            _logger.warning("No peer in group %s", group)
+            return message.uid, set()
 
         # Check if some transports are bound
         if not self._transports:

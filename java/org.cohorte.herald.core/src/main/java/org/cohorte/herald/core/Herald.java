@@ -271,6 +271,11 @@ public class Herald implements IHerald, IHeraldInternal {
         // Get all peers known in the group
         final Collection<Peer> allPeers = pDirectory
                 .getPeersForGroup(aGroupName);
+        if (allPeers.isEmpty()) {
+            pLogger.log(LogService.LOG_WARNING, "No peer in group: "
+                    + aGroupName);
+            return new LinkedHashSet<>();
+        }
 
         if (pTransports.isEmpty()) {
             // Make the list of UIDs
@@ -283,7 +288,7 @@ public class Herald implements IHerald, IHeraldInternal {
         for (final Peer peer : allPeers) {
             for (final String access : peer.getAccesses()) {
                 Utilities.setDefault(accesses, access,
-                        new LinkedHashSet<Peer>());
+                        new LinkedHashSet<Peer>()).add(peer);
             }
         }
 
@@ -898,7 +903,7 @@ public class Herald implements IHerald, IHeraldInternal {
         for (final Peer peer : allPeers) {
             for (final String access : peer.getAccesses()) {
                 Utilities.setDefault(accesses, access,
-                        new LinkedHashSet<Peer>());
+                        new LinkedHashSet<Peer>()).add(peer);
             }
         }
 
