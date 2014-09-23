@@ -76,7 +76,7 @@ public class Event {
         try {
             // Set the flag up and notify everybody
             pFlag = true;
-            pCondition.notifyAll();
+            pCondition.signalAll();
 
         } finally {
             // Unlock in any case
