@@ -65,7 +65,11 @@ public class EventData<T> {
      */
     public Throwable getError() {
 
-        return pException.getCause();
+        if (pException != null) {
+            return pException.getCause();
+        }
+
+        return null;
     }
 
     /**
