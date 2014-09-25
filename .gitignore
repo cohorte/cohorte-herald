@@ -1,5 +1,8 @@
 # Eclipse / PyCharm
 .metadata
+.settings
+.project
+.pydevproject
 RemoteSystemsTempFiles/
 .idea
 
