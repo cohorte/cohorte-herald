@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.exceptions;
+package org.cohorte.herald;
 
-import org.cohorte.herald.Message;
-import org.cohorte.herald.Target;
 
 /**
  * A timeout has been reached

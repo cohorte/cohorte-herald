@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.exceptions;
+package org.cohorte.herald;
 
-import org.cohorte.herald.Target;
 
 /**
- * The description of an access to peer can't be read by the access handler
+ * Base class for all exceptions in Herald
  *
  * @author Thomas Calmant
  */
-public class InvalidPeerAccess extends HeraldException {
+public class HeraldException extends Exception {
 
     /** Serialization version UID */
     private static final long serialVersionUID = 1L;
+
+    /** Targeted peer(s) */
+    private final Target pTarget;
 
     /**
      * Sets up the exception
@@ -35,9 +37,36 @@ public class InvalidPeerAccess extends HeraldException {
      *            Targeted peer(s)
      * @param aText
      *            Description of the error
+     * @param aCause
+     *            Cause of the error
      */
-    public InvalidPeerAccess(final Target aTarget, final String aText) {
+    public HeraldException(final Target aTarget, final String aText) {
 
-        super(aTarget, aText);
+        this(aTarget, aText, null);
+    }
+
+    /**
+     * Sets up the exception
+     *
+     * @param aTarget
+     *            Targeted peer(s)
+     * @param aText
+     *            Description of the error
+     * @param aCause
+     *            Cause of the error
+     */
+    public HeraldException(final Target aTarget, final String aText,
+            final Throwable aCause) {
+
+        super(aText, aCause);
+        pTarget = aTarget;
+    }
+
+    /**
+     * @return the targeted peer(s) or null
+     */
+    public Target getTarget() {
+
+        return pTarget;
     }
 }

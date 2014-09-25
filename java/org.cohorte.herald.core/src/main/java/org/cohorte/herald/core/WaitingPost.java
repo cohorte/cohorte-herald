@@ -16,11 +16,11 @@
 
 package org.cohorte.herald.core;
 
+import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IHerald;
 import org.cohorte.herald.IPostCallback;
 import org.cohorte.herald.IPostErrback;
 import org.cohorte.herald.MessageReceived;
-import org.cohorte.herald.exceptions.HeraldException;
 
 /**
  * A bean that describes parameters of a post() call

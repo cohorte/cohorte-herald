@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.exceptions;
-
-import org.cohorte.herald.Target;
+package org.cohorte.herald;
 
 /**
- * The message has been received by the remote peer, but no listener has been
- * found to register it.
+ * Exception given to callback methods waiting for a message that has been
+ * declared to be forgotten by forget().
  *
  * @author Thomas Calmant
  */
-public class NoListener extends HeraldException {
+public class ForgotMessage extends HeraldException {
 
     /** Serialization version UID */
     private static final long serialVersionUID = 1L;
@@ -32,33 +30,16 @@ public class NoListener extends HeraldException {
     /** Original message UID */
     private final String pMessageUid;
 
-    /** Subject of the original message */
-    private final String pSubject;
-
     /**
      * Sets up the exception
      *
-     * @param aTarget
-     *            Targeted peer(s)
      * @param aMessageUid
      *            Original message UID
-     * @param aSubject
-     *            Subject of the original message
      */
-    public NoListener(final Target aTarget, final String aMessageUid,
-            final String aSubject) {
+    public ForgotMessage(final String aMessageUid) {
 
-        super(aTarget, "No listener for " + aMessageUid);
+        super(null, "Forgot message " + aMessageUid);
         pMessageUid = aMessageUid;
-        pSubject = aSubject;
-    }
-
-    /**
-     * @return the subject
-     */
-    public String getSubject() {
-
-        return pSubject;
     }
 
     /**

@@ -16,7 +16,6 @@
 
 package org.cohorte.herald;
 
-import org.cohorte.herald.exceptions.HeraldException;
 
 /**
  * Specification of an errors handler for a posted message

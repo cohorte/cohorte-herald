@@ -18,8 +18,6 @@ package org.cohorte.herald;
 
 import java.util.Collection;
 
-import org.cohorte.herald.exceptions.HeraldException;
-
 /**
  * Specification of a transport implementation service
  *

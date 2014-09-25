@@ -71,7 +71,6 @@
 						    org.jabsorb.ng,
 						    org.jabsorb.ng.serializer,
 							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.exceptions;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version}
 						</Import-Package>
 						<Export-Package>!*</Export-Package>

@@ -14,39 +14,26 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.exceptions;
+package org.cohorte.herald;
 
 /**
- * Exception given to callback methods waiting for a message that has been
- * declared to be forgotten by forget().
+ * Exception thrown if an argument or a value is incorrect
  *
  * @author Thomas Calmant
  */
-public class ForgotMessage extends HeraldException {
+public class ValueError extends Exception {
 
     /** Serialization version UID */
     private static final long serialVersionUID = 1L;
 
-    /** Original message UID */
-    private final String pMessageUid;
-
     /**
      * Sets up the exception
      *
-     * @param aMessageUid
-     *            Original message UID
+     * @param aMessage
+     *            Description of the exception
      */
-    public ForgotMessage(final String aMessageUid) {
+    public ValueError(final String aMessage) {
 
-        super(null, "Forgot message " + aMessageUid);
-        pMessageUid = aMessageUid;
-    }
-
-    /**
-     * @return the messageUid
-     */
-    public String getUid() {
-
-        return pMessageUid;
+        super(aMessage);
     }
 }

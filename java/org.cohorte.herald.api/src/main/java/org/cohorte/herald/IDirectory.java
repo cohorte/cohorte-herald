@@ -19,9 +19,6 @@ package org.cohorte.herald;
 import java.util.Collection;
 import java.util.Map;
 
-import org.cohorte.herald.exceptions.UnknownPeer;
-import org.cohorte.herald.exceptions.ValueError;
-
 /**
  * Specification of the Herald core directory service
  *

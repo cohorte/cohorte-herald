@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.exceptions;
+package org.cohorte.herald;
+
 
 /**
- * Exception thrown if an argument or a value is incorrect
+ * No transport has been found to contact the targeted peer
  *
  * @author Thomas Calmant
  */
-public class ValueError extends Exception {
+public class NoTransport extends HeraldException {
 
     /** Serialization version UID */
     private static final long serialVersionUID = 1L;
@@ -29,11 +30,13 @@ public class ValueError extends Exception {
     /**
      * Sets up the exception
      *
-     * @param aMessage
-     *            Description of the exception
+     * @param aTarget
+     *            Targeted peer(s)
+     * @param aText
+     *            Description of the error
      */
-    public ValueError(final String aMessage) {
+    public NoTransport(final Target aTarget, final String aText) {
 
-        super(aMessage);
+        super(aTarget, aText);
     }
 }

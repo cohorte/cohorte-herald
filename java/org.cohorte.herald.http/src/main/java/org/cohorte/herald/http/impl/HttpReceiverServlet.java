@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.cohorte.herald.MessageReceived;
-import org.cohorte.herald.exceptions.ValueError;
+import org.cohorte.herald.ValueError;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
 import org.jabsorb.ng.serializer.MarshallException;

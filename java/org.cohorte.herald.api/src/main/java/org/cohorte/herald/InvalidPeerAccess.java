@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.exceptions;
+package org.cohorte.herald;
 
-import org.cohorte.herald.Target;
 
 /**
- * No transport has been found to contact the targeted peer
+ * The description of an access to peer can't be read by the access handler
  *
  * @author Thomas Calmant
  */
-public class NoTransport extends HeraldException {
+public class InvalidPeerAccess extends HeraldException {
 
     /** Serialization version UID */
     private static final long serialVersionUID = 1L;
@@ -36,7 +35,7 @@ public class NoTransport extends HeraldException {
      * @param aText
      *            Description of the error
      */
-    public NoTransport(final Target aTarget, final String aText) {
+    public InvalidPeerAccess(final Target aTarget, final String aText) {
 
         super(aTarget, aText);
     }

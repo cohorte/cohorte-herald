@@ -27,7 +27,6 @@
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
 						<Export-Package>
 							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.exceptions;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version}
 						</Export-Package>
 					</instructions>

@@ -23,8 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.cohorte.herald.exceptions.ValueError;
-
 /**
  * Represents a peer in Herald
  *

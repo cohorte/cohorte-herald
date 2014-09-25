@@ -16,7 +16,7 @@
 
 package org.cohorte.herald.http.impl;
 
-import org.cohorte.herald.exceptions.ValueError;
+import org.cohorte.herald.ValueError;
 
 /**
  * Specification of the HTTP transport directory

@@ -77,7 +77,6 @@
 							org.cohorte.remote;version="1.2.0",
 							org.cohorte.remote.utilities;version="1.0.0",
 							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.exceptions;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version}
 						</Import-Package>
 						<Export-Package>!*</Export-Package>

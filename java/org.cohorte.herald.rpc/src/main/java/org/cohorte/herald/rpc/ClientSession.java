@@ -18,9 +18,9 @@ package org.cohorte.herald.rpc;
 
 import java.util.Map;
 
+import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IHerald;
 import org.cohorte.herald.Message;
-import org.cohorte.herald.exceptions.HeraldException;
 import org.jabsorb.ng.client.ClientError;
 import org.jabsorb.ng.client.ISession;
 import org.json.JSONObject;

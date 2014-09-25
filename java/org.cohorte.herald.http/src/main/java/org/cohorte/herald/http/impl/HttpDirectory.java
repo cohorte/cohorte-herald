@@ -31,7 +31,7 @@ import org.cohorte.herald.IConstants;
 import org.cohorte.herald.IDirectory;
 import org.cohorte.herald.ITransportDirectory;
 import org.cohorte.herald.Peer;
-import org.cohorte.herald.exceptions.ValueError;
+import org.cohorte.herald.ValueError;
 import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.IHttpConstants;
 

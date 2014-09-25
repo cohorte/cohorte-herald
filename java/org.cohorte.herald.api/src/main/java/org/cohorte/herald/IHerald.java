@@ -18,12 +18,6 @@ package org.cohorte.herald;
 
 import java.util.Collection;
 
-import org.cohorte.herald.exceptions.HeraldException;
-import org.cohorte.herald.exceptions.HeraldTimeout;
-import org.cohorte.herald.exceptions.NoTransport;
-import org.cohorte.herald.exceptions.UnknownPeer;
-import org.cohorte.herald.exceptions.ValueError;
-
 /**
  * Specification of the Herald core services
  *

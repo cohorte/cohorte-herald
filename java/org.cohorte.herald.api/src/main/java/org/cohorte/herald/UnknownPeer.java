@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.exceptions;
+package org.cohorte.herald;
 
-import org.cohorte.herald.Target;
 
 /**
  * No peer matches the UID used in a call

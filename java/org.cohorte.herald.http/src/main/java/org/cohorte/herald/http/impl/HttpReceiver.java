@@ -37,7 +37,7 @@ import org.cohorte.herald.IDirectory;
 import org.cohorte.herald.IHeraldInternal;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
-import org.cohorte.herald.exceptions.ValueError;
+import org.cohorte.herald.ValueError;
 import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.IHttpConstants;
 import org.jabsorb.ng.JSONSerializer;
