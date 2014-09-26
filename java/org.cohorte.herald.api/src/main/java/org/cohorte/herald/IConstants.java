@@ -24,6 +24,17 @@ package org.cohorte.herald;
 public interface IConstants {
 
     /**
+     * Default application ID
+     */
+    String DEFAULT_APPLICATION_ID = "<herald-legacy>";
+
+    /**
+     * ID of the application the local peer is part of. Peers of other
+     * applications will be ignored.
+     */
+    String FWPROP_APPLICATION_ID = "herald.application.id";
+
+    /**
      * Framework property: Human-readable name of the node hosting the peer.
      * Defaults to the node UID.
      */

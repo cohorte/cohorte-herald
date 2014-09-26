@@ -399,6 +399,13 @@ public class Directory implements IDirectory, IDirectoryInternal {
         // Node UID
         final String nodeUid = getProperty(pContext, IConstants.FWPROP_NODE_UID);
 
+        // Application ID
+        String applicationId = getProperty(pContext,
+                IConstants.FWPROP_APPLICATION_ID);
+        if (applicationId == null || applicationId.isEmpty()) {
+            applicationId = IConstants.DEFAULT_APPLICATION_ID;
+        }
+
         // Groups
         final String[] rawGroups = getListProperty(pContext,
                 IConstants.FWPROP_PEER_GROUPS);
@@ -412,7 +419,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
         // Make the bean
         final Peer peer;
         try {
-            peer = new Peer(peerUid, nodeUid, groups, this);
+            peer = new Peer(peerUid, nodeUid, applicationId, groups, this);
         } catch (final ValueError ex) {
             // Never happens, but who knows...
             pLogger.log(LogService.LOG_ERROR,
@@ -582,6 +589,17 @@ public class Directory implements IDirectory, IDirectoryInternal {
             return new DelayedNotification(null, null);
         }
 
+        String applicationId = (String) aDescription.get("app_id");
+        if (applicationId == null) {
+            // FIXME: to remove when all apps will have been updated
+            applicationId = IConstants.DEFAULT_APPLICATION_ID;
+        }
+
+        if (!pLocalPeer.getApplicationId().equals(applicationId)) {
+            // # Ignore foreign peers
+            return new DelayedNotification(null, null);
+        }
+
         boolean peerUpdate = true;
         Peer peer = pPeers.get(uid);
         if (peer == null) {
@@ -598,8 +616,8 @@ public class Directory implements IDirectory, IDirectoryInternal {
             }
 
             // Make the new peer bean
-            peer = new Peer(uid, (String) aDescription.get("node_uid"), groups,
-                    this);
+            peer = new Peer(uid, (String) aDescription.get("node_uid"),
+                    applicationId, groups, this);
             peer.setName((String) aDescription.get("name"));
             peer.setNodeName((String) aDescription.get("node_name"));
         }

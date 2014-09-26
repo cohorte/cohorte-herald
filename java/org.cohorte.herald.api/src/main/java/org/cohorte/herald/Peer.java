@@ -33,6 +33,9 @@ public class Peer implements Comparable<Peer> {
     /** Accesses available for this peer */
     private final Map<String, Access> pAccesses = new LinkedHashMap<>();
 
+    /** Application ID */
+    private final String pApplicationId;
+
     /** Associated directory */
     private final IDirectoryInternal pDirectory;
 
@@ -58,6 +61,8 @@ public class Peer implements Comparable<Peer> {
      *            UID of the peer (can't be null nor empty)
      * @param aNodeUid
      *            UID of the node hosting the peer
+     * @param aApplicationId
+     *            ID of the application of the peer
      * @param aGroups
      *            Groups this peer belongs to
      * @param aDirectory
@@ -66,7 +71,7 @@ public class Peer implements Comparable<Peer> {
      *             Invalid peer UID
      */
     public Peer(final String aUid, final String aNodeUid,
-            final Collection<String> aGroups,
+            final String aApplicationId, final Collection<String> aGroups,
             final IDirectoryInternal aDirectory) throws ValueError {
 
         if (aUid == null || aUid.isEmpty()) {
@@ -75,6 +80,7 @@ public class Peer implements Comparable<Peer> {
 
         // Peer information
         pUid = aUid;
+        pApplicationId = aApplicationId;
         pName = pUid;
         pDirectory = aDirectory;
 
@@ -158,6 +164,16 @@ public class Peer implements Comparable<Peer> {
     public Collection<String> getAccesses() {
 
         return new HashSet<>(pAccesses.keySet());
+    }
+
+    /**
+     * Returns the ID of the application of the peer
+     *
+     * @return the application ID
+     */
+    public String getApplicationId() {
+
+        return pApplicationId;
     }
 
     /**

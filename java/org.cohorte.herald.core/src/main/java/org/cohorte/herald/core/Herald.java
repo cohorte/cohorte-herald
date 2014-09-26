@@ -199,7 +199,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -247,7 +247,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#fire(java.lang.String,
      * org.cohorte.herald.Message)
      */
@@ -260,7 +260,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#fireGroup(java.lang.String,
      * org.cohorte.herald.Message)
      */
@@ -397,7 +397,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#forget(java.lang.String)
      */
     @Override
@@ -492,11 +492,12 @@ public class Herald implements IHerald, IHeraldInternal {
                 // A new peer appears: register it
                 final Map<String, Object> peerDump = (Map<String, Object>) aMessage
                         .getContent();
-                pDirectory.register(peerDump);
-
-                // Reply to it with our information
-                reply(aMessage, pDirectory.getLocalPeer().dump(),
-                        "herald/directory/welcome");
+                if (pDirectory.register(peerDump) != null) {
+                    // Reply to it with our information, if the registration has
+                    // been done
+                    reply(aMessage, pDirectory.getLocalPeer().dump(),
+                            "herald/directory/welcome");
+                }
 
             } catch (final ValueError ex) {
                 // Invalid UID
@@ -590,7 +591,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHeraldInternal#handleMessage(org.cohorte.herald.
      * MessageReceived)
      */
@@ -760,7 +761,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#post(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback)
@@ -775,7 +776,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#post(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long)
@@ -790,7 +791,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#post(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long, boolean)
@@ -822,7 +823,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#post(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback)
@@ -837,7 +838,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#post(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long)
@@ -852,7 +853,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#post(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long, boolean)
@@ -869,7 +870,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#postGroup(java.lang.String,
      * org.cohorte.herald.Message, org.cohorte.herald.IPostCallback,
      * org.cohorte.herald.IPostErrback, java.lang.Long)
@@ -955,7 +956,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#reply(org.cohorte.herald.MessageReceived,
      * java.lang.Object)
      */
@@ -968,7 +969,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#reply(org.cohorte.herald.MessageReceived,
      * java.lang.Object, java.lang.String)
      */
@@ -998,7 +999,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#send(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -1017,7 +1018,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#send(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, java.lang.Long)
      */
@@ -1067,7 +1068,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#send(java.lang.String,
      * org.cohorte.herald.Message)
      */
@@ -1086,7 +1087,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IHerald#send(java.lang.String,
      * org.cohorte.herald.Message, java.lang.Long)
      */

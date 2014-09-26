@@ -111,6 +111,9 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
             + IHttpConstants.ACCESS_ID + ")")
     private ITransport pHttpTransport;
 
+    /** Local peer bean */
+    private Peer pLocalPeer;
+
     /** The logger */
     @Requires(optional = true)
     private LogService pLogger;
@@ -216,7 +219,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
      * .Exception)
@@ -234,17 +237,26 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
     /**
      * Handle the heart beat of a peer
      *
+     * @param aPeerUid
+     *            The UID of the peer
+     * @param aApplicationId
+     *            The ID of the application
      * @param aHostAddress
      *            The address we received the beat from
      * @param aPort
      *            The HTTP port of the peer
      * @param aPath
      *            The path to the Herald servlet
-     * @param aPeerUid
-     *            The UID of the peer
      */
-    private void handleHeartbeat(final String aHostAddress, final int aPort,
-            final String aPath, final String aPeerUid) {
+    private void handleHeartbeat(final String aPeerUid,
+            final String aApplicationId, final String aHostAddress,
+            final int aPort, final String aPath) {
+
+        if (pLocalPeer.getUid().equals(aPeerUid)
+                || !pLocalPeer.getApplicationId().equals(aApplicationId)) {
+            // Ignore local and foreign heart beats
+            return;
+        }
 
         synchronized (pPeerLST) {
             // Update the peer LST
@@ -262,8 +274,17 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
      *
      * @param aPeerUid
      *            The UID of the peer going away
+     * @param aApplicationId
+     *            The ID of application of the peer going away
      */
-    private void handleLastbeat(final String aPeerUid) {
+    private void handleLastbeat(final String aPeerUid,
+            final String aApplicationId) {
+
+        if (pLocalPeer.getUid().equals(aPeerUid)
+                || !pLocalPeer.getApplicationId().equals(aApplicationId)) {
+            // Ignore local and foreign heart beats
+            return;
+        }
 
         synchronized (pPeerLST) {
             // Forget about the peer
@@ -282,7 +303,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handlePacket(java.
      * net.InetSocketAddress, byte[])
@@ -302,17 +323,19 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
             final int port = getUnsignedShort(buffer);
             final String path = extractString(buffer);
             final String peerUid = extractString(buffer);
+            final String applicationId = extractString(buffer);
 
             // Handle the packet
-            handleHeartbeat(aSender.getAddress().getHostAddress(), port, path,
-                    peerUid);
+            handleHeartbeat(peerUid, applicationId, aSender.getAddress()
+                    .getHostAddress(), port, path);
             break;
         }
 
         case PACKET_TYPE_LASTBEAT: {
             // Handle the last beat of a peer
             final String peerUid = extractString(buffer);
-            handleLastbeat(peerUid);
+            final String applicationId = extractString(buffer);
+            handleLastbeat(peerUid, applicationId);
             break;
         }
 
@@ -353,7 +376,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
      * IHerald, org.cohorte.herald.MessageReceived)
@@ -461,6 +484,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
         // Clean up
         pPeerLST.clear();
+        pLocalPeer = null;
         pMulticast = null;
         pHeartThread = null;
         pTTLThread = null;
@@ -536,10 +560,17 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
     /**
      * Prepares the heart beat UDP packet
      *
-     * Format : Little endian <li>Kind of beat (1 byte)</li> <li>Herald HTTP
-     * server port (2 bytes)</li> <li>Herald HTTP servlet path length (2 bytes)</li>
-     * <li>Herald HTTP servlet path (variable, UTF-8)</li> <li>Peer UID length
-     * (2 bytes)</li> <li>Peer UID (variable, UTF-8)</li> </ul>
+     * Format : Little endian
+     * <ul>
+     * <li>Kind of beat (1 byte)</li>
+     * <li>Herald HTTP server port (2 bytes)</li>
+     * <li>Herald HTTP servlet path length (2 bytes)</li>
+     * <li>Herald HTTP servlet path (variable, UTF-8)</li>
+     * <li>Peer UID length (2 bytes)</li>
+     * <li>Peer UID (variable, UTF-8)</li>
+     * <li>Application ID length (2 bytes)</li>
+     * <li>Application ID (variable, UTF-8)</li>
+     * </ul>
      *
      * @return The heart beat packet content (byte array)
      * @throws UnsupportedEncodingException
@@ -549,15 +580,18 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
         // Get local information
         final HTTPAccess access = pReceiver.getAccessInfo();
-        final String localUid = pDirectory.getLocalUid();
+        final String localUid = pLocalPeer.getUid();
+        final String localAppId = pLocalPeer.getApplicationId();
 
         // Convert strings
         final byte[] uid = localUid.getBytes(IHttpConstants.CHARSET_UTF8);
+        final byte[] appId = localAppId.getBytes(IHttpConstants.CHARSET_UTF8);
         final byte[] path = access.getPath().getBytes(
                 IHttpConstants.CHARSET_UTF8);
 
         // Compute packet size (see method's documentation)
-        final int packetSize = 7 + uid.length + path.length;
+        final int packetSize = 1 + 2 + 2 + uid.length + 2 + path.length + 2
+                + appId.length;
 
         // Setup the buffer
         final ByteBuffer buffer = ByteBuffer.allocate(packetSize);
@@ -576,6 +610,10 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
         // Peer UID
         buffer.putShort((short) uid.length);
         buffer.put(uid);
+
+        // Application ID
+        buffer.putShort((short) appId.length);
+        buffer.put(appId);
         return buffer.array();
     }
 
@@ -587,6 +625,8 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
      * <li>Kind of beat (1 byte)</li>
      * <li>Peer UID length (2 bytes)</li>
      * <li>Peer UID (variable, UTF-8)</li>
+     * <li>Application ID length (2 bytes)</li>
+     * <li>Application ID (variable, UTF-8)</li>
      * </ul>
      *
      * @return The last beat packet content (byte array)
@@ -596,13 +636,15 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
     private byte[] makeLastbeat() throws UnsupportedEncodingException {
 
         // Get local information
-        final String localUid = pDirectory.getLocalUid();
+        final String localUid = pLocalPeer.getUid();
+        final String localAppId = pLocalPeer.getApplicationId();
 
         // Convert strings
         final byte[] uid = localUid.getBytes(IHttpConstants.CHARSET_UTF8);
+        final byte[] appId = localAppId.getBytes(IHttpConstants.CHARSET_UTF8);
 
         // Compute packet size (see method's documentation)
-        final int packetSize = 3 + uid.length;
+        final int packetSize = 1 + 2 + uid.length + 2 + appId.length;
 
         // Setup the buffer
         final ByteBuffer buffer = ByteBuffer.allocate(packetSize);
@@ -614,6 +656,10 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
         // Peer UID
         buffer.putShort((short) uid.length);
         buffer.put(uid);
+
+        // Application ID
+        buffer.putShort((short) appId.length);
+        buffer.put(appId);
         return buffer.array();
     }
 
@@ -625,6 +671,9 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
         // Reset the stop event
         pStopEvent.clear();
+
+        // Get the local peer
+        pLocalPeer = pDirectory.getLocalPeer();
 
         // Start the multicast listener
         try {
