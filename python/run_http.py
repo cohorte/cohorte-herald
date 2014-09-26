@@ -27,7 +27,7 @@ Runs an Herald HTTP framework
 """
 
 # Module version
-__version_info__ = (0, 0, 1)
+__version_info__ = (0, 0, 2)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -50,13 +50,14 @@ import logging
 # ------------------------------------------------------------------------------
 
 
-def main(http_port, peer_name, node_name):
+def main(http_port, peer_name, node_name, app_id):
     """
     Runs the framework
 
     :param http_port: HTTP port to listen to
     :param peer_name: Name of the peer
     :param node_name: Name (also, UID) of the node hosting the peer
+    :param app_id: Application ID
     """
     # Create the framework
     framework = pelix.framework.create_framework(
@@ -85,7 +86,8 @@ def main(http_port, peer_name, node_name):
          'herald.remote.herald_xmlrpc',),
         {herald.FWPROP_NODE_UID: node_name,
          herald.FWPROP_NODE_NAME: node_name,
-         herald.FWPROP_PEER_NAME: peer_name})
+         herald.FWPROP_PEER_NAME: peer_name,
+         herald.FWPROP_APPLICATION_ID: app_id})
 
     # Start everything
     framework.start()
@@ -127,6 +129,9 @@ if __name__ == "__main__":
                        dest="name", help="Peer name")
     group.add_argument("--node", action="store", default=None,
                        dest="node", help="Node name")
+    group.add_argument("-a", "--app", action="store",
+                       default=herald.DEFAULT_APPLICATION_ID,
+                       dest="app_id", help="Application ID")
 
     # Parse arguments
     args = parser.parse_args()
@@ -136,4 +141,4 @@ if __name__ == "__main__":
     logging.getLogger('herald').setLevel(logging.DEBUG)
 
     # Run the framework
-    main(args.http_port, args.name, args.node)
+    main(args.http_port, args.name, args.node, args.app_id)

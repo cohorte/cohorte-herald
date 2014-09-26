@@ -27,7 +27,7 @@ Pelix Shell commands for Herald
 """
 
 # Module version
-__version_info__ = (0, 0, 1)
+__version_info__ = (0, 0, 2)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -214,6 +214,7 @@ class HeraldCommands(object):
                  "\t- Name.....: {0}".format(peer.name),
                  "\t- Node UID.: {0}".format(peer.node_uid),
                  "\t- Node Name: {0}".format(peer.node_name),
+                 "\t- App ID...: {0}".format(peer.app_id),
                  "\t- Groups...:"]
         for group in sorted(peer.groups):
             lines.append("\t\t- {0}".format(group))

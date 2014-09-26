@@ -27,7 +27,7 @@ Herald Core service
 """
 
 # Module version
-__version_info__ = (0, 0, 1)
+__version_info__ = (0, 0, 2)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -484,15 +484,15 @@ class Herald(object):
         """
         if kind == 'newcomer':
             # A new peer appears: register it
-            self._directory.register(message.content)
-
-            try:
-                # Reply to it
-                self.reply(message, self._directory.get_local_peer().dump(),
-                           'herald/directory/welcome')
-            except Exception as ex:
-                _logger.warning("Can't send a welcome message back to the "
-                                "sender: %s", ex)
+            if self._directory.register(message.content) is not None:
+                try:
+                    # Reply to it, if registration was accepted
+                    self.reply(message,
+                               self._directory.get_local_peer().dump(),
+                               'herald/directory/welcome')
+                except Exception as ex:
+                    _logger.warning("Can't send a welcome message back to the "
+                                    "sender: %s", ex)
 
         elif kind == 'welcome':
             # A peer replied to our 'newcomer' event

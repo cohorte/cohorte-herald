@@ -27,7 +27,7 @@ Herald core beans definition
 """
 
 # Module version
-__version_info__ = (0, 0, 1)
+__version_info__ = (0, 0, 2)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -49,12 +49,13 @@ class Peer(object):
     """
     Represents a peer in Herald
     """
-    def __init__(self, uid, node_uid, groups, directory=None):
+    def __init__(self, uid, node_uid, app_id, groups, directory):
         """
         Sets up the peer
 
         :param uid: Peer Unique ID
         :param node_uid: Node Unique ID
+        :param app_id: Peer Application ID
         :param groups: The list of groups this peer belongs to
         :param directory: Directory to call back on access update
         :raise ValueError: Invalid Peer UID
@@ -66,6 +67,7 @@ class Peer(object):
         self.__name = uid
         self.__node = node_uid or uid
         self.__node_name = self.__node
+        self.__app_id = app_id
         self.__groups = set(groups or [])
         self.__accesses = {}
         self.__directory = directory
@@ -114,6 +116,13 @@ class Peer(object):
         Retrieves the UID of the peer
         """
         return self.__uid
+
+    @property
+    def app_id(self):
+        """
+        Returns the ID of the application this peer is part of
+        """
+        return self.__app_id
 
     @property
     def name(self):
@@ -185,7 +194,8 @@ class Peer(object):
         """
         # Properties
         dump = {name: getattr(self, name)
-                for name in ('uid', 'name', 'node_uid', 'node_name', 'groups')}
+                for name in ('uid', 'name', 'node_uid', 'node_name',
+                             'app_id', 'groups')}
 
         # Accesses
         dump['accesses'] = {access: data.dump()

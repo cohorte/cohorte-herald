@@ -90,6 +90,15 @@ A set of filename patterns to filter messages
 # ------------------------------------------------------------------------------
 # Framework properties
 
+FWPROP_APPLICATION_ID = "herald.application.id"
+"""
+ID of the application the local peer is part of. Peers of other applications
+will be ignored.
+"""
+
+DEFAULT_APPLICATION_ID = "<herald-legacy>"
+""" Default application ID """
+
 FWPROP_PEER_UID = "herald.peer.uid"
 """
 UID of the peer. Default to the Pelix framework UID.

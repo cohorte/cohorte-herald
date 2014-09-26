@@ -29,7 +29,7 @@ Herald Core directory
 # Module version
 import pelix.ipopo.decorators
 
-__version_info__ = (0, 0, 1)
+__version_info__ = (0, 0, 2)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -104,10 +104,12 @@ class HeraldDirectory(object):
 
         :param context: Bundle context
         """
-        # Get local peer UID and node UID
+        # Get local peer UID, node UID and application ID
         peer_uid = context.get_property(herald.FWPROP_PEER_UID) \
             or context.get_property(pelix.constants.FRAMEWORK_UID)
         node_uid = context.get_property(herald.FWPROP_NODE_UID)
+        app_id = context.get_property(herald.FWPROP_APPLICATION_ID) \
+            or herald.DEFAULT_APPLICATION_ID
 
         # Find configured groups
         groups = context.get_property(herald.FWPROP_PEER_GROUPS)
@@ -123,7 +125,7 @@ class HeraldDirectory(object):
             groups.add(node_uid)
 
         # Make the Peer bean
-        peer = beans.Peer(peer_uid, node_uid, groups, self)
+        peer = beans.Peer(peer_uid, node_uid, app_id, groups, self)
 
         # Setup node and name information
         peer.name = context.get_property(herald.FWPROP_PEER_NAME)
@@ -468,13 +470,25 @@ class HeraldDirectory(object):
                 return beans.DelayedNotification(None, None)
 
             try:
+                app_id = description['app_id']
+            except KeyError:
+                # FIXME: to remove when all apps will have been updated
+                app_id = herald.DEFAULT_APPLICATION_ID
+
+            if app_id != self._local.app_id:
+                # Ignore foreign peers
+                _logger.debug("Refused registration of %s from application %s",
+                              uid, app_id)
+                return beans.DelayedNotification(None, None)
+
+            try:
                 # Check if the peer is known
                 peer = self._peers[uid]
                 peer_update = True
             except KeyError:
                 # Make a new bean
                 peer_update = False
-                peer = beans.Peer(uid, description['node_uid'],
+                peer = beans.Peer(uid, description['node_uid'], app_id,
                                   description['groups'], self)
 
                 # Setup writable properties

@@ -27,7 +27,7 @@ Herald HTTP transport discovery, based on a homemade multicast protocol
 """
 
 # Module version
-__version_info__ = (0, 0, 1)
+__version_info__ = (0, 0, 2)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -288,7 +288,7 @@ def close_multicast_socket(sock, address):
 # ------------------------------------------------------------------------------
 
 
-def make_heartbeat(port, path, peer_uid):
+def make_heartbeat(port, path, peer_uid, app_id):
     """
     Prepares the heart beat UDP packet
 
@@ -299,15 +299,18 @@ def make_heartbeat(port, path, peer_uid):
     * Herald HTTP servlet path (variable, UTF-8)
     * Peer UID length (2 bytes)
     * Peer UID (variable, UTF-8)
+    * Application ID length (2 bytes)
+    * Application ID (variable, UTF-8)
 
     :param port: The port to access the Herald HTTP server
     :param path: The path to the Herald HTTP servlet
     :param peer_uid: The UID of the peer
+    :param app_id: Application ID
     :return: The heart beat packet content (byte array)
     """
     # Type and port...
     packet = struct.pack("<BH", PACKET_TYPE_HEARTBEAT, port)
-    for string in (path, peer_uid):
+    for string in (path, peer_uid, app_id):
         # Strings...
         string_bytes = to_bytes(string)
         packet += struct.pack("<H", len(string_bytes))
@@ -316,7 +319,7 @@ def make_heartbeat(port, path, peer_uid):
     return packet
 
 
-def make_lastbeat(peer_uid):
+def make_lastbeat(peer_uid, app_id):
     """
     Prepares the last beat UDP packet (when the peer is going away)
 
@@ -324,10 +327,19 @@ def make_lastbeat(peer_uid):
     * Kind of beat (1 byte)
     * Peer UID length (2 bytes)
     * Peer UID (variable, UTF-8)
+    * Application ID length (2 bytes)
+    * Application ID (variable, UTF-8)
+
+    :param peer_uid: Peer UID
+    :param app_id: Application ID
+    :return: The last beat packet content (byte array)
     """
-    string_bytes = to_bytes(peer_uid)
-    packet = struct.pack("<BH", PACKET_TYPE_LASTBEAT, len(string_bytes))
-    packet += string_bytes
+    packet = struct.pack("<B", PACKET_TYPE_LASTBEAT)
+    for string in (peer_uid, app_id):
+        string_bytes = to_bytes(string)
+        packet += struct.pack("<H", len(string_bytes))
+        packet += string_bytes
+
     return packet
 
 # ------------------------------------------------------------------------------
@@ -407,10 +419,17 @@ class MulticastReceiver(object):
             port = parsed[0]
             path, data = self._unpack_string(data)
             uid, data = self._unpack_string(data)
+            try:
+                app_id, data = self._unpack_string(data)
+            except struct.error:
+                # FIXME: to remove when all apps will have been updated
+                # Compatibility with previous version
+                app_id = herald.DEFAULT_APPLICATION_ID
 
         elif kind == PACKET_TYPE_LASTBEAT:
             # Peer is going away
             uid, data = self._unpack_string(data)
+            app_id, data = self._unpack_string(data)
             port = -1
             path = None
 
@@ -419,7 +438,7 @@ class MulticastReceiver(object):
             return
 
         try:
-            self._callback(uid, kind, sender[0], port, path)
+            self._callback(kind, uid, app_id, sender[0], port, path)
         except Exception as ex:
             _logger.exception("Error handling heart beat: %s", ex)
 
@@ -499,8 +518,8 @@ class MulticastHeartbeat(object):
         self._receiver = None
         self._transport = None
 
-        # Local peer UID
-        self._local_uid = None
+        # Local peer bean
+        self._local_peer = None
 
         # Delayed notifications map (Peer UID -> DelayedNotification)
         self.__delayed_notifs = {}
@@ -533,7 +552,7 @@ class MulticastHeartbeat(object):
         """
         self._port = int(self._port)
         self._peer_ttl = int(self._peer_ttl)
-        self._local_uid = self._directory.local_uid
+        self._local_peer = self._directory.get_local_peer()
         self._stop_event.clear()
 
         # Start the multicast listener
@@ -571,7 +590,7 @@ class MulticastHeartbeat(object):
         self._lst_thread = None
 
         # Send a last beat: "leaving"
-        beat = make_lastbeat(self._local_uid)
+        beat = make_lastbeat(self._local_peer.uid, self._local_peer.app_id)
         self._multicast_send.sendto(beat, 0, self._multicast_target)
 
         # Clear the multicast sender
@@ -582,18 +601,20 @@ class MulticastHeartbeat(object):
         # Clear storage
         self._peer_lst.clear()
 
-    def handle_heartbeat(self, peer_uid, kind, host, port, path):
+    def handle_heartbeat(self, kind, peer_uid, app_id, host, port, path):
         """
         Handles a parsed heart beat
 
-        :param peer_uid: UID of the discovered peer:
         :param kind: Kind of heart beat
+        :param peer_uid: UID of the discovered peer
+        :param app_id: Application ID of the discovered peer
         :param host: Address which sent the heart beat
         :param port: Port of the Herald HTTP server
         :param path: Path to the Herald HTTP servlet
         """
-        if peer_uid == self._local_uid:
-            # Ignore this heart beat (sent by us)
+        if peer_uid == self._local_peer.uid \
+                or app_id != self._local_peer.app_id:
+            # Ignore this heart beat (sent by us or another application)
             return
 
         if kind == PACKET_TYPE_LASTBEAT:
@@ -721,7 +742,8 @@ class MulticastHeartbeat(object):
         access = self._receiver.get_access_info()
 
         # Prepare the packet
-        beat = make_heartbeat(access[1], access[2], self._local_uid)
+        beat = make_heartbeat(access[1], access[2], self._local_peer.uid,
+                              self._local_peer.app_id)
         while not self._stop_event.is_set():
             # Send the heart beat using the multicast socket
             self._multicast_send.sendto(beat, 0, self._multicast_target)
