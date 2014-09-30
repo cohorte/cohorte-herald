@@ -7,7 +7,7 @@ jsonrpclib-pelix
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
 :license: Apache License 2.0
-:version: 0.0.1
+:version: 0.0.2
 :status: Alpha
 
 ..

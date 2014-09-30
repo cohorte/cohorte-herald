@@ -6,7 +6,7 @@ Cohorte Herald installation script
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
 :license: Apache License 2.0
-:version: 0.0.1
+:version: 0.0.2
 :status: Alpha
 
 ..
@@ -79,7 +79,7 @@ setup(name='Cohorte-Herald',
           'Programming Language :: Python :: 3.4',
           'Topic :: Software Development :: Libraries :: Application Frameworks'
       ],
-      install_requires=['iPOPO>=0.5.6',
+      install_requires=['iPOPO>=0.5.7',
                         'sleekxmpp>=1.3.1',
                         'requests>=2.3.0'],
       )
