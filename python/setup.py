@@ -66,6 +66,7 @@ setup(name='Cohorte-Herald',
       packages=['herald',
                 'herald.remote',
                 'herald.transports',
+                'herald.transports.http',
                 'herald.transports.xmpp'],
       classifiers=[
           'Development Status :: 3 - Alpha',
