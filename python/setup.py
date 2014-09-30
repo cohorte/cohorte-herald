@@ -77,8 +77,7 @@ setup(name='Cohorte-Herald',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.2',
           'Programming Language :: Python :: 3.3',
-          'Programming Language :: Python :: 3.4',
-          'Framework :: iPOPO'
+          'Programming Language :: Python :: 3.4'
       ],
       install_requires=['iPOPO>=0.5.7',
                         'sleekxmpp>=1.3.1',
