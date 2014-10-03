@@ -53,33 +53,37 @@ def read(fname):
         return fd.read()
 
 
-setup(name='Cohorte-Herald',
-      version=__version__,
-      license='Apache License 2.0',
-      description='An easy-to-use messaging framework',
-      long_description=read('../README.rst'),
-      author='Thomas Calmant',
-      author_email='thomas.calmant@isandlatech.com',
-      url='https://github.com/isandlaTech/cohorte-herald',
-      download_url=
-          'https://github.com/isandlaTech/cohorte-herald/archive/master.zip',
-      packages=['herald',
-                'herald.remote',
-                'herald.transports',
-                'herald.transports.http',
-                'herald.transports.xmpp'],
-      classifiers=[
-          'Development Status :: 3 - Alpha',
-          'Intended Audience :: Developers',
-          'License :: OSI Approved :: Apache Software License',
-          'Operating System :: OS Independent',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.2',
-          'Programming Language :: Python :: 3.3',
-          'Programming Language :: Python :: 3.4'
-      ],
-      install_requires=['iPOPO>=0.5.7',
-                        'sleekxmpp>=1.3.1',
-                        'requests>=2.3.0'],
-      )
+setup(
+    name='Cohorte-Herald',
+    version=__version__,
+    license='Apache License 2.0',
+    description='An easy-to-use messaging framework',
+    long_description=read('README.rst'),
+    author='Thomas Calmant',
+    author_email='thomas.calmant@isandlatech.com',
+    url='https://github.com/isandlaTech/cohorte-herald',
+    download_url=
+        'https://github.com/isandlaTech/cohorte-herald/archive/master.zip',
+    packages=[
+        'herald',
+        'herald.remote',
+        'herald.transports',
+        'herald.transports.http',
+        'herald.transports.xmpp'],
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Apache Software License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4'
+    ],
+    install_requires=[
+        'iPOPO>=0.5.7',
+        'sleekxmpp>=1.3.1',
+        'requests>=2.3.0'
+    ]
+)
