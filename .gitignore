@@ -18,6 +18,8 @@ target/
 *.pyc
 *.pyo
 __pycache__/
+build/
+dist/
 .coverage
 htmlcov/
 html/
