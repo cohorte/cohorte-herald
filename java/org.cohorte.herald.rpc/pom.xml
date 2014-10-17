@@ -7,9 +7,10 @@
 		<version>0.0.2-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-
 	<artifactId>org.cohorte.herald.rpc</artifactId>
 	<packaging>bundle</packaging>
+
+	<name>Cohorte Herald :: Remote Services Provider</name>
 
 	<dependencies>
 		<dependency>
@@ -42,7 +43,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.cohorte.remote</groupId>
-			<artifactId>org.cohorte.remote.api</artifactId>			
+			<artifactId>org.cohorte.remote.api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.cohorte.remote</groupId>

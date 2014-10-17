@@ -12,6 +12,8 @@
 	<artifactId>org.cohorte.herald.api</artifactId>
 	<packaging>bundle</packaging>
 
+	<name>Cohorte Herald :: API</name>
+
 	<build>
 		<plugins>
 			<plugin>
