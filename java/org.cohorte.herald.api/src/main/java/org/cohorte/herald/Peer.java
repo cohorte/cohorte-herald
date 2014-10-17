@@ -99,7 +99,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
@@ -132,7 +132,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -240,13 +240,23 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
     public int hashCode() {
 
         return pUid.hashCode();
+    }
+
+    /**
+     * Indicates if this peer is the local one
+     *
+     * @return True if this peer is the local one
+     */
+    public boolean isLocal() {
+
+        return pUid.equals(pDirectory.getLocalUid());
     }
 
     /**
@@ -299,7 +309,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override

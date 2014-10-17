@@ -25,6 +25,13 @@ package org.cohorte.herald;
 public interface IDirectoryInternal {
 
     /**
+     * Easy access to the local peer UID
+     *
+     * @return the UID of the local UID
+     */
+    String getLocalUid();
+
+    /**
      * Called by a Peer bean when one of its accesses has been set
      *
      * @param aPeer
