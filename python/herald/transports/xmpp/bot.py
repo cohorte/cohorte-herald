@@ -111,23 +111,16 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
                             ":".join(("invite", str(key or ''), groups_str)))
         self.__send_message("chat", monitor_jid, msg)
 
-    def __send_message(self, msgtype, target, message, body=None):
+    def __send_message(self, msgtype, target, message):
         """
         Prepares and sends a message over XMPP
 
         :param msgtype: Kind of message (chat or groupchat)
         :param target: Target JID or MUC room
         :param message: Herald message bean
-        :param body: The serialized form of the message body. If not given,
-                     the content is the string form of the message.content
-                     field
         """
-        if body is None:
-            # String form of the message as content
-            body = str(message.content)
-
         # Prepare an XMPP message, based on the Herald message
-        xmpp_msg = self.make_message(mto=target, mbody=body,
+        xmpp_msg = self.make_message(mto=target, mbody=str(message.content),
                                      msubject=message.subject, mtype=msgtype)
         xmpp_msg['thread'] = message.uid
 
