@@ -71,8 +71,8 @@ class XMPPDirectory(object):
         self._directory = None
         self._access_id = ACCESS_ID
 
-        # JID -> Peer UID
-        self._jid_uid = {}
+        # JID -> Peer bean
+        self._jid_peer = {}
 
         # Group name -> XMPP room JID
         self._groups = {}
@@ -82,7 +82,7 @@ class XMPPDirectory(object):
         """
         Component validated
         """
-        self._jid_uid.clear()
+        self._jid_peer.clear()
         self._groups.clear()
 
     @Invalidate
@@ -90,7 +90,7 @@ class XMPPDirectory(object):
         """
         Component invalidated
         """
-        self._jid_uid.clear()
+        self._jid_peer.clear()
         self._groups.clear()
 
     def load_access(self, data):
@@ -110,7 +110,7 @@ class XMPPDirectory(object):
         :param data: The peer access data, previously loaded with load_access()
         """
         if peer.uid != self._directory.local_uid:
-            self._jid_uid[data.jid] = peer
+            self._jid_peer[data.jid] = peer
 
     def peer_access_unset(self, peer, data):
         """
@@ -120,16 +120,16 @@ class XMPPDirectory(object):
         :param data: The peer access data
         """
         try:
-            del self._jid_uid[data.jid]
+            del self._jid_peer[data.jid]
         except KeyError:
             pass
 
     def from_jid(self, jid):
         """
-        Returns the peer UID associated to the given JID
+        Returns the peer associated to the given JID
 
-        :param jid: A peer (full) JID
-        :return: A peer UID
+        :param jid: The (full) JID of a peer
+        :return: A peer bean
         :raise KeyError: Unknown JID
         """
-        return self._jid_uid[jid]
+        return self._jid_peer[jid]
