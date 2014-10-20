@@ -440,6 +440,8 @@ class MonitorBotWrapper(object):
 
         # The wrapped monitor bot
         self.__bot = None
+        self._bound = False
+        self._authenticated = False
 
     @Validate
     def _validate(self, context):
@@ -448,21 +450,44 @@ class MonitorBotWrapper(object):
         """
         self.__bot = MonitorBot(self._jid, self._password, self._nick)
 
-        # FIXME: use session_bind event before creating the room
-        # FIXME: handle login errors (event)
+        # Register to session start event
+        self.__bot.add_event_handler("session_start", self._on_session_start)
+        self.__bot.add_event_handler("failed_auth", self._on_failed_auth)
+        self.__bot.add_event_handler("session_end", self._on_session_end)
 
-        if self.__bot.connect(self._host, self._port):
-            self.__bot.create_main_room(self._main_room)
-        else:
-            _logger.warning("Error connecting to server.")
+        self.__bot.connect(self._host, self._port)
 
     @Invalidate
     def _invalidate(self, context):
         """
         Component invalidated
         """
-        self.__bot.disconnect()
+        if self._bound:
+            self.__bot.disconnect()
         self.__bot = None
+
+    def _on_session_start(self, data):
+        """
+        The bot session has started: create the main room
+        """
+        self._bound = True
+        self._authenticated = True
+        self.__bot.create_main_room(self._main_room)
+
+    def _on_failed_auth(self, data):
+        """
+        An authentication attempt failed
+        """
+        self._authenticated = False
+
+    def _on_session_end(self, data):
+        """
+        End of session
+        """
+        if self._authenticated:
+            _logger.info("End of session")
+        else:
+            _logger.warning("End of session due to authentication error")
 
     def create_main_room(self, room, callback=None):
         """
