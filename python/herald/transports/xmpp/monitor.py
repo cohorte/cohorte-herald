@@ -447,8 +447,14 @@ class MonitorBotWrapper(object):
         Component validated
         """
         self.__bot = MonitorBot(self._jid, self._password, self._nick)
-        self.__bot.connect(self._host, self._port, use_tls=False)
-        self.__bot.create_main_room(self._main_room)
+
+        # FIXME: use session_bind event before creating the room
+        # FIXME: handle login errors (event)
+
+        if self.__bot.connect(self._host, self._port):
+            self.__bot.create_main_room(self._main_room)
+        else:
+            _logger.warning("Error connecting to server.")
 
     @Invalidate
     def _invalidate(self, context):
