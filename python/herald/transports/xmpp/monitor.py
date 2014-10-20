@@ -360,6 +360,9 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
                     if self.__main_room:
                         rooms.add(self.__main_room)
 
+                    # Remove potential empty names
+                    rooms.discard("")
+
                     rooms_jids = set(JID(local=room, domain=self.__muc_service)
                                      for room in rooms)
 
