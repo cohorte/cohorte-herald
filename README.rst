@@ -1,5 +1,5 @@
 Herald
-******
+######
 
 Herald is an easy-to-use messaging framework.
 It allows Pelix/iPOPO and Java OSGi frameworks to communicate with each other
@@ -8,7 +8,7 @@ transmission.
 
 
 Concepts
-========
+********
 
 Each Pelix or OSGi framework instance is considered as a *peer*.
 A peer has a unique ID and a human-readable name.
@@ -20,7 +20,7 @@ A message has a subject, which listeners register to, and a content.
 
 
 Remote Services
-===============
+***************
 
 Herald provides an RPC transport implementations for Pelix Remote Services
 (Python) and for
@@ -29,7 +29,7 @@ Herald provides an RPC transport implementations for Pelix Remote Services
 
 
 Transports
-==========
+**********
 
 Currently, Herald supports two protocols in Python, and one in Java:
 
@@ -44,15 +44,16 @@ Currently, Herald supports two protocols in Python, and one in Java:
     `Felix HTTP service <http://felix.apache.org/documentation/subprojects/apache-felix-http-service.html>`_
     to work correctly.
 
-* XMPP (Python only, for now):
+* XMPP (Python & Java):
 
   * Each message is a either a message or a group message
   * Discovery is based on a Multi-User Chat room (XEP-0045)
   * Best transport for distributed applications and for group messages
   * Python implementation is based on `SleekXMPP <http://sleekxmpp.com/>`_
+  * Java implementation is based on `Babbler <http://sco0ter.bitbucket.org/babbler/>`_
 
 
 License
-=======
+*******
 
 Cohorte Herald is released under the terms of the Apache Software License 2.0.
