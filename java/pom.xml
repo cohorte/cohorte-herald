@@ -28,6 +28,7 @@
 		<module>org.cohorte.herald.api</module>
 		<module>org.cohorte.herald.core</module>
 		<module>org.cohorte.herald.rpc</module>
+		<module>org.cohorte.herald.shell</module>
 		<module>org.cohorte.herald.http</module>
 		<module>org.cohorte.herald.xmpp</module>
 		<module>cohorte-herald-package</module>
