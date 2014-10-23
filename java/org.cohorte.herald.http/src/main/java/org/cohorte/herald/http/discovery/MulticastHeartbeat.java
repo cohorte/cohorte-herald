@@ -219,7 +219,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
      * .Exception)
@@ -303,7 +303,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handlePacket(java.
      * net.InetSocketAddress, byte[])
@@ -376,7 +376,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
      * IHerald, org.cohorte.herald.MessageReceived)
@@ -508,7 +508,11 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
             final HTTPExtra extra = (HTTPExtra) aMessage.getExtra();
             final HTTPAccess updatedAccess = new HTTPAccess(extra.getHost(),
                     extra.getPort(), extra.getPath());
-            remoteDump.put(IHttpConstants.ACCESS_ID, updatedAccess.dump());
+
+            // Replace the access
+            final Map<String, Object> accessDump = (Map<String, Object>) remoteDump
+                    .get("accesses");
+            accessDump.put(IHttpConstants.ACCESS_ID, updatedAccess.dump());
         }
 
         return remoteDump;
