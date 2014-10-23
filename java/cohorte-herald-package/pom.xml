@@ -12,7 +12,7 @@
 	<artifactId>cohorte-herald-package</artifactId>
 	<packaging>pom</packaging>
 
-	<dependencies>		
+	<dependencies>
 		<dependency>
 			<groupId>org.cohorte.herald</groupId>
 			<artifactId>org.cohorte.herald.api</artifactId>
@@ -29,10 +29,14 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
+            <groupId>org.cohorte.herald</groupId>
+            <artifactId>org.cohorte.herald.xmpp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+		<dependency>
 			<groupId>org.cohorte.herald</groupId>
 			<artifactId>org.cohorte.herald.rpc</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
-
 </project>
