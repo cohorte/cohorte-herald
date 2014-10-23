@@ -99,7 +99,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
@@ -132,7 +132,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -240,7 +240,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -270,7 +270,7 @@ public class Peer implements Comparable<Peer> {
     public synchronized void setAccess(final String aAccessId,
             final Access aData) {
 
-        final Access oldData = pAccesses.remove(aAccessId);
+        final Access oldData = pAccesses.get(aAccessId);
         if (oldData == null || !oldData.equals(aData)) {
             pAccesses.put(aAccessId, aData);
             pDirectory.peerAccessSet(this, aAccessId, aData);
@@ -309,7 +309,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override
