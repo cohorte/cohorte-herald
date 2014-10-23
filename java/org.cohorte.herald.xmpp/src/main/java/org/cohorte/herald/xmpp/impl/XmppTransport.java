@@ -120,7 +120,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -133,7 +133,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, java.lang.Object)
      */
@@ -175,7 +175,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.ITransport#fireGroup(java.lang.String,
      * java.util.Collection, org.cohorte.herald.Message)
      */
@@ -252,7 +252,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onMessage(org.xmpp.stanza.client
      * .Message)
@@ -321,7 +321,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onRoomIn(org.xmpp.extension.muc.
      * ChatRoom, org.xmpp.extension.muc.Occupant)
@@ -353,7 +353,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onRoomOut(org.xmpp.extension.muc
      * .ChatRoom, org.xmpp.extension.muc.Occupant)
@@ -376,7 +376,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onSessionEnd(org.xmpp.XmppSession)
      */
@@ -392,7 +392,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onSessionStart(org.xmpp.XmppSession)
      */
@@ -433,6 +433,7 @@ public class XmppTransport implements ITransport, IBotListener {
         // Prepare the XMPP message
         final org.xmpp.stanza.client.Message xmppMsg = new org.xmpp.stanza.client.Message(
                 aJid, aType, content);
+        xmppMsg.setFrom(pBot.getJid());
         xmppMsg.setSubject(aMessage.getSubject());
         xmppMsg.setThread(aMessage.getUid());
         if (aParentUid != null) {

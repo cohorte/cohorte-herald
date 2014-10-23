@@ -164,7 +164,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xmpp.stanza.StanzaListener#handle(org.xmpp.stanza.StanzaEvent)
      */
     @Override
@@ -192,8 +192,16 @@ public class Bot implements ConnectionListener, InvitationListener,
             return;
         }
 
-        // Call back the listener
-        pListener.onMessage(msg);
+        try {
+            // Call back the listener
+            pListener.onMessage(msg);
+
+        } catch (final RuntimeException ex) {
+            // Log possible exceptions here, as they won't be handled by the
+            // caller
+            pLogger.log(LogService.LOG_ERROR, "Error handling XMPP message: "
+                    + ex, ex);
+        }
     }
 
     /**
@@ -226,7 +234,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.xmpp.extension.muc.InvitationListener#invitationReceived(org.xmpp
      * .extension.muc.InvitationEvent)
@@ -389,6 +397,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
         // Prepare the message
         final Message msg = new Message(target, aMsgType);
+        msg.setFrom(getJid());
         msg.setBody(String.valueOf(aMessage.getContent()));
         msg.setSubject(aMessage.getSubject());
         msg.setThread(aMessage.getUid());
@@ -399,7 +408,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xmpp.ConnectionListener#statusChanged(org.xmpp.ConnectionEvent)
      */
     @Override
