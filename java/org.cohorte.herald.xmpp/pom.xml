@@ -75,6 +75,7 @@
 						</Import-Package>
 						<Export-Package>!*</Export-Package>
 						<Embed-Dependency>xmpp-*;inline=true</Embed-Dependency>
+						<DynamicImport-Package>javax.*</DynamicImport-Package>
 					</instructions>
 				</configuration>
 			</plugin>
