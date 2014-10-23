@@ -35,7 +35,6 @@ import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Modified;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.Unbind;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.ForgotMessage;
@@ -61,7 +60,9 @@ import org.cohorte.herald.utils.EventData;
 import org.cohorte.herald.utils.EventException;
 import org.cohorte.herald.utils.FnMatch;
 import org.cohorte.herald.utils.LoopTimer;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.log.LogService;
 
 /**
@@ -70,7 +71,7 @@ import org.osgi.service.log.LogService;
  * @author Thomas Calmant
  */
 @Component(publicFactory = false)
-@Provides(specifications = { IHerald.class, IHeraldInternal.class })
+@Provides(specifications = IHeraldInternal.class)
 @Instantiate(name = "herald-core")
 public class Herald implements IHerald, IHeraldInternal {
 
@@ -80,9 +81,8 @@ public class Herald implements IHerald, IHeraldInternal {
     /** iPOJO requirement ID */
     private static final String ID_TRANSPORTS = "transports";
 
-    /** Core service controller */
-    @ServiceController(value = false, specification = IHerald.class)
-    private boolean pController;
+    /** The bundle context */
+    private final BundleContext pContext;
 
     /** The Herald core directory */
     @Requires
@@ -93,10 +93,6 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /** Object used to synchronize garbage collection */
     private final Object pGarbageToken = new Object();
-
-    /** Internal service controller */
-    @ServiceController(value = true)
-    private boolean pInternalController;
 
     /** Time stamp of the last garbage collection */
     private long pLastGarbage = -1;
@@ -114,6 +110,9 @@ public class Herald implements IHerald, IHeraldInternal {
     /** The thread pool */
     private ExecutorService pPool;
 
+    /** Herald "public" service registration */
+    private ServiceRegistration<IHerald> pSvcRegistration;
+
     /** Access ID -&gt; Transport implementation */
     private final Map<String, ITransport> pTransports = new LinkedHashMap<>();
 
@@ -125,6 +124,17 @@ public class Herald implements IHerald, IHeraldInternal {
 
     /** Events used for "post()" methods: UID -&gt; WaitingPost */
     private final Map<String, WaitingPost> pWaitingPosts = new LinkedHashMap<>();
+
+    /**
+     * Sets up members
+     *
+     * @param aContext
+     *            The bundle context
+     */
+    public Herald(final BundleContext aContext) {
+
+        pContext = aContext;
+    }
 
     /**
      * A message listener has been bound
@@ -192,8 +202,11 @@ public class Herald implements IHerald, IHeraldInternal {
             // Store the service
             pTransports.put(accessId, aTransport);
 
-            // We have at least one service: provide our service
-            pController = true;
+            if (pSvcRegistration == null) {
+                // We have at least one service: provide our service
+                pSvcRegistration = pContext.registerService(IHerald.class,
+                        this, null);
+            }
         }
     }
 
@@ -1153,9 +1166,10 @@ public class Herald implements IHerald, IHeraldInternal {
             // Forget about the service
             pTransports.remove(accessId);
 
-            if (pTransports.isEmpty()) {
+            if (pTransports.isEmpty() && pSvcRegistration != null) {
                 // No more transport service: we can't provide the service
-                pController = false;
+                pSvcRegistration.unregister();
+                pSvcRegistration = null;
             }
         }
     }
