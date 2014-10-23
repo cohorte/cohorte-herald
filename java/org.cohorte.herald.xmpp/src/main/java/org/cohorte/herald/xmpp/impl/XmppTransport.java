@@ -60,7 +60,7 @@ import org.xmpp.stanza.AbstractMessage.Type;
  *
  * @author Thomas Calmant
  */
-@Component
+@Component(name = "herald-xmpp-transport-factory")
 @Provides(specifications = ITransport.class)
 public class XmppTransport implements ITransport, IBotListener {
 
