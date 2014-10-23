@@ -137,7 +137,7 @@ class XmppTransport(object):
         self._bot.set_message_callback(self.__on_message)
 
         # Connect to the server
-        self._bot.connect(self._host, self._port, use_tls=False)
+        self._bot.connect(self._host, self._port)
 
     @Invalidate
     def _invalidate(self, context):
