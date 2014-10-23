@@ -17,9 +17,13 @@
 package org.cohorte.herald.xmpp.impl;
 
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.security.auth.login.LoginException;
 
 import org.cohorte.herald.xmpp.IBotListener;
@@ -97,8 +101,16 @@ public class Bot implements ConnectionListener, InvitationListener,
     public void connect(final String aHost, final int aPort) throws IOException {
 
         // Prepare the XMPP session
-        final TcpConnectionConfiguration tcpConfig = TcpConnectionConfiguration
-                .builder().hostname(aHost).port(aPort).build();
+        final TcpConnectionConfiguration tcpConfig;
+        try {
+            tcpConfig = TcpConnectionConfiguration.builder().hostname(aHost)
+                    .port(aPort).sslContext(makeSSLContext()).build();
+
+        } catch (final NoSuchAlgorithmException | KeyManagementException ex) {
+            pLogger.log(LogService.LOG_ERROR, "Can't create the SSL context: "
+                    + ex, ex);
+            return;
+        }
         pSession = new XmppSession(aHost, tcpConfig);
 
         // Prepare the MUC manager
@@ -152,7 +164,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xmpp.stanza.StanzaListener#handle(org.xmpp.stanza.StanzaEvent)
      */
     @Override
@@ -214,7 +226,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.xmpp.extension.muc.InvitationListener#invitationReceived(org.xmpp
      * .extension.muc.InvitationEvent)
@@ -315,6 +327,33 @@ public class Bot implements ConnectionListener, InvitationListener,
     }
 
     /**
+     * Prepares the {@link SSLContext} object to use in the XMPP connection, to
+     * trust any certificate
+     *
+     * See
+     * http://stackoverflow.com/questions/19723415/java-overriding-function-to
+     * -disable-ssl-certificate-check
+     *
+     * @return An SSL context
+     * @throws NoSuchAlgorithmException
+     *             Can't create the SSLContext
+     * @throws KeyManagementException
+     *             Error initializing the SSLContext
+     */
+    private SSLContext makeSSLContext() throws NoSuchAlgorithmException,
+            KeyManagementException {
+
+        // Create a TLS context
+        final SSLContext sc = SSLContext.getInstance("TLS");
+
+        // Set our custom trust manager
+        sc.init(null, new TrustManager[] { new TrustAllX509TrustManager() },
+                new java.security.SecureRandom());
+
+        return sc;
+    }
+
+    /**
      * Sends a packet using the active session
      *
      * @param aElement
@@ -354,7 +393,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xmpp.ConnectionListener#statusChanged(org.xmpp.ConnectionEvent)
      */
     @Override
