@@ -56,8 +56,6 @@ import org.xmpp.stanza.AbstractMessage.Type;
 /**
  * Implementation of the Herald XMPP transport
  *
- * TODO: handle MUC room events (in, out, presence)
- *
  * @author Thomas Calmant
  */
 @Component(name = "herald-xmpp-transport-factory")
@@ -122,7 +120,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -135,7 +133,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, java.lang.Object)
      */
@@ -177,7 +175,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fireGroup(java.lang.String,
      * java.util.Collection, org.cohorte.herald.Message)
      */
@@ -323,7 +321,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onRoomIn(org.xmpp.extension.muc.
      * ChatRoom, org.xmpp.extension.muc.Occupant)
@@ -331,7 +329,8 @@ public class XmppTransport implements ITransport, IBotListener {
     @Override
     public void onRoomIn(final Jid aRoomJid, final Occupant aOccupant) {
 
-        if (aOccupant.isSelf() && aRoomJid.equals(pMainRoomJid)) {
+        if (!pController && aRoomJid.equals(pMainRoomJid)
+                && (aOccupant == null || aOccupant.isSelf())) {
             // We're on line, in the main room, register our service
             pController = true;
 
@@ -354,7 +353,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onRoomOut(org.xmpp.extension.muc
      * .ChatRoom, org.xmpp.extension.muc.Occupant)
@@ -377,7 +376,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onSessionEnd(org.xmpp.XmppSession)
      */
@@ -393,7 +392,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onSessionStart(org.xmpp.XmppSession)
      */
@@ -452,6 +451,15 @@ public class XmppTransport implements ITransport, IBotListener {
 
         // Ensure we do not provide the service at first
         pController = false;
+
+        // Prepare the serializer
+        try {
+            pSerializer.registerDefaultSerializers();
+        } catch (final Exception ex) {
+            pLogger.log(LogService.LOG_ERROR,
+                    "Error initializing the Jabsorb serializer: " + ex, ex);
+            return;
+        }
 
         // Compute the MUC domain
         pMainRoomJid = Jid.valueOf(pMainRoom);

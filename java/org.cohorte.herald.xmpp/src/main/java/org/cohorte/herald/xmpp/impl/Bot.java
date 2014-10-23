@@ -164,7 +164,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.xmpp.stanza.StanzaListener#handle(org.xmpp.stanza.StanzaEvent)
      */
     @Override
@@ -226,7 +226,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.xmpp.extension.muc.InvitationListener#invitationReceived(org.xmpp
      * .extension.muc.InvitationEvent)
@@ -277,7 +277,13 @@ public class Bot implements ConnectionListener, InvitationListener,
         });
 
         try {
+            // Enter the room
             room.enter(pNickName);
+
+            // Did it: we have to notify the bot listener here,
+            // as the OccupantListener avoids notifying this event
+            pListener.onRoomIn(room.getAddress(), null);
+
         } catch (final XmppException ex) {
             pLogger.log(LogService.LOG_ERROR, "Error joining XMPP room: " + ex,
                     ex);
@@ -393,7 +399,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.xmpp.ConnectionListener#statusChanged(org.xmpp.ConnectionEvent)
      */
     @Override
