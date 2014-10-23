@@ -24,6 +24,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
+import javax.servlet.ServletException;
+
 import org.apache.felix.ipojo.annotations.Bind;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -44,6 +46,7 @@ import org.jabsorb.ng.JSONSerializer;
 import org.jabsorb.ng.serializer.MarshallException;
 import org.jabsorb.ng.serializer.UnmarshallException;
 import org.osgi.service.http.HttpService;
+import org.osgi.service.http.NamespaceException;
 import org.osgi.service.log.LogService;
 
 /**
@@ -387,12 +390,25 @@ public class HttpReceiver implements IHttpReceiver {
         final HttpReceiverServlet servlet = new HttpReceiverServlet(this);
         try {
             pHttpService.registerServlet(pServletPath, servlet, null, null);
-            pController = true;
 
-        } catch (final Exception ex) {
+        } catch (final ServletException ex) {
             pLogger.log(LogService.LOG_ERROR,
-                    "Can't register the HTTP Signal Receiver servlet:" + ex, ex);
-            pController = false;
+                    "Error registering the Herald HTTP Receiver servlet:" + ex,
+                    ex);
+            return;
+
+        } catch (final NamespaceException ex) {
+            pLogger.log(LogService.LOG_ERROR,
+                    "Herald HTTP Receiver servlet name is already taken:" + ex,
+                    ex);
+            return;
         }
+
+        // Register our local access
+        pDirectory.getLocalPeer().setAccess(IHttpConstants.ACCESS_ID,
+                new HTTPAccess("localhost", pHttpPort, pServletPath));
+
+        // Activate our server
+        pController = true;
     }
 }
