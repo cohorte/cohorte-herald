@@ -31,7 +31,6 @@
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.gogo.runtime</artifactId>
 			<version>0.12.1</version>
-			<type>bundle</type>
 		</dependency>
 
 		<dependency>
