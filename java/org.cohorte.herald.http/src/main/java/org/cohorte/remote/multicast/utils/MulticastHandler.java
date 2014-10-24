@@ -148,7 +148,7 @@ public class MulticastHandler {
         while (itfEnum.hasMoreElements()) {
             final NetworkInterface itf = itfEnum.nextElement();
             try {
-                if (itf.supportsMulticast()) {
+                if (itf.isUp() && itf.supportsMulticast()) {
                     // Multicast is supported
                     multicastItfs.add(itf);
                 }
@@ -363,7 +363,20 @@ public class MulticastHandler {
         try {
             // Join the group on all interfaces
             for (final NetworkInterface itf : getMulticastInterfaces()) {
-                pJoinedGroups.add(pChannel.join(pAddress, itf));
+                try {
+                    pJoinedGroups.add(pChannel.join(pAddress, itf));
+                } catch (final IOException ex) {
+                    pLogger.log(
+                            LogService.LOG_ERROR,
+                            "Error joining multicast group on interface "
+                                    + itf.getDisplayName(), ex);
+                }
+            }
+
+            if (pJoinedGroups.isEmpty()) {
+                // No success: abandon.
+                throw new SocketException(
+                        "No interface to join multicast group");
             }
 
         } catch (final SocketException ex) {
