@@ -120,7 +120,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message)
      */
@@ -133,7 +133,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
      * org.cohorte.herald.Message, java.lang.Object)
      */
@@ -175,7 +175,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransport#fireGroup(java.lang.String,
      * java.util.Collection, org.cohorte.herald.Message)
      */
@@ -252,7 +252,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onMessage(org.xmpp.stanza.client
      * .Message)
@@ -302,6 +302,8 @@ public class XmppTransport implements ITransport, IBotListener {
             content = pSerializer.fromJSON(aMessage.getBody());
         } catch (final UnmarshallException ex) {
             // Error parsing content: use the raw body
+            pLogger.log(LogService.LOG_ERROR, "Error parsing message content: "
+                    + ex, ex);
             content = aMessage.getBody();
         }
 
@@ -321,7 +323,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onRoomIn(org.xmpp.extension.muc.
      * ChatRoom, org.xmpp.extension.muc.Occupant)
@@ -353,7 +355,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onRoomOut(org.xmpp.extension.muc
      * .ChatRoom, org.xmpp.extension.muc.Occupant)
@@ -376,7 +378,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onSessionEnd(org.xmpp.XmppSession)
      */
@@ -392,7 +394,7 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.xmpp.IBotListener#onSessionStart(org.xmpp.XmppSession)
      */
