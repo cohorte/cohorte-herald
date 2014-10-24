@@ -54,6 +54,7 @@ import sleekxmpp
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, Validate, Invalidate
+import pelix.misc.jabsorb as jabsorb
 
 # Standard library
 import json
@@ -196,7 +197,7 @@ class XmppTransport(object):
             sender_uid = "<unknown>"
 
         try:
-            content = json.loads(msg['body'])
+            content = jabsorb.from_jabsorb(json.loads(msg['body']))
         except ValueError:
             # Content can't be decoded, use its string representation as is
             content = msg['body']
@@ -273,7 +274,8 @@ class XmppTransport(object):
         :param parent_uid: UID of the message this one replies to (optional)
         """
         # Convert content to JSON
-        content = json.dumps(message.content, default=utils.json_converter)
+        content = json.dumps(jabsorb.to_jabsorb(message.content),
+                             default=utils.json_converter)
 
         # Prepare an XMPP message, based on the Herald message
         xmpp_msg = self._bot.make_message(mto=target,
