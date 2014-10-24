@@ -72,15 +72,15 @@ public class XmppDirectory implements ITransportDirectory, IXmppDirectory {
 
         try {
             final Peer peer = pJidPeer.get(aJid);
-            if (peer == null) {
-                throw new UnknownPeer("XMPP:" + aJid);
+            if (peer != null) {
+                return peer;
             }
 
         } catch (final IllegalArgumentException ex) {
-            throw new UnknownPeer("XMPP:" + aJid);
+            // Continue...
         }
 
-        return null;
+        throw new UnknownPeer("XMPP:" + aJid);
     }
 
     /**
