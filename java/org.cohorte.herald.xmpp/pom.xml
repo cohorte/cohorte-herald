@@ -72,10 +72,10 @@
 							org.jabsorb.ng.serializer,
 							org.cohorte.herald;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version},
+							javax.*
 						</Import-Package>
 						<Export-Package>!*</Export-Package>
 						<Embed-Dependency>xmpp-*;inline=true</Embed-Dependency>
-						<DynamicImport-Package>javax.*</DynamicImport-Package>
 					</instructions>
 				</configuration>
 			</plugin>
