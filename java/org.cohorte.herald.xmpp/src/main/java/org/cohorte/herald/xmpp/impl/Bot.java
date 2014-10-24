@@ -164,7 +164,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.xmpp.stanza.StanzaListener#handle(org.xmpp.stanza.StanzaEvent)
      */
     @Override
@@ -172,8 +172,18 @@ public class Bot implements ConnectionListener, InvitationListener,
 
         // Extract message information
         final Message msg = aEvent.getMessage();
+        final Type msgType = msg.getType();
+        if (msgType == null) {
+            // Ignore messages without type
+            return;
+        }
 
-        switch (msg.getType()) {
+        if (getJid().equals(msg.getFrom())) {
+            // Ignore loop back messages
+            return;
+        }
+
+        switch (msgType) {
         case GROUPCHAT:
             // MUC room chat
             if (msg.getFrom().getResource().equals(pNickName)) {
@@ -234,7 +244,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.xmpp.extension.muc.InvitationListener#invitationReceived(org.xmpp
      * .extension.muc.InvitationEvent)
@@ -408,7 +418,7 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.xmpp.ConnectionListener#statusChanged(org.xmpp.ConnectionEvent)
      */
     @Override
