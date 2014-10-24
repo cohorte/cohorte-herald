@@ -24,6 +24,11 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
+            <groupId>org.cohorte.herald</groupId>
+            <artifactId>org.cohorte.herald.shell</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+		<dependency>
 			<groupId>org.cohorte.herald</groupId>
 			<artifactId>org.cohorte.herald.http</artifactId>
 			<version>${project.version}</version>
