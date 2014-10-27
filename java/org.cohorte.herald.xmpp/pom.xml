@@ -15,16 +15,6 @@
 		<babbler-version>0.4.0-beta.1-SNAPSHOT</babbler-version>
 	</properties>
 
-	<repositories>
-		<repository>
-			<id>babbler-snapshot</id>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</repository>
-	</repositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
@@ -54,21 +44,29 @@
 			<groupId>rocks.xmpp</groupId>
 			<artifactId>xmpp-core</artifactId>
 			<version>${babbler-version}</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/babbler-${babbler-version}.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>rocks.xmpp</groupId>
 			<artifactId>xmpp-core-client</artifactId>
 			<version>${babbler-version}</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/babbler-${babbler-version}.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>rocks.xmpp</groupId>
 			<artifactId>xmpp-extensions</artifactId>
 			<version>${babbler-version}</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/babbler-${babbler-version}.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>rocks.xmpp</groupId>
 			<artifactId>xmpp-extensions-client</artifactId>
 			<version>${babbler-version}</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/babbler-${babbler-version}.jar</systemPath>
 		</dependency>
 	</dependencies>
 
