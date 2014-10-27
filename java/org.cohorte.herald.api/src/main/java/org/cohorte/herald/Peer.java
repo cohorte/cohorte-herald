@@ -99,7 +99,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
@@ -120,6 +120,7 @@ public class Peer implements Comparable<Peer> {
         dump.put("name", pName);
         dump.put("node_uid", pNodeUid);
         dump.put("node_name", pNodeName);
+        dump.put("app_id", pApplicationId);
         dump.put("groups", pGroups.toArray(new String[pGroups.size()]));
 
         final Map<String, Object> accesses = new LinkedHashMap<>();
@@ -132,7 +133,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -240,7 +241,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -309,7 +310,7 @@ public class Peer implements Comparable<Peer> {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
