@@ -47,11 +47,12 @@ import org.jabsorb.ng.JSONSerializer;
 import org.jabsorb.ng.serializer.MarshallException;
 import org.jabsorb.ng.serializer.UnmarshallException;
 import org.osgi.service.log.LogService;
-import org.xmpp.Jid;
-import org.xmpp.XmppSession;
-import org.xmpp.extension.delay.DelayedDelivery;
-import org.xmpp.extension.muc.Occupant;
-import org.xmpp.stanza.AbstractMessage.Type;
+
+import rocks.xmpp.core.Jid;
+import rocks.xmpp.core.session.XmppSession;
+import rocks.xmpp.core.stanza.model.AbstractMessage.Type;
+import rocks.xmpp.extensions.delay.model.DelayedDelivery;
+import rocks.xmpp.extensions.muc.Occupant;
 
 /**
  * Implementation of the Herald XMPP transport
@@ -252,13 +253,14 @@ public class XmppTransport implements ITransport, IBotListener {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
-     * org.cohorte.herald.xmpp.IBotListener#onMessage(org.xmpp.stanza.client
-     * .Message)
+     * org.cohorte.herald.xmpp.IBotListener#onMessage(rocks.xmpp.core.stanza
+     * .model.client.Message)
      */
     @Override
-    public void onMessage(final org.xmpp.stanza.client.Message aMessage) {
+    public void onMessage(
+            final rocks.xmpp.core.stanza.model.client.Message aMessage) {
 
         // Check subject
         final String subject = aMessage.getSubject();
@@ -433,7 +435,7 @@ public class XmppTransport implements ITransport, IBotListener {
         final String content = pSerializer.toJSON(aMessage.getContent());
 
         // Prepare the XMPP message
-        final org.xmpp.stanza.client.Message xmppMsg = new org.xmpp.stanza.client.Message(
+        final rocks.xmpp.core.stanza.model.client.Message xmppMsg = new rocks.xmpp.core.stanza.model.client.Message(
                 aJid, aType, content);
         xmppMsg.setFrom(pBot.getJid());
         xmppMsg.setSubject(aMessage.getSubject());

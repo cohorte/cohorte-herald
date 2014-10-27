@@ -17,7 +17,8 @@
 package org.cohorte.herald.xmpp;
 
 import org.cohorte.herald.Access;
-import org.xmpp.Jid;
+
+import rocks.xmpp.core.Jid;
 
 /**
  * Description of the XMPP access to a peer
@@ -96,7 +97,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -111,7 +112,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.cohorte.herald.Access#getAccessId()
      */
     @Override
@@ -130,7 +131,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -141,7 +142,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override

@@ -28,32 +28,33 @@ import javax.security.auth.login.LoginException;
 
 import org.cohorte.herald.xmpp.IBotListener;
 import org.osgi.service.log.LogService;
-import org.xmpp.ConnectionEvent;
-import org.xmpp.ConnectionListener;
-import org.xmpp.Jid;
-import org.xmpp.TcpConnectionConfiguration;
-import org.xmpp.XmppException;
-import org.xmpp.XmppSession;
-import org.xmpp.extension.muc.ChatRoom;
-import org.xmpp.extension.muc.ChatService;
-import org.xmpp.extension.muc.InvitationEvent;
-import org.xmpp.extension.muc.InvitationListener;
-import org.xmpp.extension.muc.MultiUserChatManager;
-import org.xmpp.extension.muc.OccupantEvent;
-import org.xmpp.extension.muc.OccupantListener;
-import org.xmpp.stanza.AbstractMessage.Type;
-import org.xmpp.stanza.MessageEvent;
-import org.xmpp.stanza.MessageListener;
-import org.xmpp.stanza.client.Message;
-import org.xmpp.stanza.client.Presence;
-import org.xmpp.stream.ClientStreamElement;
+
+import rocks.xmpp.core.Jid;
+import rocks.xmpp.core.XmppException;
+import rocks.xmpp.core.session.SessionStatusEvent;
+import rocks.xmpp.core.session.SessionStatusListener;
+import rocks.xmpp.core.session.TcpConnectionConfiguration;
+import rocks.xmpp.core.session.XmppSession;
+import rocks.xmpp.core.stanza.MessageEvent;
+import rocks.xmpp.core.stanza.MessageListener;
+import rocks.xmpp.core.stanza.model.AbstractMessage.Type;
+import rocks.xmpp.core.stanza.model.client.Message;
+import rocks.xmpp.core.stanza.model.client.Presence;
+import rocks.xmpp.core.stream.model.ClientStreamElement;
+import rocks.xmpp.extensions.muc.ChatRoom;
+import rocks.xmpp.extensions.muc.ChatService;
+import rocks.xmpp.extensions.muc.InvitationEvent;
+import rocks.xmpp.extensions.muc.InvitationListener;
+import rocks.xmpp.extensions.muc.MultiUserChatManager;
+import rocks.xmpp.extensions.muc.OccupantEvent;
+import rocks.xmpp.extensions.muc.OccupantListener;
 
 /**
  * The XMPP bot implementation, based on Babbler
  *
  * @author Thomas Calmant
  */
-public class Bot implements ConnectionListener, InvitationListener,
+public class Bot implements SessionStatusListener, InvitationListener,
         MessageListener {
 
     /** The listener */
@@ -117,7 +118,7 @@ public class Bot implements ConnectionListener, InvitationListener,
         pMucManager = pSession.getExtensionManager(MultiUserChatManager.class);
 
         // Register to events
-        pSession.addConnectionListener(this);
+        pSession.addSessionStatusListener(this);
         pMucManager.addInvitationListener(this);
         pSession.addMessageListener(this);
 
@@ -164,8 +165,9 @@ public class Bot implements ConnectionListener, InvitationListener,
 
     /*
      * (non-Javadoc)
-     * 
-     * @see org.xmpp.stanza.StanzaListener#handle(org.xmpp.stanza.StanzaEvent)
+     *
+     * @see
+     * rocks.xmpp.stanza.StanzaListener#handle(rocks.xmpp.stanza.StanzaEvent)
      */
     @Override
     public void handle(final MessageEvent aEvent) {
@@ -246,7 +248,7 @@ public class Bot implements ConnectionListener, InvitationListener,
      * (non-Javadoc)
      *
      * @see
-     * org.xmpp.extension.muc.InvitationListener#invitationReceived(org.xmpp
+     * rocks.xmpp.extension.muc.InvitationListener#invitationReceived(rocks.xmpp
      * .extension.muc.InvitationEvent)
      */
     @Override
@@ -419,10 +421,12 @@ public class Bot implements ConnectionListener, InvitationListener,
     /*
      * (non-Javadoc)
      * 
-     * @see org.xmpp.ConnectionListener#statusChanged(org.xmpp.ConnectionEvent)
+     * @see
+     * rocks.xmpp.core.session.SessionStatusListener#sessionStatusChanged(rocks
+     * .xmpp.core.session.SessionStatusEvent)
      */
     @Override
-    public void statusChanged(final ConnectionEvent aEvent) {
+    public void sessionStatusChanged(final SessionStatusEvent aEvent) {
 
         switch (aEvent.getStatus()) {
         case AUTHENTICATED:

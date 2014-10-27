@@ -16,7 +16,7 @@
 
 package org.cohorte.herald.xmpp;
 
-import org.xmpp.Jid;
+import rocks.xmpp.core.Jid;
 
 /**
  * XMPP access extra information

@@ -18,7 +18,8 @@ package org.cohorte.herald.xmpp;
 
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.UnknownPeer;
-import org.xmpp.Jid;
+
+import rocks.xmpp.core.Jid;
 
 /**
  * Specification of the XMPP transport directory

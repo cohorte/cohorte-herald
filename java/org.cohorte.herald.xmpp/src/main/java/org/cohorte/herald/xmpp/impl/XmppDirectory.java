@@ -35,7 +35,8 @@ import org.cohorte.herald.UnknownPeer;
 import org.cohorte.herald.xmpp.IXmppConstants;
 import org.cohorte.herald.xmpp.IXmppDirectory;
 import org.cohorte.herald.xmpp.XmppAccess;
-import org.xmpp.Jid;
+
+import rocks.xmpp.core.Jid;
 
 /**
  * Herald XMPP transport directory
@@ -64,7 +65,7 @@ public class XmppDirectory implements ITransportDirectory, IXmppDirectory {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.xmpp.IXmppDirectory#fromJID(org.xmpp.Jid)
      */
     @Override
@@ -96,7 +97,7 @@ public class XmppDirectory implements ITransportDirectory, IXmppDirectory {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.ITransportDirectory#loadAccess(java.lang.Object)
      */
     @Override
@@ -107,7 +108,7 @@ public class XmppDirectory implements ITransportDirectory, IXmppDirectory {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.ITransportDirectory#peerAccessSet(org.cohorte.herald
      * .Peer, org.cohorte.herald.Access)
@@ -122,7 +123,7 @@ public class XmppDirectory implements ITransportDirectory, IXmppDirectory {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.ITransportDirectory#peerAccessUnset(org.cohorte.herald
      * .Peer, org.cohorte.herald.Access)

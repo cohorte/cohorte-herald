@@ -16,10 +16,10 @@
 
 package org.cohorte.herald.xmpp;
 
-import org.xmpp.Jid;
-import org.xmpp.XmppSession;
-import org.xmpp.extension.muc.Occupant;
-import org.xmpp.stanza.client.Message;
+import rocks.xmpp.core.Jid;
+import rocks.xmpp.core.session.XmppSession;
+import rocks.xmpp.core.stanza.model.client.Message;
+import rocks.xmpp.extensions.muc.Occupant;
 
 /**
  * Specification of a bot listener
