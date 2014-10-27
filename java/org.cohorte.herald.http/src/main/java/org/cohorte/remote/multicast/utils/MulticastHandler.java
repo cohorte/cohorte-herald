@@ -366,8 +366,7 @@ public class MulticastHandler {
                 try {
                     pJoinedGroups.add(pChannel.join(pAddress, itf));
                 } catch (final IOException ex) {
-                    pLogger.log(
-                            LogService.LOG_ERROR,
+                    log(LogService.LOG_ERROR,
                             "Error joining multicast group on interface "
                                     + itf.getDisplayName(), ex);
                 }
@@ -443,8 +442,10 @@ public class MulticastHandler {
         stopThread();
 
         // Stop the notifying thread
-        pExecutor.shutdownNow();
-        pExecutor = null;
+        if (pExecutor != null) {
+            pExecutor.shutdownNow();
+            pExecutor = null;
+        }
 
         // Close the socket
         closeMulticast();
