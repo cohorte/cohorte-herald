@@ -455,7 +455,10 @@ class MonitorBotWrapper(object):
         self.__bot.add_event_handler("failed_auth", self._on_failed_auth)
         self.__bot.add_event_handler("session_end", self._on_session_end)
 
-        self.__bot.connect(self._host, self._port)
+        if not self.__bot.connect(self._host, self._port):
+            _logger.error("Can't connect to the XMPP server at %s port %s",
+                          self._host, self._port)
+            print("I'm so embarrassed right now. (XMPP connect failed)")
 
     @Invalidate
     def _invalidate(self, context):
