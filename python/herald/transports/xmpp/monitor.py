@@ -474,6 +474,10 @@ class MonitorBotWrapper(object):
         self._authenticated = True
         self.__bot.create_main_room(self._main_room)
 
+        # Rendez-vous sentence for the start scripts
+        _logger.info("Bot connected, authenticated and main room created.")
+        print("Bite my shiny, metal a**!")
+
     def _on_failed_auth(self, data):
         """
         An authentication attempt failed
