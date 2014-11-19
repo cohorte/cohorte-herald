@@ -441,7 +441,7 @@ class HeraldDirectory(object):
                     # Do not reload already known peer
                     self.register(description)
                 except ValueError as ex:
-                    _logger.warning("Error loading dump: %s", ex)
+                    _logger.warning("Error loading peer dump: %s", ex)
 
     def register(self, description):
         """

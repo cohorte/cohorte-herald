@@ -633,7 +633,7 @@ class Herald(object):
                                   access, ex)
                 except Exception as ex:
                     # Exception during transport
-                    _logger.warning("Error using transport %s: %s", access, ex)
+                    _logger.info("Error using transport %s: %s", access, ex)
                 else:
                     # Success
                     break
@@ -658,7 +658,7 @@ class Herald(object):
         # Get all peers known in the group
         all_peers = self._directory.get_peers_for_group(group)
         if not all_peers:
-            _logger.warning("No peer in group %s", group)
+            _logger.info("No peer in group %s", group)
             return message.uid, set()
 
         # Check if some transports are bound

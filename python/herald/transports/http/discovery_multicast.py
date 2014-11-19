@@ -764,7 +764,7 @@ class MulticastHeartbeat(object):
                 for uid, last_seen in self._peer_lst.items():
                     if not last_seen:
                         # No LST for this peer
-                        _logger.warning("Invalid LST for %s", uid)
+                        _logger.debug("Invalid LST for %s", uid)
 
                     elif (loop_start - last_seen) > self._peer_ttl:
                         # TTL reached
