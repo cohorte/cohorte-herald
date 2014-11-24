@@ -170,11 +170,16 @@ class HeraldDirectory(object):
 
         with self.__lock:
             for peer in self._peers.values():
-                access = peer.get_access(access_id)
-                if isinstance(access, beans.RawAccess):
-                    # We need to convert a raw access bean
-                    parsed = svc.load_access(access.dump())
-                    peer.set_access(access_id, parsed)
+                try:
+                    access = peer.get_access(access_id)
+                except KeyError:
+                    # No access of this kind
+                    pass
+                else:
+                    if isinstance(access, beans.RawAccess):
+                        # We need to convert a raw access bean
+                        parsed = svc.load_access(access.dump())
+                        peer.set_access(access_id, parsed)
 
     @UnbindField('_directories')
     def _unbind_directory(self, _, svc, svc_ref):
@@ -187,8 +192,13 @@ class HeraldDirectory(object):
 
         with self.__lock:
             for peer in self._peers.values():
-                access = peer.get_access(access_id)
-                if access is not None:
+                try:
+                    # Get the current access information
+                    access = peer.get_access(access_id)
+                except KeyError:
+                    # No access of this kind
+                    pass
+                else:
                     # Convert to a RawAccess bean
                     peer.set_access(access_id,
                                     beans.RawAccess(access_id, access.dump()))
