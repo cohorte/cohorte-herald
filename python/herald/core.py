@@ -304,9 +304,11 @@ class Herald(object):
         """
         A message listener has been bound
         """
+        svc_filters = pelix.utilities.to_iterable(
+            svc_ref.get_property(herald.PROP_FILTERS), False)
+
         re_filters = set(self.__compile_pattern(fn_filter)
-                         for fn_filter
-                         in svc_ref.get_property(herald.PROP_FILTERS) or [])
+                         for fn_filter in svc_filters)
 
         with self.__listeners_lock:
             for re_filter in re_filters:
@@ -318,15 +320,19 @@ class Herald(object):
         """
         The properties of a message listener have been updated
         """
+        svc_filters = pelix.utilities.to_iterable(
+            svc_ref.get_property(herald.PROP_FILTERS), False)
+
         new_filters = set(self.__compile_pattern(fn_filter)
-                          for fn_filter
-                          in svc_ref.get_property(herald.PROP_FILTERS) or [])
+                          for fn_filter in svc_filters)
 
         with self.__listeners_lock:
             # Get old and new filters as sets
+            old_svc_filters = pelix.utilities.to_iterable(
+                old_props.get(herald.PROP_FILTERS), False)
+
             old_filters = set(self.__compile_pattern(fn_filter)
-                              for fn_filter
-                              in old_props.get(herald.PROP_FILTERS) or [])
+                              for fn_filter in old_svc_filters)
 
             # Compute differences
             added_filters = new_filters.difference(old_filters)
@@ -355,11 +361,12 @@ class Herald(object):
         """
         A message listener has gone away
         """
+        svc_filters = pelix.utilities.to_iterable(
+            svc_ref.get_property(herald.PROP_FILTERS), False)
+
         with self.__listeners_lock:
             re_filters = set(self.__compile_pattern(fn_filter)
-                             for fn_filter
-                             in svc_ref.get_property(herald.PROP_FILTERS)
-                             or [])
+                             for fn_filter in svc_filters)
             for re_filter in re_filters:
                 try:
                     listeners = self.__msg_listeners[re_filter]
