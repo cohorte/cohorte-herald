@@ -110,7 +110,7 @@ class HeraldServlet(object):
         self._servlet_path = None
 
     @Validate
-    def validate(self, context):
+    def validate(self, _):
         """
         Component validated
         """
@@ -161,12 +161,12 @@ class HeraldServlet(object):
         else:
             return False
 
-    def unbound_from(self, path, parameters):
+    def unbound_from(self, path, _):
         """
         Servlet unbound from a HTTP service
 
         :param path: The path to access the servlet
-        :param parameters: The server & servlet parameters
+        :param _: The server & servlet parameters
         """
         if path == self._servlet_path:
             with self.__lock:
@@ -183,11 +183,11 @@ class HeraldServlet(object):
             self._host = None
             self._port = None
 
-    def do_GET(self, request, response):
+    def do_GET(self, _, response):
         """
         Handles a GET request: sends the description of the local peer
 
-        :param request: The HTTP request bean
+        :param _: The HTTP request bean
         :param response: The HTTP response handler
         """
         # pylint: disable=C0103
@@ -239,7 +239,7 @@ class HeraldServlet(object):
                                                          host, port):
                     # Port doesn't match: invalid UID
                     sender_uid = "<invalid>"
-            except ValueError as ex:
+            except ValueError:
                 # Unknown peer UID: keep it as is
                 pass
 

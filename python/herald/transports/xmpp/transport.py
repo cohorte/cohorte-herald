@@ -113,7 +113,7 @@ class XmppTransport(object):
         self._bot = HeraldBot()
 
     @Validate
-    def _validate(self, context):
+    def _validate(self, _):
         """
         Component validated
         """
@@ -141,7 +141,7 @@ class XmppTransport(object):
         self._bot.connect(self._host, self._port)
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """
@@ -152,7 +152,7 @@ class XmppTransport(object):
         self._bot.del_event_handler("session_start", self.__on_start)
         self._bot.del_event_handler("session_end", self.__on_end)
 
-    def __on_start(self, data):
+    def __on_start(self, _):
         """
         XMPP session started
         """
@@ -214,7 +214,7 @@ class XmppTransport(object):
                                         reply_to, self._access_id, extra=extra)
         self._core.handle_message(message)
 
-    def __on_end(self, data):
+    def __on_end(self, _):
         """
         XMPP session ended
         """

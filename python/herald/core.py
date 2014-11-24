@@ -230,7 +230,7 @@ class Herald(object):
         self.__gc_lock = threading.Lock()
 
     @Validate
-    def _validate(self, context):
+    def _validate(self, _):
         """
         Component validated
         """
@@ -244,7 +244,7 @@ class Herald(object):
         self.__gc_timer.start()
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """

@@ -100,7 +100,7 @@ class HttpTransport(object):
         self.__access_path = None
 
     @BindField('_local_recv')
-    def _bind_local_receiver(self, field, service, svc_ref):
+    def _bind_local_receiver(self, _, service, svc_ref):
         """
         The local receiver has been bound
         """
@@ -109,7 +109,7 @@ class HttpTransport(object):
         self.__access_path = access[2]
 
     @Validate
-    def _validate(self, context):
+    def _validate(self, _):
         """
         Component validated
         """
@@ -119,7 +119,7 @@ class HttpTransport(object):
         self.__pool.start()
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """
@@ -233,7 +233,7 @@ class HttpTransport(object):
         accessed_peers = set()
         countdown = pelix.utilities.CountdownEvent(len(peers))
 
-        def peer_result(result, exception, target_peer):
+        def peer_result(_, exception, target_peer):
             """
             Called back once the request has been posted
             """

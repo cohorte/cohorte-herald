@@ -50,7 +50,6 @@ from pelix.utilities import to_bytes, to_unicode
 # Standard library
 import logging
 import os
-import requests
 import select
 import socket
 import struct
@@ -546,7 +545,7 @@ class MulticastHeartbeat(object):
         self._lst_lock = threading.Lock()
 
     @Validate
-    def _validate(self, context):
+    def _validate(self, _):
         """
         Component validated
         """
@@ -575,7 +574,7 @@ class MulticastHeartbeat(object):
         self._lst_thread.start()
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """

@@ -207,12 +207,12 @@ class HeraldDiscovery(object):
         """
         self.__send_message('add', self._dump_endpoints(endpoints))
 
-    def endpoint_updated(self, endpoint, old_properties):
+    def endpoint_updated(self, endpoint, _):
         """
         An endpoint has been updated
 
         :param endpoint: An updated ExportEndpoint bean
-        :param old_properties: Previous value of the endpoint properties
+        :param _: Previous value of the endpoint properties
         """
         self.__send_message('update',
                             {"uid": endpoint.uid,

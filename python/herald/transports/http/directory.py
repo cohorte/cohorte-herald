@@ -75,14 +75,14 @@ class HTTPDirectory(object):
         self._uid_address = {}
 
     @Validate
-    def _validate(self, context):
+    def _validate(self, _):
         """
         Component validated
         """
         self._uid_address.clear()
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """

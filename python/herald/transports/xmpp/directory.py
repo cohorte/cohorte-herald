@@ -78,7 +78,7 @@ class XMPPDirectory(object):
         self._groups = {}
 
     @Validate
-    def _validate(self, context):
+    def _validate(self, _):
         """
         Component validated
         """
@@ -86,7 +86,7 @@ class XMPPDirectory(object):
         self._groups.clear()
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """
@@ -112,11 +112,11 @@ class XMPPDirectory(object):
         if peer.uid != self._directory.local_uid:
             self._jid_peer[data.jid] = peer
 
-    def peer_access_unset(self, peer, data):
+    def peer_access_unset(self, _, data):
         """
         The access to the given peer matching our access ID has been removed
 
-        :param peer: The Peer bean
+        :param _: The Peer bean
         :param data: The peer access data
         """
         try:

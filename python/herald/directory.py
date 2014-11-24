@@ -149,7 +149,7 @@ class HeraldDirectory(object):
             self._groups[group] = set()
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """

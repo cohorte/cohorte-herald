@@ -26,6 +26,8 @@ Herald XMPP control robot implementation
     limitations under the License.
 """
 
+from __future__ import print_function
+
 # Module version
 __version_info__ = (0, 0, 2)
 __version__ = ".".join(str(x) for x in __version_info__)
@@ -266,12 +268,12 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         except StopIteration:
             _logger.error("No Multi-User Chat service on this server.")
 
-    def __room_created(self, room, nick):
+    def __room_created(self, room, _):
         """
         A room has been correctly created, and we're its owner
 
         :param room: Bare JID of the room
-        :param nick: Our nick in the room
+        :param _: Our nick in the room
         """
         with self.__countdowns_lock:
             to_remove = set()
@@ -366,12 +368,12 @@ class MonitorBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
                     rooms_jids = set(JID(local=room, domain=self.__muc_service)
                                      for room in rooms)
 
-                    def rooms_ready(successes, failures):
+                    def rooms_ready(_, failures):
                         """
                         Invites the requester in the rooms it requested, as
                         soon as they are ready
 
-                        :param successes: JIDs of the usable rooms
+                        :param _: JIDs of the usable rooms
                         :param failures: JIDs of the rooms which
                         failed
                         """
@@ -444,7 +446,7 @@ class MonitorBotWrapper(object):
         self._authenticated = False
 
     @Validate
-    def _validate(self, context):
+    def _validate(self, _):
         """
         Component validated
         """
@@ -461,7 +463,7 @@ class MonitorBotWrapper(object):
             print("I'm so embarrassed right now. (XMPP connect failed)")
 
     @Invalidate
-    def _invalidate(self, context):
+    def _invalidate(self, _):
         """
         Component invalidated
         """
@@ -469,7 +471,7 @@ class MonitorBotWrapper(object):
             self.__bot.disconnect()
         self.__bot = None
 
-    def _on_session_start(self, data):
+    def _on_session_start(self, _):
         """
         The bot session has started: create the main room
         """
@@ -481,13 +483,13 @@ class MonitorBotWrapper(object):
         _logger.info("Bot connected, authenticated and main room created.")
         print("Bite my shiny, metal a**!")
 
-    def _on_failed_auth(self, data):
+    def _on_failed_auth(self, _):
         """
         An authentication attempt failed
         """
         self._authenticated = False
 
-    def _on_session_end(self, data):
+    def _on_session_end(self, _):
         """
         End of session
         """
