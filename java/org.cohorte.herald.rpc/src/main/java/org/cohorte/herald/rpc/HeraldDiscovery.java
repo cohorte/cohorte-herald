@@ -128,7 +128,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.IExportEndpointListener#endpointRemoved(org.cohorte
      * .remote.ExportEndpoint)
@@ -143,7 +143,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.IExportEndpointListener#endpointsAdded(org.cohorte
      * .remote.ExportEndpoint[])
@@ -156,7 +156,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.IExportEndpointListener#endpointUpdated(org.cohorte
      * .remote.ExportEndpoint, java.util.Map)
@@ -168,12 +168,12 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
         final Map<String, Object> content = new LinkedHashMap<>();
         content.put("uid", aEndpoint.getUid());
         content.put("properties", aEndpoint.makeImportProperties());
-        sendMessage("remove", content);
+        sendMessage("update", content);
     }
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
      * IHerald, org.cohorte.herald.MessageReceived)
@@ -265,7 +265,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IDirectoryListener#peerRegistered(org.cohorte.herald
      * .Peer)
@@ -278,7 +278,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IDirectoryListener#peerUnregistered(org.cohorte.herald
      * .Peer)
@@ -292,7 +292,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IDirectoryListener#peerUpdated(org.cohorte.herald.
      * Peer, java.lang.String, org.cohorte.herald.Access,
