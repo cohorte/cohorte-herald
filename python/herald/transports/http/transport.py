@@ -39,7 +39,7 @@ __docformat__ = "restructuredtext en"
 from . import ACCESS_ID, SERVICE_HTTP_RECEIVER, SERVICE_HTTP_TRANSPORT
 
 # HTTP requests
-import requests
+import requests.exceptions
 
 # Herald Core
 from herald.exceptions import InvalidPeerAccess
@@ -188,6 +188,22 @@ class HttpTransport(object):
         content = json.dumps(jabsorb_content, default=utils.json_converter)
         return headers, content
 
+    def __post_message(self, url, content, headers):
+        """
+        Method called directly or in a thread to send a POST HTTP request
+
+        :param url: Target URL
+        :param content: Request body
+        :param headers: Request headers
+        :return: A response bean
+        """
+        try:
+            return self.__session.post(url, content, headers=headers)
+        except requests.exceptions.ConnectionError as ex:
+            # Connection aborted during request
+            _logger.error("Connection error while posting a message: %s", ex)
+            return None
+
     def fire(self, peer, message, extra=None):
         """
         Fires a message to a peer
@@ -213,8 +229,14 @@ class HttpTransport(object):
 
         # Send the HTTP request (blocking) and raise an error if necessary
         headers, content = self.__prepare_message(message, parent_uid)
-        response = self.__session.post(url, content, headers=headers)
-        response.raise_for_status()
+
+        response = self.__post_message(url, content, headers)
+        if response is None:
+            # The error has been logged in post_message
+            raise IOError("Error sending message %s", message.uid)
+        else:
+            # Raise an error if the status isn't 2XX
+            response.raise_for_status()
 
     def fire_group(self, group, peers, message):
         """
@@ -250,8 +272,8 @@ class HttpTransport(object):
             url = self.__get_access(peer)
             if url:
                 # Send the HTTP requests (from the thread pool)
-                future = self.__pool.enqueue(self.__session.post, url, content,
-                                             headers=headers)
+                future = self.__pool.enqueue(self.__post_message,
+                                             url, content, headers)
                 future.set_callback(peer_result, peer)
             else:
                 # No HTTP access description
