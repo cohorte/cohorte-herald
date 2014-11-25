@@ -184,7 +184,7 @@ public class HttpTransport implements ITransport {
             public void run(final Object aResult, final Throwable aThrowable,
                     final Peer aPeer) {
 
-                if (aThrowable != null) {
+                if (aThrowable == null) {
                     // No error
                     accessedPeers.add(aPeer);
 
