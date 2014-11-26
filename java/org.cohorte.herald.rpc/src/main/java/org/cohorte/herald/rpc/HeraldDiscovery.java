@@ -38,6 +38,7 @@ import org.cohorte.herald.Message;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.NoTransport;
 import org.cohorte.herald.Peer;
+import org.cohorte.herald.UnknownPeer;
 import org.cohorte.remote.ExportEndpoint;
 import org.cohorte.remote.IExportEndpointListener;
 import org.cohorte.remote.IExportsDispatcher;
@@ -190,21 +191,28 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
         try {
             switch (kind) {
-            case "add":
             case "contact": {
                 // Register the endpoints
-                final List<Map<String, Object>> maps = (List<Map<String, Object>>) aMessage
-                        .getContent();
-                for (final Map<String, Object> map : maps) {
-                    final ImportEndpoint endpoint = loadEndpoint(map);
-                    pRegistry.add(endpoint);
-                }
+                registerEndpoints((List<Map<String, Object>>) aMessage
+                        .getContent());
 
-                if (kind.equals("contact")) {
-                    // In case of contact: reply with our dump
-                    final List<Map<String, Object>> dump = dumpEndpoints(pDispatcher
-                            .getEndpoints());
-                    aHerald.reply(aMessage, dump, SUBJECT_PREFIX + "/add");
+                // In case of contact: reply with our dump
+                final List<Map<String, Object>> dump = dumpEndpoints(pDispatcher
+                        .getEndpoints());
+                aHerald.reply(aMessage, dump, SUBJECT_PREFIX + "/add");
+                break;
+            }
+
+            case "add": {
+                try {
+                    // Check if the sender is known
+                    pDirectory.getPeer(aMessage.getSender());
+
+                    // Peer is known: load the endpoints
+                    registerEndpoints((List<Map<String, Object>>) aMessage
+                            .getContent());
+                } catch (final UnknownPeer ex) {
+                    // Peer is unknown: ignore the message
                 }
                 break;
             }
@@ -303,6 +311,20 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
             final Access aData, final Access aPrevious) {
 
         // Do nothing
+    }
+
+    /**
+     * Registers a list of endpoints
+     *
+     * @param aMessageContent
+     *            A list of maps describing endpoints
+     */
+    private void registerEndpoints(final List<Map<String, Object>> aEndpoints) {
+
+        for (final Map<String, Object> endpointDict : aEndpoints) {
+            final ImportEndpoint endpoint = loadEndpoint(endpointDict);
+            pRegistry.add(endpoint);
+        }
     }
 
     /**

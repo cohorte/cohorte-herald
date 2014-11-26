@@ -143,36 +143,49 @@ class HeraldDiscovery(object):
         self._herald.fire_group('all', beans.Message(self.__subject(kind),
                                                      content))
 
+    def __register_endpoints(self, peer_uid, endpoints_dicts):
+        """
+        Registers a list of endpoints
+
+        :param peer_uid: UID of the peer providing the services
+        :param endpoints_dicts: A list of endpoint description dictionaries
+        """
+        for endpoint_dict in endpoints_dicts:
+            try:
+                endpoint = self._load_endpoint(endpoint_dict)
+                self._registry.add(endpoint)
+            except KeyError as ex:
+                _logger.error("Unreadable endpoint from %s: missing %s",
+                              peer_uid, ex)
+
     def herald_message(self, herald_svc, message):
         """
         An Herald message has been received
         """
         kind = message.subject.rsplit('/', 1)[1]
-        if kind in ('add', 'contact'):
-            # Register the new endpoints
-            for endpoint_dict in message.content:
-                try:
-                    endpoint = self._load_endpoint(endpoint_dict)
-                    self._registry.add(endpoint)
-                except KeyError as ex:
-                    _logger.error("Unreadable endpoint from %s: missing %s",
-                                  message.sender, ex)
+        if kind == 'contact':
+            # First contact: we should know about the remote peer
+            # (peer discovery process)
+            # => Register the new endpoints
+            self.__register_endpoints(message.sender, message.content)
 
-            if kind == 'contact':
-                # Reply with the whole list of our exported endpoints
-                endpoints = \
-                    self._dump_endpoints(self._dispatcher.get_endpoints())
-                herald_svc.reply(message, endpoints, self.__subject("add"))
-
+            # Reply with the whole list of our exported endpoints
+            endpoints = self._dump_endpoints(self._dispatcher.get_endpoints())
+            herald_svc.reply(message, endpoints, self.__subject("add"))
+        elif kind == 'add' and message.sender in self._directory:
+            # New endpoint available on a known peer
+            # => Register the new endpoints
+            self.__register_endpoints(message.sender, message.content)
         elif kind == 'remove':
-            # Message only contains the UID of the endpoint
+            # The message only contains the UID of the endpoint
             self._registry.remove(message.content['uid'])
-
         elif kind == 'update':
             # Update the endpoint
             endpoint_uid = message.content['uid']
             new_properties = message.content['properties']
             self._registry.update(endpoint_uid, new_properties)
+        else:
+            _logger.debug("Unknown kind of discovery event: %s", kind)
 
     def peer_registered(self, peer):
         """
