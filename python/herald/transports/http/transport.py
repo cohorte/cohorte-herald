@@ -233,7 +233,7 @@ class HttpTransport(object):
         response = self.__post_message(url, content, headers)
         if response is None:
             # The error has been logged in post_message
-            raise IOError("Error sending message %s", message.uid)
+            raise IOError("Error sending message {0}".format(message.uid))
         else:
             # Raise an error if the status isn't 2XX
             response.raise_for_status()
