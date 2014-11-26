@@ -98,6 +98,16 @@ class HeraldDirectory(object):
         # Thread safety
         self.__lock = threading.Lock()
 
+    def __contains__(self, peer):
+        """
+        Adds support for the "in" keyword: checks if the given peer is
+        registered in this directory
+
+        :param peer: A peer UID or object
+        :return: True if the peer is known
+        """
+        return peer in self._peers or peer in self._peers.values()
+
     def __make_local_peer(self, context):
         """
         Prepares a Peer bean with local configuration
