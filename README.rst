@@ -44,7 +44,7 @@ Currently, Herald supports two protocols in Python, and one in Java:
     `Felix HTTP service <http://felix.apache.org/documentation/subprojects/apache-felix-http-service.html>`_
     to work correctly.
 
-* XMPP (Python only, for now):
+* XMPP (Python & Java):
 
   * Each message is a either a message or a group message
   * Discovery is based on a Multi-User Chat room (XEP-0045)
