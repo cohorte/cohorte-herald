@@ -41,6 +41,7 @@ from . import ACCESS_ID, SERVICE_HTTP_TRANSPORT, SERVICE_HTTP_RECEIVER, \
 from .beans import HTTPAccess
 import herald
 import herald.beans as beans
+import herald.utils as utils
 
 # Pelix/iPOPO
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
@@ -195,7 +196,7 @@ def create_multicast_socket(address, port, join=True):
         addrs_info = socket.getaddrinfo(address, port, socket.AF_UNSPEC,
                                         socket.SOCK_DGRAM)
     except socket.gaierror:
-        raise ValueError("Error retrieving address informations ({0}, {1})"
+        raise ValueError("Error retrieving address information ({0}, {1})"
                          .format(address, port))
 
     if len(addrs_info) > 1:
@@ -221,14 +222,12 @@ def create_multicast_socket(address, port, join=True):
             # pylint: disable=no-member
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         except AttributeError:
-
             pass
 
         # Bind the socket
         if sock.family == socket.AF_INET:
             # IPv4 binding
             sock.bind(('0.0.0.0', port))
-
         else:
             # IPv6 Binding
             sock.bind(('::', port))
@@ -244,7 +243,6 @@ def create_multicast_socket(address, port, join=True):
 
             # Allow multicast packets to get back on this host
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
-
         else:
             # IPv6
             sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
@@ -654,14 +652,15 @@ class MulticastHeartbeat(object):
             # Remove the starting /, as it is added while forging the URL
             path = path[1:]
 
+        # Normalize the address of the sender
+        host = utils.normalize_ip(host)
+
         # Prepare the "extra" information, like for a reply
         extra = {'host': host, 'port': port, 'path': path}
         local_dump = self._directory.get_local_peer().dump()
         try:
             self._transport.fire(
-                None,
-                beans.Message(SUBJECT_STEP_1, local_dump),
-                extra)
+                None, beans.Message(SUBJECT_STEP_1, local_dump), extra)
         except Exception as ex:
             _logger.exception("Error contacting peer: %s", ex)
 

@@ -212,7 +212,7 @@ class HeraldServlet(object):
         content_type = request.get_header('content-type')
         if content_type not in (None, CONTENT_TYPE_JSON):
             # Unknown content type -> Error 412 "Precondition failed"
-            _logger.critical("Bad content type: %s", content_type)
+            _logger.error("Bad content type: %s", content_type)
             code, content = _make_json_result(412, "Unknown content type")
 
         else:
@@ -226,7 +226,7 @@ class HeraldServlet(object):
             msg_content = jabsorb.from_jabsorb(json.loads(json_content))
 
             # Store sender information
-            host = request.get_client_address()[0]
+            host = utils.normalize_ip(request.get_client_address()[0])
             port = int(request.get_header('herald-port', 80))
             extra = {'host': host, 'port': port,
                      'path': request.get_header('herald-path'),
@@ -235,8 +235,8 @@ class HeraldServlet(object):
             try:
                 # Check the sender UID port
                 # (not perfect, but can avoid spoofing)
-                if not self._http_directory.check_access(sender_uid,
-                                                         host, port):
+                if not self._http_directory.check_access(
+                        sender_uid, host, port):
                     # Port doesn't match: invalid UID
                     sender_uid = "<invalid>"
             except ValueError:

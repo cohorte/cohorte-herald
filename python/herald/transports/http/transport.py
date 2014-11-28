@@ -223,7 +223,7 @@ class HttpTransport(object):
         url = self.__get_access(peer, extra)
         if not url:
             # No HTTP access description
-            raise InvalidPeerAccess(beans.Target(uid=peer.uid),
+            raise InvalidPeerAccess(beans.Target(peer=peer),
                                     "No '{0}' access found"
                                     .format(self._access_id))
 
