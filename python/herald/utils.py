@@ -44,3 +44,40 @@ def json_converter(obj):
         return tuple(obj)
 
     raise TypeError
+
+# ------------------------------------------------------------------------------
+
+try:
+    # IPv4/v6 utility methods, added in Python 3.3
+    import ipaddress
+except ImportError:
+    # Module not available
+    def normalize_ip(ip_address):
+        """
+        Should un-map the given IP address. (Does nothing)
+
+        :param ip_address: An IP address
+        :return: The given IP address
+        """
+        return ip_address
+else:
+    def normalize_ip(ip_address):
+        """
+        Un-maps the given IP address: if it is an IPv4 address mapped in an
+        IPv6 one, the methods returns the IPv4 address
+
+        :param ip_address: An IP address
+        :return: The un-mapped IPv4 address or the given address
+        """
+        try:
+            parsed = ipaddress.ip_address(ip_address)
+            if parsed.version == 6:
+                mapped = parsed.ipv4_mapped
+                if mapped is not None:
+                    # Return the un-mapped IPv4 address
+                    return str(mapped)
+        except ValueError:
+            # No an IP address: maybe a host name => keep it as is
+            pass
+
+        return ip_address
