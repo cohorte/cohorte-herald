@@ -283,15 +283,19 @@ class Target(object):
     """
     The description of a target, used in exceptions
     """
-    def __init__(self, uid=None, group=None, uids=None):
+    def __init__(self, uid=None, group=None, uids=None, peer=None):
         """
         Sets the target definition. Only one argument should be set at once.
 
         :param uid: The UID of the targeted peer
         :param group: The targeted group
         :param uids: The UIDs of the targeted peers (for groups only)
+        :param peer: A Peer bean
         """
-        self.__uid = uid
+        if peer is not None:
+            self.__uid = peer.uid
+        else:
+            self.__uid = uid
         self.__group = group
         self.__uids = uids or []
 
