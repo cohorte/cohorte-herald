@@ -61,6 +61,7 @@ public class HeraldRpcImporter implements IImportEndpointListener {
     private final BundleContext pContext;
 
     /** The Herald core service */
+    @Requires
     private IHerald pHerald;
 
     /** The logger */
@@ -86,7 +87,10 @@ public class HeraldRpcImporter implements IImportEndpointListener {
 
     /*
      * (non-Javadoc)
-     * @see org.cohorte.remote.IImportEndpointListener#endpointAdded(org.cohorte.remote.ImportEndpoint)
+     * 
+     * @see
+     * org.cohorte.remote.IImportEndpointListener#endpointAdded(org.cohorte.
+     * remote.ImportEndpoint)
      */
     @Override
     public synchronized void endpointAdded(final ImportEndpoint aEndpoint) {
@@ -161,7 +165,7 @@ public class HeraldRpcImporter implements IImportEndpointListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.IImportEndpointListener#endpointRemoved(org.cohorte
      * .remote.ImportEndpoint)
@@ -184,7 +188,7 @@ public class HeraldRpcImporter implements IImportEndpointListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.IImportEndpointListener#endpointUpdated(org.cohorte
      * .remote.ImportEndpoint, java.util.Map)
