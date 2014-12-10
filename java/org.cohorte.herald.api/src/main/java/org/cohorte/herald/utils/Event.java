@@ -107,7 +107,11 @@ public class Event {
         try {
             if (!pFlag) {
                 // Wait only if the flag is not yet set
-                pCondition.await(aTimeout, TimeUnit.MILLISECONDS);
+                if (aTimeout == null) {
+                    pCondition.await();
+                } else {
+                    pCondition.await(aTimeout, TimeUnit.MILLISECONDS);
+                }
             }
             return pFlag;
 
