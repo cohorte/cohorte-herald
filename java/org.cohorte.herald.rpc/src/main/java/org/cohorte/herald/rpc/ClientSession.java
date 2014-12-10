@@ -57,6 +57,7 @@ public class ClientSession implements ISession {
 
     /*
      * (non-Javadoc)
+     * 
      * @see org.jabsorb.ng.client.ISession#close()
      */
     @Override
@@ -70,6 +71,7 @@ public class ClientSession implements ISession {
 
     /*
      * (non-Javadoc)
+     * 
      * @see org.jabsorb.ng.client.ISession#sendAndReceive(org.json.JSONObject)
      */
     @Override
@@ -78,8 +80,10 @@ public class ClientSession implements ISession {
         Object result;
         try {
             // Send the request as a string
-            result = pHerald.send(pPeerUid,
-                    new Message(pSubject, aMessage.toString()));
+            result = pHerald
+                    .send(pPeerUid,
+                            new Message(pSubject, JSONObject.quote(aMessage
+                                    .toString())));
 
         } catch (final HeraldException ex) {
             // Error sending the message
