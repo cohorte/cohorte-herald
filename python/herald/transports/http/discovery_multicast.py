@@ -42,6 +42,7 @@ from .beans import HTTPAccess
 import herald
 import herald.beans as beans
 import herald.utils as utils
+import herald.transports.peer_contact as peer_contact
 
 # Pelix/iPOPO
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
@@ -64,16 +65,6 @@ PACKET_TYPE_HEARTBEAT = 1
 
 # Last beat packet type
 PACKET_TYPE_LASTBEAT = 2
-
-# Prefix to all multicast discovery messages
-SUBJECT_PREFIX = "herald/http/discovery"
-
-# First message: Initial contact message, containing our dump
-SUBJECT_STEP_1 = SUBJECT_PREFIX + "/step1"
-# Second message: let the remote peer send its dump
-SUBJECT_STEP_2 = SUBJECT_PREFIX + "/step2"
-# Third message: the remote peer acknowledge, notify our listeners
-SUBJECT_STEP_3 = SUBJECT_PREFIX + "/step3"
 
 _logger = logging.getLogger(__name__)
 
@@ -486,7 +477,6 @@ class MulticastReceiver(object):
                 data, sender = self._socket.recvfrom(1024)
                 try:
                     self._handle_heartbeat(sender, data)
-
                 except Exception as ex:
                     _logger.exception("Error handling the heart beat: %s", ex)
 
@@ -501,7 +491,8 @@ class MulticastReceiver(object):
 @Property('_group', PROP_MULTICAST_GROUP, '239.0.0.1')
 @Property('_port', PROP_MULTICAST_PORT, 42000)
 @Property('_peer_ttl', 'peer.ttl', 30)
-@Property('_filters', herald.PROP_FILTERS, [SUBJECT_PREFIX + "/*"])
+@Property('_filters', herald.PROP_FILTERS,
+          [peer_contact.SUBJECT_DISCOVERY_PREFIX + "/*"])
 class MulticastHeartbeat(object):
     """
     Discovery of Herald peers based on multicast
@@ -518,8 +509,8 @@ class MulticastHeartbeat(object):
         # Local peer bean
         self._local_peer = None
 
-        # Delayed notifications map (Peer UID -> DelayedNotification)
-        self.__delayed_notifs = {}
+        # Peer contact handler
+        self.__contact = None
 
         # Properties
         self._group = "239.0.0.1"
@@ -547,6 +538,10 @@ class MulticastHeartbeat(object):
         """
         Component validated
         """
+        # Setup the contact
+        self.__contact = peer_contact.PeerContact(
+            self._directory, self.__load_dump, "http-multicast-contact")
+
         self._port = int(self._port)
         self._peer_ttl = int(self._peer_ttl)
         self._local_peer = self._directory.get_local_peer()
@@ -597,6 +592,8 @@ class MulticastHeartbeat(object):
 
         # Clear storage
         self._peer_lst.clear()
+        self.__contact.clear()
+        self.__contact = None
 
     def handle_heartbeat(self, kind, peer_uid, app_id, host, port, path):
         """
@@ -660,25 +657,26 @@ class MulticastHeartbeat(object):
         local_dump = self._directory.get_local_peer().dump()
         try:
             self._transport.fire(
-                None, beans.Message(SUBJECT_STEP_1, local_dump), extra)
+                None,
+                beans.Message(peer_contact.SUBJECT_DISCOVERY_STEP_1,
+                              local_dump), extra)
         except Exception as ex:
             _logger.exception("Error contacting peer: %s", ex)
 
-    def __load_dump(self, message):
+    def __load_dump(self, message, description):
         """
         Loads and updates the remote peer dump with its HTTP access
 
-        :param message: A message containing a remote peer dump
+        :param message: A message containing a remote peer description
+        :param description: The parsed remote peer description
         :return: The peer dump map
         """
-        remote_dump = message.content
         if message.access == ACCESS_ID:
             # Forge the access to the HTTP server using extra information
             extra = message.extra
-            remote_dump['accesses'][ACCESS_ID] = \
+            description['accesses'][ACCESS_ID] = \
                 HTTPAccess(extra['host'], extra['port'], extra['path']).dump()
-
-        return remote_dump
+        return description
 
     def herald_message(self, herald_svc, message):
         """
@@ -687,56 +685,7 @@ class MulticastHeartbeat(object):
         :param herald_svc: Herald service
         :param message: Received message
         """
-        subject = message.subject
-        if subject == SUBJECT_STEP_1:
-            # Step 1: Register the remote peer and reply with our dump
-            try:
-                # Delayed registration
-                notification = self._directory.register_delayed(
-                    self.__load_dump(message))
-                peer = notification.peer
-                if peer is not None:
-                    # Registration succeeded
-                    self.__delayed_notifs[peer.uid] = notification
-
-                    # Reply with our dump
-                    herald_svc.reply(message,
-                                     self._directory.get_local_peer().dump(),
-                                     SUBJECT_STEP_2)
-            except ValueError:
-                _logger.error("Error registering a peer discovered by "
-                              "multicast")
-
-        elif subject == SUBJECT_STEP_2:
-            # Step 2: Register the dump, notify local listeners, then let
-            # the remote peer notify its listeners
-            try:
-                # Register the peer
-                notification = self._directory.register_delayed(
-                    self.__load_dump(message))
-
-                # Let the remote peer notify its listeners
-                herald_svc.reply(message, None, SUBJECT_STEP_3)
-
-                # Now we can notify listeners
-                notification.notify()
-            except ValueError:
-                _logger.error("Error registering a peer using the dump it "
-                              "sent")
-
-        elif subject == SUBJECT_STEP_3:
-            # Step 3: notify local listeners about the remote peer
-            try:
-                notification = self.__delayed_notifs.pop(message.sender)
-            except KeyError:
-                # Unknown peer
-                pass
-            else:
-                # Notify listeners
-                notification.notify()
-        else:
-            # Unknown subject
-            _logger.debug("Unknown discovery step: %s", subject)
+        self.__contact.herald_message(herald_svc, message)
 
     def __heart_loop(self):
         """
