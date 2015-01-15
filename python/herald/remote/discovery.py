@@ -164,9 +164,18 @@ class HeraldDiscovery(object):
         """
         kind = message.subject.rsplit('/', 1)[1]
         if kind == 'contact':
-            # First contact: we should know about the remote peer
-            # (peer discovery process)
-            # => Register the new endpoints
+            # First contact
+            # Check if we know the sending peer
+            # # (peer discovery process)
+            if message.sender not in self._directory:
+                # Unknown sender: ignore message (we can't use those services)
+                # FIXME: condition to be removed once the peer discovery has
+                # been checked: this should never happen
+                _logger.critical("Sender of 'contact' is unknown: %s",
+                                 message.sender)
+                return
+
+            # Register the new endpoints
             self.__register_endpoints(message.sender, message.content)
 
             # Reply with the whole list of our exported endpoints
