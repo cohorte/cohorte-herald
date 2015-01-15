@@ -706,18 +706,24 @@ class MulticastHeartbeat(object):
             except ValueError:
                 _logger.error("Error registering a peer discovered by "
                               "multicast")
+
         elif subject == SUBJECT_STEP_2:
             # Step 2: Register the dump, notify local listeners, then let
             # the remote peer notify its listeners
             try:
-                # Register the peer and notify listeners
-                self._directory.register(self.__load_dump(message))
+                # Register the peer
+                notification = self._directory.register_delayed(
+                    self.__load_dump(message))
 
                 # Let the remote peer notify its listeners
                 herald_svc.reply(message, None, SUBJECT_STEP_3)
+
+                # Now we can notify listeners
+                notification.notify()
             except ValueError:
                 _logger.error("Error registering a peer using the dump it "
                               "sent")
+
         elif subject == SUBJECT_STEP_3:
             # Step 3: notify local listeners about the remote peer
             try:
