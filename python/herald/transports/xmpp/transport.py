@@ -424,7 +424,6 @@ class XmppTransport(object):
 
         if subject.startswith(peer_contact.SUBJECT_DISCOVERY_PREFIX):
             # Handle discovery message
-            _logger.debug("Got a discovery message...")
             self.__contact.herald_message(self._herald, message)
         else:
             # All other messages are give to Herald Core

@@ -108,7 +108,6 @@ class RoomData(object):
         self.errback = errback
 
 
-# FIXME: to review
 class RoomCreator(object):
     """
     XMPP Room creation utility.
@@ -159,7 +158,7 @@ class RoomCreator(object):
         :param callback: Method called back on success
         :param errback: Method called on error
         """
-        self.__logger.info("Creating room: %s", room)
+        self.__logger.debug("Creating room: %s", room)
 
         with self.__lock:
             # Format the room JID
