@@ -14,6 +14,17 @@
 
 	<name>Cohorte Herald :: API</name>
 
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.compendium</artifactId>
+		</dependency>
+	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -27,8 +38,12 @@
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
+						<Import-Package>
+							org.osgi.service.log
+						</Import-Package>
 						<Export-Package>
 							org.cohorte.herald;version=${pkg-version},
+							org.cohorte.herald.transport;version=${pkg-version}
 							org.cohorte.herald.utils;version=${pkg-version}
 						</Export-Package>
 					</instructions>
