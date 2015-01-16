@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,7 +38,6 @@ import org.apache.felix.ipojo.annotations.ServiceProperty;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IConstants;
-import org.cohorte.herald.IDelayedNotification;
 import org.cohorte.herald.IDirectory;
 import org.cohorte.herald.IHerald;
 import org.cohorte.herald.IMessageListener;
@@ -48,11 +46,13 @@ import org.cohorte.herald.Message;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.UnknownPeer;
-import org.cohorte.herald.ValueError;
 import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
 import org.cohorte.herald.http.impl.IHttpReceiver;
+import org.cohorte.herald.transport.IContactHook;
+import org.cohorte.herald.transport.IDiscoveryConstants;
+import org.cohorte.herald.transport.PeerContact;
 import org.cohorte.herald.utils.Event;
 import org.cohorte.remote.multicast.utils.IPacketListener;
 import org.cohorte.remote.multicast.utils.MulticastHandler;
@@ -65,7 +65,8 @@ import org.osgi.service.log.LogService;
  */
 @Component(name = IHttpConstants.FACTORY_DISCOVERY_MULTICAST)
 @Provides(specifications = IMessageListener.class)
-public class MulticastHeartbeat implements IPacketListener, IMessageListener {
+public class MulticastHeartbeat implements IPacketListener, IMessageListener,
+        IContactHook {
 
     /** UDP Packet: Peer heart beat */
     private static final byte PACKET_TYPE_HEARTBEAT = 1;
@@ -76,23 +77,8 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
     /** Maximum time without peer notification : 30 seconds */
     private static final long PEER_TTL = 30000;
 
-    /** Prefix to all multicast discovery messages */
-    private static final String SUBJECT_PREFIX = "herald/http/discovery";
-
-    /** First message: Initial contact message, containing our dump */
-    private static final String SUBJECT_STEP_1 = MulticastHeartbeat.SUBJECT_PREFIX
-            + "/step1";
-
-    /** Second message: let the remote peer send its dump */
-    private static final String SUBJECT_STEP_2 = MulticastHeartbeat.SUBJECT_PREFIX
-            + "/step2";
-
-    /** Third message: the remote peer acknowledge, notify our listeners */
-    private static final String SUBJECT_STEP_3 = MulticastHeartbeat.SUBJECT_PREFIX
-            + "/step3";
-
-    /** Delayed notifications map: Peer UID -&gt; {@link IDelayedNotification} */
-    private final Map<String, IDelayedNotification> pDelayedNotifications = new LinkedHashMap<>();
+    /** The peer contact utility */
+    private PeerContact pContact;
 
     /** The Herald directory */
     @Requires
@@ -100,7 +86,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /** Herald messages filter */
     @ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
-            + SUBJECT_PREFIX + "/*}")
+            + IDiscoveryConstants.SUBJECT_DISCOVERY_PREFIX + "/*}")
     private String[] pFilters;
 
     /** The heart beat thread */
@@ -162,8 +148,9 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
         try {
             // Fire the message, using the HTTP transport directly
             // Peer registration will be done after it responds
-            pHttpTransport.fire(null, new Message(SUBJECT_STEP_1, pDirectory
-                    .getLocalPeer().dump()), extra);
+            pHttpTransport.fire(null, new Message(
+                    IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_1, pDirectory
+                            .getLocalPeer().dump()), extra);
 
         } catch (final HeraldException ex) {
             pLogger.log(LogService.LOG_ERROR, "Error contacting peer: " + ex,
@@ -219,7 +206,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
      * .Exception)
@@ -303,7 +290,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handlePacket(java.
      * net.InetSocketAddress, byte[])
@@ -376,7 +363,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
      * IHerald, org.cohorte.herald.MessageReceived)
@@ -385,63 +372,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
     public void heraldMessage(final IHerald aHerald,
             final MessageReceived aMessage) throws HeraldException {
 
-        switch (aMessage.getSubject()) {
-        case SUBJECT_STEP_1: {
-            // Step 1: Register the remote peer and reply with our dump
-            try {
-                // Delayed registration
-                final IDelayedNotification notification = pDirectory
-                        .registerDelayed(loadDump(aMessage));
-
-                final Peer peer = notification.getPeer();
-                if (peer != null) {
-                    // Registration succeeded
-                    pDelayedNotifications.put(peer.getUid(), notification);
-
-                    // Reply with our dump
-                    aHerald.reply(aMessage, pDirectory.getLocalPeer().dump(),
-                            SUBJECT_STEP_2);
-                }
-            } catch (final ValueError ex) {
-                pLogger.log(LogService.LOG_ERROR,
-                        "Error registering a peer discovered by multicast: "
-                                + ex, ex);
-            }
-            break;
-        }
-
-        case SUBJECT_STEP_2: {
-            // Step 2: Register the dump, notify local listeners, then let
-            // the remote peer notify its listeners
-            try {
-                // Register the peer and notify listeners
-                pDirectory.register(loadDump(aMessage));
-
-                // Let the remote peer notify its listeners
-                aHerald.reply(aMessage, null, SUBJECT_STEP_3);
-            } catch (final ValueError ex) {
-                pLogger.log(LogService.LOG_ERROR,
-                        "Error registering a peer using the dump it send: "
-                                + ex, ex);
-            }
-            break;
-        }
-
-        case SUBJECT_STEP_3: {
-            // Step 3: notify local listeners about the remote peer
-            final IDelayedNotification notification = pDelayedNotifications
-                    .remove(aMessage.getSender());
-            if (notification != null) {
-                notification.notifyListeners();
-            }
-            break;
-        }
-
-        default:
-            pLogger.log(LogService.LOG_DEBUG, "Unknown discovery step: "
-                    + aMessage.getSubject());
-            break;
-        }
+        pContact.heraldMessage(aHerald, aMessage);
     }
 
     /**
@@ -484,38 +415,12 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
 
         // Clean up
         pPeerLST.clear();
+        pContact.clear();
         pLocalPeer = null;
         pMulticast = null;
         pHeartThread = null;
         pTTLThread = null;
-    }
-
-    /**
-     * Casts and updates the remote peer dump with its HTTP access
-     *
-     * @param aMessage
-     *            A message containing a remote peer dump
-     * @return The peer dump map
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> loadDump(final MessageReceived aMessage) {
-
-        final Map<String, Object> remoteDump = (Map<String, Object>) aMessage
-                .getContent();
-
-        if (aMessage.getAccess().equals(IHttpConstants.ACCESS_ID)) {
-            // Forge the access to the HTTP server using extra information
-            final HTTPExtra extra = (HTTPExtra) aMessage.getExtra();
-            final HTTPAccess updatedAccess = new HTTPAccess(extra.getHost(),
-                    extra.getPort(), extra.getPath());
-
-            // Replace the access
-            final Map<String, Object> accessDump = (Map<String, Object>) remoteDump
-                    .get("accesses");
-            accessDump.put(IHttpConstants.ACCESS_ID, updatedAccess.dump());
-        }
-
-        return remoteDump;
+        pContact = null;
     }
 
     /**
@@ -667,11 +572,42 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener {
         return buffer.array();
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see
+     * org.cohorte.herald.transport.IContactHook#updateDescription(org.cohorte
+     * .herald.MessageReceived, java.util.Map)
+     */
+    @Override
+    public Map<String, Object> updateDescription(
+            final MessageReceived aMessage,
+            final Map<String, Object> aDescription) {
+
+        if (aMessage.getAccess().equals(IHttpConstants.ACCESS_ID)) {
+            // Forge the access to the HTTP server using extra information
+            final HTTPExtra extra = (HTTPExtra) aMessage.getExtra();
+            final HTTPAccess updatedAccess = new HTTPAccess(extra.getHost(),
+                    extra.getPort(), extra.getPath());
+
+            // Update the remote peer description with its HTTP access
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> accessDump = (Map<String, Object>) aDescription
+                    .get("accesses");
+            accessDump.put(IHttpConstants.ACCESS_ID, updatedAccess.dump());
+        }
+
+        return aDescription;
+    }
+
     /**
      * Component validated
      */
     @Validate
     public void validate() {
+
+        // Setup the peer contact
+        pContact = new PeerContact(pDirectory, this, pLogger);
 
         // Reset the stop event
         pStopEvent.clear();
