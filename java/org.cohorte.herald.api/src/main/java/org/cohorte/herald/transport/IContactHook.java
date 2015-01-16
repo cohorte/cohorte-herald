@@ -18,6 +18,8 @@ package org.cohorte.herald.transport;
 
 import java.util.Map;
 
+import org.cohorte.herald.MessageReceived;
+
 /**
  * Defines a hook to update the description of a peer before storing it
  *
@@ -25,5 +27,6 @@ import java.util.Map;
  */
 public interface IContactHook {
 
-    Map<String, Object> updateDescription(Map<String, Object> aDescription);
+    Map<String, Object> updateDescription(MessageReceived aMessage,
+            Map<String, Object> aDescription);
 }

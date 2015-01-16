@@ -24,7 +24,6 @@ import org.cohorte.herald.IDelayedNotification;
 import org.cohorte.herald.IDirectory;
 import org.cohorte.herald.IHerald;
 import org.cohorte.herald.IMessageListener;
-import org.cohorte.herald.Message;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.ValueError;
@@ -75,7 +74,7 @@ public class PeerContact implements IMessageListener {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
      * IHerald, org.cohorte.herald.MessageReceived)
@@ -158,7 +157,7 @@ public class PeerContact implements IMessageListener {
      *            The received Herald message
      * @return The updated peer description
      */
-    private Map<String, Object> loadDescription(final Message aMessage) {
+    private Map<String, Object> loadDescription(final MessageReceived aMessage) {
 
         @SuppressWarnings("unchecked")
         final Map<String, Object> description = (Map<String, Object>) aMessage
@@ -167,7 +166,7 @@ public class PeerContact implements IMessageListener {
         if (pHook != null) {
             // Call the hook
             final Map<String, Object> updatedDescription = pHook
-                    .updateDescription(description);
+                    .updateDescription(aMessage, description);
             if (updatedDescription != null) {
                 return updatedDescription;
             }
