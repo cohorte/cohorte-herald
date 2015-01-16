@@ -6,7 +6,7 @@ Runs an Herald XMPP framework
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
 :license: Apache License 2.0
-:version: 0.0.2.dev
+:version: 0.0.3
 :status: Alpha
 
 ..
@@ -27,7 +27,7 @@ Runs an Herald XMPP framework
 """
 
 # Module version
-__version_info__ = (0, 0, 2, "dev")
+__version_info__ = (0, 0, 3)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -49,22 +49,16 @@ import logging
 # ------------------------------------------------------------------------------
 
 
-def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name, app_id):
+def main(xmpp_server, xmpp_port, peer_name, node_name, app_id):
     """
     Runs the framework
 
     :param xmpp_server: Address of the XMPP server
     :param xmpp_port: Port of the XMPP server
-    :param run_monitor: Start the monitor bot
     :param peer_name: Name of the peer
     :param node_name: Name (also, UID) of the node hosting the peer
     :param app_id: Application ID
     """
-    # Monitor configuration
-    monitor_jid = 'bot@phenomtwo3000'
-    main_room = 'herald'
-    main_room_jid = '{0}@conference.phenomtwo3000'.format(main_room)
-
     # Create the framework
     framework = pelix.framework.create_framework(
         ('pelix.ipopo.core',
@@ -93,34 +87,16 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name, app_id):
          herald.FWPROP_APPLICATION_ID: app_id})
     context = framework.get_bundle_context()
 
-    if run_monitor:
-        # Also install the monitor bundle
-        context.install_bundle('herald.transports.xmpp.monitor')
-
     # Start everything
     framework.start()
 
     # Instantiate components
     with use_waiting_list(context) as ipopo:
-        if run_monitor:
-            # ... Monitor bot
-            ipopo.add(herald.transports.xmpp.FACTORY_MONITOR,
-                      "herald-xmpp-monitor",
-                      {herald.transports.xmpp.PROP_XMPP_SERVER: xmpp_server,
-                       herald.transports.xmpp.PROP_XMPP_PORT: xmpp_port,
-                       herald.transports.xmpp.PROP_MONITOR_JID: monitor_jid,
-                       herald.transports.xmpp.PROP_MONITOR_PASSWORD: "bot",
-                       herald.transports.xmpp.PROP_MONITOR_NICK: "Monitor",
-                       herald.transports.xmpp.PROP_XMPP_ROOM_NAME: main_room})
-
         # ... XMPP Transport
         ipopo.add(herald.transports.xmpp.FACTORY_TRANSPORT,
                   "herald-xmpp-transport",
                   {herald.transports.xmpp.PROP_XMPP_SERVER: xmpp_server,
-                   herald.transports.xmpp.PROP_XMPP_PORT: xmpp_port,
-                   herald.transports.xmpp.PROP_MONITOR_JID: monitor_jid,
-                   herald.transports.xmpp.PROP_MONITOR_KEY: "42",
-                   herald.transports.xmpp.PROP_XMPP_ROOM_JID: main_room_jid})
+                   herald.transports.xmpp.PROP_XMPP_PORT: xmpp_port})
 
     # Start the framework and wait for it to stop
     framework.wait_for_stop()
@@ -130,11 +106,6 @@ def main(xmpp_server, xmpp_port, run_monitor, peer_name, node_name, app_id):
 if __name__ == "__main__":
     # Parse arguments
     parser = argparse.ArgumentParser(description="Pelix Herald demo")
-
-    # Provider or consumer
-    parser.add_argument("-m", "--monitor", action="store_true",
-                        dest="monitor",
-                        help="Runs the monitor bot")
 
     # XMPP server
     group = parser.add_argument_group("XMPP Configuration",
@@ -163,5 +134,4 @@ if __name__ == "__main__":
     logging.getLogger('herald').setLevel(logging.DEBUG)
 
     # Run the framework
-    main(args.xmpp_server, args.xmpp_port, args.monitor,
-         args.name, args.node, args.app_id)
+    main(args.xmpp_server, args.xmpp_port, args.name, args.node, args.app_id)

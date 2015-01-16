@@ -6,7 +6,7 @@ Herald XMPP bot
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
 :license: Apache License 2.0
-:version: 0.0.2
+:version: 0.0.3
 :status: Alpha
 
 ..
@@ -27,7 +27,7 @@ Herald XMPP bot
 """
 
 # Module version
-__version_info__ = (0, 0, 2)
+__version_info__ = (0, 0, 3)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -51,17 +51,22 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
-class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
+class HeraldBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
     """
     XMPP Messenger for Herald.
     """
-    def __init__(self, jid=None, password=None):
+    def __init__(self, jid=None, password=None, nick=None):
         """
         Sets up the robot
+
+        :param jid: Bot JID (None for anonymous connection)
+        :param password: Authentication password
+        :param nick: Nick name used in MUC rooms
         """
         # Set up the object
         pelixmpp.BasicBot.__init__(self, jid, password)
-        pelixmpp.InviteMixIn.__init__(self, None)
+        pelixmpp.ServiceDiscoveryMixin.__init__(self)
+        self._nick = nick
 
         # Message callback
         self.__cb_message = None
@@ -91,25 +96,6 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.InviteMixIn):
                 method(data)
             except Exception as ex:
                 _logger.exception("Error calling method: %s", ex)
-
-    def herald_join(self, nick, monitor_jid, key, groups=None):
-        """
-        Requests to join Herald's XMPP groups
-
-        :param nick: Multi-User Chat nick
-        :param monitor_jid: JID of a monitor bot
-        :param key: Key to send to the monitor bot
-        :param groups: Groups to join
-        """
-        # Update nick for the Invite MixIn
-        self._nick = nick
-
-        # Compute & send message
-        groups_str = ",".join(str(group)
-                              for group in groups if group) if groups else ""
-        msg = beans.Message("boostrap.invite",
-                            ":".join(("invite", str(key or ''), groups_str)))
-        self.__send_message("chat", monitor_jid, msg)
 
     def __send_message(self, msgtype, target, message):
         """

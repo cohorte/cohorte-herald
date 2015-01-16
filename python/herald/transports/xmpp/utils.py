@@ -6,7 +6,7 @@ Utilities to debug sleekXMPP objects
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
 :license: Apache License 2.0
-:version: 0.0.2
+:version: 0.0.3
 :status: Alpha
 
 ..
@@ -27,7 +27,7 @@ Utilities to debug sleekXMPP objects
 """
 
 # Module version
-__version_info__ = (0, 0, 2)
+__version_info__ = (0, 0, 3)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -108,6 +108,7 @@ class RoomData(object):
         self.errback = errback
 
 
+# FIXME: to review
 class RoomCreator(object):
     """
     XMPP Room creation utility.
@@ -270,3 +271,86 @@ class RoomCreator(object):
 
                 # Call back the creator
                 self.__safe_callback(room_data)
+
+# ------------------------------------------------------------------------------
+
+
+class MarksCallback(object):
+    """
+    Calls back a method when a list of elements have been marked
+    """
+    def __init__(self, elements, callback, logname=None):
+        """
+        Sets up the count down.
+
+        The callback method must accept two arguments: successful elements and
+        erroneous ones. The elements must be hashable, as sets are used
+        internally.
+
+        :param elements: A list of elements to wait for
+        :param callback: Method to call back when all elements have been
+                         marked
+        """
+        self.__logger = logging.getLogger(logname or __name__)
+        self.__elements = set(elements)
+        self.__callback = callback
+        self.__called = False
+        self.__successes = set()
+        self.__errors = set()
+
+    def __call(self):
+        """
+        Calls the callback method
+        """
+        try:
+            if self.__callback is not None:
+                self.__callback(self.__successes, self.__errors)
+        except Exception as ex:
+            self.__logger.exception("Error calling back count down "
+                                    "handler: %s", ex)
+        else:
+            self.__called = True
+
+    def __mark(self, element, mark_set):
+        """
+        Marks an element
+
+        :param element: The element to mark
+        :param mark_set: The set corresponding to the mark
+        :return: True if the element was known
+        """
+        try:
+            self.__elements.remove(element)
+            mark_set.add(element)
+        except KeyError:
+            return False
+        else:
+            if not self.__elements:
+                # No more elements to wait for
+                self.__call()
+            return True
+
+    def is_done(self):
+        """
+        Checks if the call back has been called, i.e. if this object can be
+        deleted
+        """
+        return self.__called
+
+    def set(self, element):
+        """
+        Marks an element as successful
+
+        :param element: An element
+        :return: True if the element was known
+        """
+        return self.__mark(element, self.__successes)
+
+    def set_error(self, element):
+        """
+        Marks an element as erroneous
+
+        :param element: An element
+        :return: True if the element was known
+        """
+        return self.__mark(element, self.__errors)
