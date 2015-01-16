@@ -489,23 +489,7 @@ class Herald(object):
         :param message: Message received from another peer
         :param kind: Kind of directory message
         """
-        if kind == 'newcomer':
-            # A new peer appears: register it
-            if self._directory.register(message.content) is not None:
-                try:
-                    # Reply to it, if registration was accepted
-                    self.reply(message,
-                               self._directory.get_local_peer().dump(),
-                               'herald/directory/welcome')
-                except Exception as ex:
-                    _logger.warning("Can't send a welcome message back to the "
-                                    "sender: %s", ex)
-
-        elif kind == 'welcome':
-            # A peer replied to our 'newcomer' event
-            self._directory.register(message.content)
-
-        elif kind == 'bye':
+        if kind == 'bye':
             # A peer is going away
             self._directory.unregister(message.content)
 
