@@ -540,7 +540,7 @@ class MulticastHeartbeat(object):
         """
         # Setup the contact
         self.__contact = peer_contact.PeerContact(
-            self._directory, self.__load_dump, "http-multicast-contact")
+            self._directory, self.__load_dump, __name__ + ".contact")
 
         self._port = int(self._port)
         self._peer_ttl = int(self._peer_ttl)

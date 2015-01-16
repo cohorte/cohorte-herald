@@ -54,7 +54,7 @@ class PeerContact(object):
     """
     Standard peer discovery algorithm
     """
-    def __init__(self, directory, dump_hook, logname="peer-contact"):
+    def __init__(self, directory, dump_hook, logname=None):
         """
         Sets up members
 
