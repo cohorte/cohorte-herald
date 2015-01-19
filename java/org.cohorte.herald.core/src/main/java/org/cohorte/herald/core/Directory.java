@@ -180,7 +180,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#dump()
      */
     @Override
@@ -191,6 +191,17 @@ public class Directory implements IDirectory, IDirectoryInternal {
             result.put(peer.getUid(), peer.dump());
         }
         return result;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.cohorte.herald.IDirectory#getApplicationId()
+     */
+    @Override
+    public String getApplicationId() {
+
+        return pLocalPeer.getApplicationId();
     }
 
     /**
@@ -216,7 +227,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#getLocalPeer()
      */
     @Override
@@ -227,7 +238,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#getLocalUid()
      */
     @Override
@@ -238,7 +249,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#getPeer(java.lang.String)
      */
     @Override
@@ -254,7 +265,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#getPeers()
      */
     @Override
@@ -265,7 +276,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#getPeersForGroup(java.lang.String)
      */
     @Override
@@ -286,7 +297,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#getPeersForName(java.lang.String)
      */
     @Override
@@ -311,7 +322,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#getPeersForNode(java.lang.String)
      */
     @Override
@@ -359,7 +370,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#load(java.util.Map)
      */
     @Override
@@ -507,7 +518,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IDirectoryInternal#peerAccessSet(org.cohorte.herald
      * .Peer, java.lang.String, org.cohorte.herald.Access)
@@ -533,7 +544,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.IDirectoryInternal#peerAccessUnset(org.cohorte.herald
      * .Peer, java.lang.String, org.cohorte.herald.Access)
@@ -561,7 +572,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#register(java.util.Map)
      */
     @Override
@@ -575,7 +586,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#registerDelayed(java.util.Map)
      */
     @Override
@@ -716,7 +727,7 @@ public class Directory implements IDirectory, IDirectoryInternal {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.IDirectory#unregister(java.lang.String)
      */
     @Override

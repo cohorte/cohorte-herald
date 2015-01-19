@@ -34,6 +34,13 @@ public interface IDirectory {
     Map<String, Map<String, Object>> dump();
 
     /**
+     * Easy access to the application ID of the local peer
+     *
+     * @return the application ID of the local peer
+     */
+    String getApplicationId();
+
+    /**
      * Returns the bean representing the local peer
      *
      * @return the local Peer bean
