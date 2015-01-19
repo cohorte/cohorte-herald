@@ -130,11 +130,8 @@ class XmppTransport(object):
         self.__contact = peer_contact.PeerContact(self._directory, None,
                                                   __name__ + ".contact")
 
-        # Get our local peer description
-        local_peer = self._directory.get_local_peer()
-
         # Setup the bot
-        self._bot = HeraldBot(nick = local_peer.app_id)
+        self._bot = HeraldBot(nick=self._directory.local_uid)
 
         # Register to session events
         self._bot.add_event_handler("session_start", self._on_session_start)
@@ -181,13 +178,12 @@ class XmppTransport(object):
         """
         return sleekxmpp.JID(local=room_name, domain=self.__muc_service)
 
-    def __create_rooms(self, rooms, nickname, callback=None):
+    def __create_rooms(self, rooms, nickname):
         """
         Creates or joins the given rooms
 
         :param rooms: A list of rooms to join / create
         :param nickname: Nickname to use in MUC rooms
-        :param callback: Method to call back when all rooms have been created
         :raise ValueError: No Multi-User Chat service available
         """
         # Look for the MUC service if necessary
@@ -197,11 +193,10 @@ class XmppTransport(object):
             except StopIteration:
                 raise ValueError("No Multi-User Chat service on server")
 
-        if callback is not None:
-            # Prepare a callback
-            self.__countdowns.add(
-                MarksCallback((self.room_jid(room) for room in rooms),
-                              callback, __name__ + ".RoomCreator"))
+        # Prepare a callback
+        self.__countdowns.add(
+            MarksCallback((self.room_jid(room) for room in rooms),
+                          self.__on_ready, __name__ + ".RoomCreator"))
 
         # Prepare the room creator
         creator = RoomCreator(self._bot, __name__ + ".RoomCreator")
@@ -291,14 +286,14 @@ class XmppTransport(object):
         # Get our local peer description
         peer = self._directory.get_local_peer()
 
-        # Create/join rooms for each peers
+        # Create/join rooms for each group
         all_rooms = ["{0}--{1}".format(peer.app_id, group)
                      for group in peer.groups]
         all_rooms.append(peer.app_id)
 
         # Wait to have joined all rooms before activating the service
         _logger.debug("Creating XMPP rooms...")
-        self.__create_rooms(all_rooms, peer.uid, self.__on_ready)
+        self.__create_rooms(all_rooms, peer.uid)
 
     def __on_ready(self, joined, erroneous):
         """

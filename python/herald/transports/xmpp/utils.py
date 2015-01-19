@@ -289,6 +289,7 @@ class MarksCallback(object):
         :param elements: A list of elements to wait for
         :param callback: Method to call back when all elements have been
                          marked
+        :param logname: The name of the logger to use in case of error
         """
         self.__logger = logging.getLogger(logname or __name__)
         self.__elements = set(elements)

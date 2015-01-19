@@ -38,9 +38,6 @@ __docformat__ = "restructuredtext en"
 # Pelix XMPP utility classes
 import pelix.misc.xmpp as pelixmpp
 
-# Herald
-import herald.beans as beans
-
 # Standard library
 import logging
 
@@ -84,34 +81,18 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
         """
         self.__cb_message = callback
 
-    def __callback(self, method, data):
+    def __callback(self, data):
         """
         Safely calls back a method
 
-        :param method: Method to call, or None
         :param data: Associated stanza
         """
+        method = self.__cb_message
         if method is not None:
             try:
                 method(data)
             except Exception as ex:
                 _logger.exception("Error calling method: %s", ex)
-
-    def __send_message(self, msgtype, target, message):
-        """
-        Prepares and sends a message over XMPP
-
-        :param msgtype: Kind of message (chat or groupchat)
-        :param target: Target JID or MUC room
-        :param message: Herald message bean
-        """
-        # Prepare an XMPP message, based on the Herald message
-        xmpp_msg = self.make_message(mto=target, mbody=str(message.content),
-                                     msubject=message.subject, mtype=msgtype)
-        xmpp_msg['thread'] = message.uid
-
-        # Send it
-        xmpp_msg.send()
 
     def __on_message(self, msg):
         """
@@ -129,4 +110,4 @@ class HeraldBot(pelixmpp.BasicBot, pelixmpp.ServiceDiscoveryMixin):
             return
 
         # Callback
-        self.__callback(self.__cb_message, msg)
+        self.__callback(msg)
