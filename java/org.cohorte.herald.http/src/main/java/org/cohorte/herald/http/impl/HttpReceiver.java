@@ -29,19 +29,25 @@ import javax.servlet.ServletException;
 import org.apache.felix.ipojo.annotations.Bind;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.ServiceProperty;
 import org.apache.felix.ipojo.annotations.Unbind;
 import org.apache.felix.ipojo.annotations.Validate;
+import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IDirectory;
 import org.cohorte.herald.IHeraldInternal;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.ValueError;
 import org.cohorte.herald.http.HTTPAccess;
+import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
+import org.cohorte.herald.transport.IContactHook;
+import org.cohorte.herald.transport.IDiscoveryConstants;
+import org.cohorte.herald.transport.PeerContact;
 import org.jabsorb.ng.JSONSerializer;
 import org.jabsorb.ng.serializer.MarshallException;
 import org.jabsorb.ng.serializer.UnmarshallException;
@@ -57,13 +63,16 @@ import org.osgi.service.log.LogService;
 @Component
 @Provides(specifications = IHttpReceiver.class)
 @Instantiate(name = "herald-http-receiver")
-public class HttpReceiver implements IHttpReceiver {
+public class HttpReceiver implements IHttpReceiver, IContactHook {
 
     /** HTTP service port property */
     private static final String HTTP_SERVICE_PORT = "org.osgi.service.http.port";
 
     /** HTTPService dependency ID */
     private static final String IPOJO_ID_HTTP = "http.service";
+
+    /** The peer contact utility */
+    private PeerContact pContact;
 
     /** Service controller */
     @ServiceController(value = false)
@@ -95,6 +104,7 @@ public class HttpReceiver implements IHttpReceiver {
     /** The Jabsorb serializer */
     private JSONSerializer pSerializer;
 
+    /** The path to the reception servlet */
     @ServiceProperty(name = "servlet.path", value = IHttpConstants.SERVLET_PATH)
     private String pServletPath;
 
@@ -168,7 +178,7 @@ public class HttpReceiver implements IHttpReceiver {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.http.impl.IHttpReceiver#getAccessInfo()
      */
     @Override
@@ -190,7 +200,7 @@ public class HttpReceiver implements IHttpReceiver {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * org.cohorte.herald.http.impl.IHttpReceiver#grabPeer(java.lang.String,
      * int, java.lang.String)
@@ -279,7 +289,22 @@ public class HttpReceiver implements IHttpReceiver {
      */
     public void handleMessage(final MessageReceived aMessage) {
 
-        pHerald.handleMessage(aMessage);
+        if (aMessage.getSubject().startsWith(
+                IDiscoveryConstants.SUBJECT_DISCOVERY_PREFIX)) {
+            // Discovery message
+            try {
+                pContact.handleDiscoveryMessage(pHerald, aMessage);
+
+            } catch (final HeraldException ex) {
+                // Error replying to final a discovered peer
+                pLogger.log(LogService.LOG_ERROR,
+                        "Error replying to a discovered peer: " + ex, ex);
+            }
+
+        } else {
+            // Standard message
+            pHerald.handleMessage(aMessage);
+        }
     }
 
     /**
@@ -312,6 +337,16 @@ public class HttpReceiver implements IHttpReceiver {
 
         outStream.close();
         return outStream.toByteArray();
+    }
+
+    /**
+     * Component invalidated
+     */
+    @Invalidate
+    public void invalidate() {
+
+        pContact.clear();
+        pContact = null;
     }
 
     /**
@@ -367,6 +402,34 @@ public class HttpReceiver implements IHttpReceiver {
         pHttpPort = 0;
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see
+     * org.cohorte.herald.transport.IContactHook#updateDescription(org.cohorte
+     * .herald.MessageReceived, java.util.Map)
+     */
+    @Override
+    public Map<String, Object> updateDescription(
+            final MessageReceived aMessage,
+            final Map<String, Object> aDescription) {
+
+        if (aMessage.getAccess().equals(IHttpConstants.ACCESS_ID)) {
+            // Forge the access to the HTTP server using extra information
+            final HTTPExtra extra = (HTTPExtra) aMessage.getExtra();
+            final HTTPAccess updatedAccess = new HTTPAccess(extra.getHost(),
+                    extra.getPort(), extra.getPath());
+
+            // Update the remote peer description with its HTTP access
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> accessDump = (Map<String, Object>) aDescription
+                    .get("accesses");
+            accessDump.put(IHttpConstants.ACCESS_ID, updatedAccess.dump());
+        }
+
+        return aDescription;
+    }
+
     /**
      * Component validated
      */
@@ -375,6 +438,9 @@ public class HttpReceiver implements IHttpReceiver {
 
         // Disable the service
         pController = false;
+
+        // Setup the peer contact
+        pContact = new PeerContact(pDirectory, this, pLogger);
 
         // Prepare the JSON serializer
         pSerializer = new JSONSerializer();

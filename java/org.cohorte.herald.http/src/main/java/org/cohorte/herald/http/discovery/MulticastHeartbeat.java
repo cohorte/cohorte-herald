@@ -32,27 +32,20 @@ import java.util.Map.Entry;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Property;
-import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.ServiceProperty;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IConstants;
 import org.cohorte.herald.IDirectory;
-import org.cohorte.herald.IHerald;
-import org.cohorte.herald.IMessageListener;
 import org.cohorte.herald.ITransport;
 import org.cohorte.herald.Message;
-import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.UnknownPeer;
 import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
 import org.cohorte.herald.http.impl.IHttpReceiver;
-import org.cohorte.herald.transport.IContactHook;
 import org.cohorte.herald.transport.IDiscoveryConstants;
-import org.cohorte.herald.transport.PeerContact;
 import org.cohorte.herald.utils.Event;
 import org.cohorte.remote.multicast.utils.IPacketListener;
 import org.cohorte.remote.multicast.utils.MulticastHandler;
@@ -64,9 +57,7 @@ import org.osgi.service.log.LogService;
  * @author Thomas Calmant
  */
 @Component(name = IHttpConstants.FACTORY_DISCOVERY_MULTICAST)
-@Provides(specifications = IMessageListener.class)
-public class MulticastHeartbeat implements IPacketListener, IMessageListener,
-        IContactHook {
+public class MulticastHeartbeat implements IPacketListener {
 
     /** UDP Packet: Peer heart beat */
     private static final byte PACKET_TYPE_HEARTBEAT = 1;
@@ -77,17 +68,9 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener,
     /** Maximum time without peer notification : 30 seconds */
     private static final long PEER_TTL = 30000;
 
-    /** The peer contact utility */
-    private PeerContact pContact;
-
     /** The Herald directory */
     @Requires
     private IDirectory pDirectory;
-
-    /** Herald messages filter */
-    @ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
-            + IDiscoveryConstants.SUBJECT_DISCOVERY_PREFIX + "/*}")
-    private String[] pFilters;
 
     /** The heart beat thread */
     private Thread pHeartThread;
@@ -206,7 +189,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
      * .Exception)
@@ -290,7 +273,7 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener,
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.cohorte.remote.multicast.utils.IPacketListener#handlePacket(java.
      * net.InetSocketAddress, byte[])
@@ -361,20 +344,6 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener,
         } while (!pStopEvent.waitEvent(20000L));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
-     * IHerald, org.cohorte.herald.MessageReceived)
-     */
-    @Override
-    public void heraldMessage(final IHerald aHerald,
-            final MessageReceived aMessage) throws HeraldException {
-
-        pContact.heraldMessage(aHerald, aMessage);
-    }
-
     /**
      * Component invalidated
      */
@@ -415,12 +384,10 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener,
 
         // Clean up
         pPeerLST.clear();
-        pContact.clear();
         pLocalPeer = null;
         pMulticast = null;
         pHeartThread = null;
         pTTLThread = null;
-        pContact = null;
     }
 
     /**
@@ -572,42 +539,11 @@ public class MulticastHeartbeat implements IPacketListener, IMessageListener,
         return buffer.array();
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.cohorte.herald.transport.IContactHook#updateDescription(org.cohorte
-     * .herald.MessageReceived, java.util.Map)
-     */
-    @Override
-    public Map<String, Object> updateDescription(
-            final MessageReceived aMessage,
-            final Map<String, Object> aDescription) {
-
-        if (aMessage.getAccess().equals(IHttpConstants.ACCESS_ID)) {
-            // Forge the access to the HTTP server using extra information
-            final HTTPExtra extra = (HTTPExtra) aMessage.getExtra();
-            final HTTPAccess updatedAccess = new HTTPAccess(extra.getHost(),
-                    extra.getPort(), extra.getPath());
-
-            // Update the remote peer description with its HTTP access
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> accessDump = (Map<String, Object>) aDescription
-                    .get("accesses");
-            accessDump.put(IHttpConstants.ACCESS_ID, updatedAccess.dump());
-        }
-
-        return aDescription;
-    }
-
     /**
      * Component validated
      */
     @Validate
     public void validate() {
-
-        // Setup the peer contact
-        pContact = new PeerContact(pDirectory, this, pLogger);
 
         // Reset the stop event
         pStopEvent.clear();
