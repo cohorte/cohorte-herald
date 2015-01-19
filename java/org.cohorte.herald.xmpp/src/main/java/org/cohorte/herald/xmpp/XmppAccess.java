@@ -63,7 +63,7 @@ public class XmppAccess extends Access {
      */
     public XmppAccess(final Jid aJid) {
 
-        pJid = aJid.asBareJid();
+        pJid = aJid;
     }
 
     /**
@@ -97,7 +97,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -112,7 +112,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.cohorte.herald.Access#getAccessId()
      */
     @Override
@@ -131,7 +131,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -142,7 +142,7 @@ public class XmppAccess extends Access {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
