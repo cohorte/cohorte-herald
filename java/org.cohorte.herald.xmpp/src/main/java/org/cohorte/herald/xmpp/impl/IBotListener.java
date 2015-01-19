@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.xmpp;
+package org.cohorte.herald.xmpp.impl;
 
-import rocks.xmpp.core.Jid;
 import rocks.xmpp.core.session.XmppSession;
 import rocks.xmpp.core.stanza.model.client.Message;
-import rocks.xmpp.extensions.muc.Occupant;
 
 /**
  * Specification of a bot listener
@@ -35,26 +33,6 @@ public interface IBotListener {
      *            The received message
      */
     void onMessage(Message aMessage);
-
-    /**
-     * Someone entered a room
-     *
-     * @param aRoomJid
-     *            The JID of the room
-     * @param aOccupant
-     *            The new occupant
-     */
-    void onRoomIn(Jid aRoomJid, Occupant aOccupant);
-
-    /**
-     * Someone exited a room
-     *
-     * @param aRoomJid
-     *            The JID of the room
-     * @param aOccupant
-     *            The occupant
-     */
-    void onRoomOut(Jid aRoomJid, Occupant aOccupant);
 
     /**
      * The XMPP session has ended

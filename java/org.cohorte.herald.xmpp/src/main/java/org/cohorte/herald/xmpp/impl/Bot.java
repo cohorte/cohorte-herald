@@ -19,18 +19,14 @@ package org.cohorte.herald.xmpp.impl;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Collection;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.security.auth.login.LoginException;
 
-import org.cohorte.herald.xmpp.IBotListener;
 import org.osgi.service.log.LogService;
 
 import rocks.xmpp.core.Jid;
-import rocks.xmpp.core.XmppException;
 import rocks.xmpp.core.session.SessionStatusEvent;
 import rocks.xmpp.core.session.SessionStatusListener;
 import rocks.xmpp.core.session.TcpConnectionConfiguration;
@@ -41,21 +37,13 @@ import rocks.xmpp.core.stanza.model.AbstractMessage.Type;
 import rocks.xmpp.core.stanza.model.client.Message;
 import rocks.xmpp.core.stanza.model.client.Presence;
 import rocks.xmpp.core.stream.model.ClientStreamElement;
-import rocks.xmpp.extensions.muc.ChatRoom;
-import rocks.xmpp.extensions.muc.ChatService;
-import rocks.xmpp.extensions.muc.InvitationEvent;
-import rocks.xmpp.extensions.muc.InvitationListener;
-import rocks.xmpp.extensions.muc.MultiUserChatManager;
-import rocks.xmpp.extensions.muc.OccupantEvent;
-import rocks.xmpp.extensions.muc.OccupantListener;
 
 /**
  * The XMPP bot implementation, based on Babbler
  *
  * @author Thomas Calmant
  */
-public class Bot implements SessionStatusListener, InvitationListener,
-        MessageListener {
+public class Bot implements SessionStatusListener, MessageListener {
 
     /** The listener */
     private final IBotListener pListener;
@@ -63,14 +51,8 @@ public class Bot implements SessionStatusListener, InvitationListener,
     /** The log service */
     private final LogService pLogger;
 
-    /** The chat service */
-    private ChatService pMucChatService;
-
-    /** The MultiUserChat manager */
-    private MultiUserChatManager pMucManager;
-
     /** The nick used in MultiUserChat rooms */
-    private String pNickName;
+    private final String pNickName;
 
     /** The XMPP session */
     private XmppSession pSession;
@@ -82,11 +64,15 @@ public class Bot implements SessionStatusListener, InvitationListener,
      *            The event listener
      * @param aLogger
      *            The log service to use
+     * @param aNickName
+     *            The nickname used in MultiUserChat rooms
      */
-    public Bot(final IBotListener aListener, final LogService aLogger) {
+    public Bot(final IBotListener aListener, final LogService aLogger,
+            final String aNickName) {
 
         pListener = aListener;
         pLogger = aLogger;
+        pNickName = aNickName;
     }
 
     /**
@@ -114,12 +100,8 @@ public class Bot implements SessionStatusListener, InvitationListener,
         }
         pSession = new XmppSession(aHost, tcpConfig);
 
-        // Prepare the MUC manager
-        pMucManager = pSession.getExtensionManager(MultiUserChatManager.class);
-
         // Register to events
         pSession.addSessionStatusListener(this);
-        pMucManager.addInvitationListener(this);
         pSession.addMessageListener(this);
 
         // Connect
@@ -148,8 +130,6 @@ public class Bot implements SessionStatusListener, InvitationListener,
                     "Error closing the XMPP session:" + ex, ex);
         }
 
-        pMucChatService = null;
-        pMucManager = null;
         pSession = null;
     }
 
@@ -163,9 +143,19 @@ public class Bot implements SessionStatusListener, InvitationListener,
         return pSession.getConnectedResource();
     }
 
+    /**
+     * Returns the internal Babbler {@link XmppSession}
+     *
+     * @return The XMPP session
+     */
+    public XmppSession getSession() {
+
+        return pSession;
+    }
+
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see
      * rocks.xmpp.stanza.StanzaListener#handle(rocks.xmpp.stanza.StanzaEvent)
      */
@@ -217,142 +207,6 @@ public class Bot implements SessionStatusListener, InvitationListener,
     }
 
     /**
-     * Sends a join message to the monitor
-     *
-     * @param aNick
-     *            MUC nick name
-     * @param aMonitorJid
-     *            JID of a monitor bot
-     * @param aKey
-     *            Key to send to the monitor bot
-     * @param aGroups
-     *            Groups to join
-     */
-    public void heraldJoin(final String aNick, final String aMonitorJid,
-            final String aKey, final Collection<String> aGroups) {
-
-        // Store the nick name
-        pNickName = aNick;
-
-        // Prepare the message
-        final String groupStr = join(",", aGroups);
-        final String messageContent = join(":", "invite", aKey, groupStr);
-        final org.cohorte.herald.Message message = new org.cohorte.herald.Message(
-                "bootstrap.invite", messageContent);
-
-        // Send it
-        sendMessage(Type.CHAT, aMonitorJid, message);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * rocks.xmpp.extension.muc.InvitationListener#invitationReceived(rocks.xmpp
-     * .extension.muc.InvitationEvent)
-     */
-    @Override
-    public void invitationReceived(final InvitationEvent aEvent) {
-
-        if (pNickName == null) {
-            // Update our nick name if necessary
-            pNickName = pSession.getConnectedResource().getResource();
-        }
-
-        // Prepare the chat service
-        if (pMucChatService == null) {
-            pMucChatService = pMucManager.createChatService(new Jid(aEvent
-                    .getRoomAddress().getDomain()));
-        }
-
-        // Join the room
-        final Jid roomAddress = aEvent.getRoomAddress().asBareJid();
-        final ChatRoom room = pMucChatService
-                .createRoom(roomAddress.getLocal());
-
-        // Add listeners
-        room.addOccupantListener(new OccupantListener() {
-
-            @Override
-            public void occupantChanged(final OccupantEvent aEvent) {
-
-                switch (aEvent.getType()) {
-                case ENTERED:
-                    // Occupant got in
-                    pListener.onRoomIn(roomAddress, aEvent.getOccupant());
-                    break;
-
-                case BANNED:
-                case EXITED:
-                case KICKED:
-                    // Occupant got away
-                    pListener.onRoomOut(roomAddress, aEvent.getOccupant());
-                    break;
-
-                default:
-                    // Ignore others
-                    break;
-                }
-            }
-        });
-
-        try {
-            // Enter the room
-            room.enter(pNickName);
-
-            // Did it: we have to notify the bot listener here,
-            // as the OccupantListener avoids notifying this event
-            pListener.onRoomIn(room.getAddress(), null);
-
-        } catch (final XmppException ex) {
-            pLogger.log(LogService.LOG_ERROR, "Error joining XMPP room: " + ex,
-                    ex);
-        }
-    }
-
-    /**
-     * Acts like Python's join
-     *
-     * @param aSeparator
-     *            Items separator
-     * @param aItems
-     *            Items to join
-     * @return The joined string, or an empty one
-     */
-    private String join(final String aSeparator, final Collection<?> aItems) {
-
-        // Join elements
-        final StringBuilder joinedStr = new StringBuilder();
-        for (final Object item : aItems) {
-            if (item != null) {
-                joinedStr.append(item).append(aSeparator);
-            }
-        }
-
-        // Remove the last separator
-        final int resultLen = joinedStr.length();
-        if (resultLen > 0) {
-            joinedStr.delete(resultLen - aSeparator.length(), resultLen);
-        }
-
-        return joinedStr.toString();
-    }
-
-    /**
-     * Acts like Python's join
-     *
-     * @param aSeparator
-     *            Items separator
-     * @param aItems
-     *            Items to join
-     * @return The joined string, or an empty one
-     */
-    private String join(final String aSeparator, final Object... aItems) {
-
-        return join(aSeparator, Arrays.asList(aItems));
-    }
-
-    /**
      * Prepares the {@link SSLContext} object to use in the XMPP connection, to
      * trust any certificate
      *
@@ -390,37 +244,9 @@ public class Bot implements SessionStatusListener, InvitationListener,
         pSession.send(aElement);
     }
 
-    /**
-     * Prepares and sends a message over XMPP. The content is sent as a string,
-     * without serialization
-     *
-     * @param aMsgType
-     *            Kind of message (chat or groupchat)
-     * @param aTarget
-     *            Target JID or MUC room
-     * @param aMessage
-     *            Herald message bean
-     */
-    private void sendMessage(final Type aMsgType, final String aTarget,
-            final org.cohorte.herald.Message aMessage) {
-
-        // Parse the target JID
-        final Jid target = Jid.valueOf(aTarget);
-
-        // Prepare the message
-        final Message msg = new Message(target, aMsgType);
-        msg.setFrom(getJid());
-        msg.setBody(String.valueOf(aMessage.getContent()));
-        msg.setSubject(aMessage.getSubject());
-        msg.setThread(aMessage.getUid());
-
-        // Send it
-        pSession.send(msg);
-    }
-
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * rocks.xmpp.core.session.SessionStatusListener#sessionStatusChanged(rocks
      * .xmpp.core.session.SessionStatusEvent)
