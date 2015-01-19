@@ -495,52 +495,10 @@ public class Herald implements IHerald, IHeraldInternal {
      * @param aKind
      *            Kind of directory message
      */
-    @SuppressWarnings("unchecked")
     private void handleDirectoryMessage(final MessageReceived aMessage,
             final String aKind) {
 
         switch (aKind) {
-        case "newcomer": {
-            try {
-                // A new peer appears: register it
-                final Map<String, Object> peerDump = (Map<String, Object>) aMessage
-                        .getContent();
-                if (pDirectory.register(peerDump) != null) {
-                    // Reply to it with our information, if the registration has
-                    // been done
-                    reply(aMessage, pDirectory.getLocalPeer().dump(),
-                            "herald/directory/welcome");
-                }
-
-            } catch (final ValueError ex) {
-                // Invalid UID
-                pLogger.log(LogService.LOG_WARNING,
-                        "Error registering a newcomer: " + ex);
-
-            } catch (final HeraldException ex) {
-                // Error sending reply
-                pLogger.log(LogService.LOG_WARNING,
-                        "Can't send a welcome message back to the sender: "
-                                + ex);
-            }
-            break;
-        }
-
-        case "welcome": {
-            try {
-                // A peer replied to our 'newcomer' event
-                // Message content: result of peer's dump()
-                final Map<String, Object> peerDump = (Map<String, Object>) aMessage
-                        .getContent();
-                pDirectory.register(peerDump);
-
-            } catch (final ValueError ex) {
-                pLogger.log(LogService.LOG_WARNING,
-                        "Error registering a peer: " + ex);
-            }
-            break;
-        }
-
         case "bye": {
             // A peer is going away
             // Message content: the Peer UID
