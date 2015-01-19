@@ -112,6 +112,7 @@ public class RoomCreator {
             }
         }
         // Send the new configuration
+        configurationForm.setType(DataForm.Type.SUBMIT);
         aRoom.submitConfigurationForm(configurationForm);
     }
 
@@ -200,6 +201,7 @@ public class RoomCreator {
 
         // The "not-owner" information is not available: the configuration
         // setting may raise an exception
+        // FIXME: don't try to set the room configuration if we're not its owner
         try {
             // Configure the room
             configureRoom(room, aConfiguration);
@@ -207,6 +209,9 @@ public class RoomCreator {
             pLogger.log(LogService.LOG_WARNING,
                     "Error setting up XMPP room configuration: " + ex);
         }
+
+        // Notify the listener
+        aListener.onRoomCreated(roomAddress, aNickname);
     }
 
     /**
