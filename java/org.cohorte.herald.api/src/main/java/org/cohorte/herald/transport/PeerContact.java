@@ -22,8 +22,7 @@ import java.util.Map;
 import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IDelayedNotification;
 import org.cohorte.herald.IDirectory;
-import org.cohorte.herald.IHerald;
-import org.cohorte.herald.IMessageListener;
+import org.cohorte.herald.IHeraldInternal;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.ValueError;
@@ -34,7 +33,7 @@ import org.osgi.service.log.LogService;
  *
  * @author Thomas Calmant
  */
-public class PeerContact implements IMessageListener {
+public class PeerContact {
 
     /** Delayed notifications store */
     private final Map<String, IDelayedNotification> pDelayedNotifs = new LinkedHashMap<String, IDelayedNotification>();
@@ -72,15 +71,17 @@ public class PeerContact implements IMessageListener {
         pDelayedNotifs.clear();
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
-     * IHerald, org.cohorte.herald.MessageReceived)
+    /**
+     * Handles a discovery message
+     *
+     * @param aHerald
+     *            The Herald internal service
+     * @param aMessage
+     *            The received message
+     * @throws HeraldException
+     *             Error replying to the discovered peer
      */
-    @Override
-    public void heraldMessage(final IHerald aHerald,
+    public void handleDiscoveryMessage(final IHeraldInternal aHerald,
             final MessageReceived aMessage) throws HeraldException {
 
         switch (aMessage.getSubject()) {

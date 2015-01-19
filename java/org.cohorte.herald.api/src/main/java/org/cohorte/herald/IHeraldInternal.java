@@ -32,4 +32,20 @@ public interface IHeraldInternal {
      *            A {@link MessageReceived} bean forged by a transport
      */
     void handleMessage(MessageReceived aMessage);
+
+    /**
+     * Replies to a message. If no subject is given, it will be the one of the
+     * original message, prefixed with "reply/"
+     *
+     * @param aMessage
+     *            Message to reply to
+     * @param aContent
+     *            Content of the response
+     * @param aSubject
+     *            Subject of the response message
+     * @throws HeraldException
+     *             Error sending the reply
+     */
+    void reply(MessageReceived aMessage, Object aContent, String aSubject)
+            throws HeraldException;
 }
