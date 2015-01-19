@@ -33,7 +33,6 @@ import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IConstants;
 import org.cohorte.herald.IDirectory;
-import org.cohorte.herald.IHerald;
 import org.cohorte.herald.IHeraldInternal;
 import org.cohorte.herald.ITransport;
 import org.cohorte.herald.InvalidPeerAccess;
@@ -155,7 +154,7 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
                         public void onMarksDone(final Set<Jid> aSucceeded,
                                 final Set<Jid> aErrors) {
 
-                            onRoomReady(aSucceeded, aErrors);
+                            onRoomsReady(aSucceeded, aErrors);
                         }
                     }, pLogger));
         }
@@ -437,7 +436,7 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
         if (subject.startsWith(IDiscoveryConstants.SUBJECT_DISCOVERY_PREFIX)) {
             // Handle discovery message
             try {
-                pContact.heraldMessage((IHerald) pHerald, msgReceived);
+                pContact.handleDiscoveryMessage(pHerald, msgReceived);
 
             } catch (final HeraldException ex) {
                 // Error replying to a discovered peer
@@ -555,7 +554,7 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
      * @param aErrors
      *            List of room that couldn't be joined
      */
-    private void onRoomReady(final Set<Jid> aSucceeded, final Set<Jid> aErrors) {
+    private void onRoomsReady(final Set<Jid> aSucceeded, final Set<Jid> aErrors) {
 
         pLogger.log(LogService.LOG_DEBUG, "Client joined rooms: " + aSucceeded);
         if (!aErrors.isEmpty()) {
