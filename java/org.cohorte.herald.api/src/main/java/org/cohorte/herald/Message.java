@@ -79,7 +79,7 @@ public class Message {
 
         pSubject = aSubject;
         pContent = aContent;
-        pUid = aUid;
+        pUid = aUid.replace("-", "").toUpperCase();
         pTimestamp = aTimestamp;
     }
 
@@ -117,7 +117,7 @@ public class Message {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.lang.Object#toString()
      */
     @Override
