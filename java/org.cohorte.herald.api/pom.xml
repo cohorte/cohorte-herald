@@ -43,7 +43,7 @@
 						</Import-Package>
 						<Export-Package>
 							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.transport;version=${pkg-version}
+							org.cohorte.herald.transport;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version}
 						</Export-Package>
 					</instructions>
