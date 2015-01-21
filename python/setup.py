@@ -66,6 +66,7 @@ setup(
         'https://github.com/isandlaTech/cohorte-herald/archive/master.zip',
     packages=[
         'herald',
+        'herald.probe',
         'herald.remote',
         'herald.transports',
         'herald.transports.http',
