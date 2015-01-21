@@ -78,9 +78,6 @@ def _make_json_result(code, message="", results=None):
                              'results': results})
 
 
-PROBE_CHANNEL_MSG_RECV = "msg_recv"
-
-
 @ComponentFactory(FACTORY_SERVLET)
 @RequiresBest('_probe', herald.SERVICE_PROBE)
 @Requires('_core', herald.SERVICE_HERALD_INTERNAL)
@@ -256,7 +253,7 @@ class HeraldServlet(object):
 
             # Log before giving message to Herald
             self._probe.store(
-                PROBE_CHANNEL_MSG_RECV,
+                herald.PROBE_CHANNEL_MSG_RECV,
                 {"uid": message.uid, "timestamp": time.time(),
                  "transport": ACCESS_ID, "subject": message.subject,
                  "source": sender_uid, "repliesTo": reply_to or "",

@@ -65,8 +65,6 @@ _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 
-PROBE_CHANNEL_MSG_SEND = "msg_sent"
-PROBE_CHANNEL_MSG_CONTENT = "msg_content"
 
 @ComponentFactory('herald-http-transport-factory')
 @RequiresBest('_probe', herald.SERVICE_PROBE)
@@ -238,14 +236,14 @@ class HttpTransport(object):
 
         # Log before sending
         self._probe.store(
-            PROBE_CHANNEL_MSG_SEND,
+            herald.PROBE_CHANNEL_MSG_SEND,
             {"uid": message.uid, "timestamp": time.time(),
              "transport": ACCESS_ID, "subject": message.subject,
              "target": peer.uid if peer else "<unknown>",
              "transportTarget": url, "repliesTo": parent_uid or ""})
 
         self._probe.store(
-            PROBE_CHANNEL_MSG_CONTENT,
+            herald.PROBE_CHANNEL_MSG_CONTENT,
             {"uid": message.uid, "content": content}
         )
 
@@ -285,11 +283,25 @@ class HttpTransport(object):
             # In any case: update the count down
             countdown.step()
 
+        # Store the message once
+        self._probe.store(
+            herald.PROBE_CHANNEL_MSG_CONTENT,
+            {"uid": message.uid, "content": content}
+        )
+
         # Send a request to each peers
         for peer in peers:
             # Try to read extra information
             url = self.__get_access(peer)
             if url:
+                # Log before sending
+                self._probe.store(
+                    herald.PROBE_CHANNEL_MSG_SEND,
+                    {"uid": message.uid, "timestamp": time.time(),
+                     "transport": ACCESS_ID, "subject": message.subject,
+                     "target": peer.uid, "transportTarget": url,
+                     "repliesTo": ""})
+
                 # Send the HTTP requests (from the thread pool)
                 future = self.__pool.enqueue(self.__post_message,
                                              url, content, headers)
