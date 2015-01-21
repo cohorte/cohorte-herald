@@ -74,6 +74,9 @@ SERVICE_TRANSPORT_DIRECTORY = "herald.transport.directory"
 Specification of the directory associated to a transport implementation
 """
 
+SERVICE_PROBE = 'herald.probe'
+""" Core probe service """
+
 # ------------------------------------------------------------------------------
 # Service properties
 
