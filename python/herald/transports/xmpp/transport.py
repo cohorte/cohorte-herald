@@ -54,13 +54,14 @@ import sleekxmpp
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property, Validate, Invalidate
+    Property, Validate, Invalidate, RequiresBest
 import pelix.misc.jabsorb as jabsorb
 
 # Standard library
 import json
 import logging
 import threading
+import time
 
 # ------------------------------------------------------------------------------
 
@@ -72,6 +73,7 @@ FEATURE_MUC = 'http://jabber.org/protocol/muc'
 
 
 @ComponentFactory(FACTORY_TRANSPORT)
+@RequiresBest('_probe', herald.SERVICE_PROBE)
 @Requires('_herald', herald.SERVICE_HERALD_INTERNAL)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_xmpp_directory', SERVICE_XMPP_DIRECTORY)
@@ -87,6 +89,9 @@ class XmppTransport(object):
         """
         Sets up the transport
         """
+        # Probe service
+        self._probe = None
+
         # Herald core service
         self._herald = None
 
@@ -417,6 +422,14 @@ class XmppTransport(object):
         message = beans.MessageReceived(uid, subject, content, sender_uid,
                                         reply_to, self._access_id, extra=extra)
 
+        # Log before giving message to Herald
+        self._probe.store(
+            herald.PROBE_CHANNEL_MSG_RECV,
+            {"uid": message.uid, "timestamp": time.time(),
+             "transport": ACCESS_ID, "subject": message.subject,
+             "source": str(sender_uid), "repliesTo": reply_to or "",
+             "transportSource": str(sender_jid)})
+
         if subject.startswith(peer_contact.SUBJECT_DISCOVERY_PREFIX):
             # Handle discovery message
             self.__contact.herald_message(self._herald, message)
@@ -469,6 +482,12 @@ class XmppTransport(object):
         if parent_uid:
             xmpp_msg['parent_thread'] = parent_uid
 
+        # Store message content
+        self._probe.store(
+            herald.PROBE_CHANNEL_MSG_CONTENT,
+            {"uid": message.uid, "content": content}
+        )
+
         # Send it
         xmpp_msg.send()
 
@@ -489,6 +508,14 @@ class XmppTransport(object):
         jid = self.__get_jid(peer, extra)
 
         if jid:
+            # Log before sending
+            self._probe.store(
+                herald.PROBE_CHANNEL_MSG_SEND,
+                {"uid": message.uid, "timestamp": time.time(),
+                 "transport": ACCESS_ID, "subject": message.subject,
+                 "target": peer.uid if peer else "<unknown>",
+                 "transportTarget": str(jid), "repliesTo": parent_uid or ""})
+
             # Send the XMPP message
             self.__send_message("chat", jid, message, parent_uid)
         else:
@@ -515,6 +542,14 @@ class XmppTransport(object):
         else:
             # Get the group JID
             group_jid = self.room_jid("{0}--{1}".format(app_id, group))
+
+        # Log before sending
+        self._probe.store(
+            herald.PROBE_CHANNEL_MSG_SEND,
+            {"uid": message.uid, "timestamp": time.time(),
+             "transport": ACCESS_ID, "subject": message.subject,
+             "target": group, "transportTarget": str(group_jid),
+             "repliesTo": ""})
 
         # Send the XMPP message
         self.__send_message("groupchat", group_jid, message)
