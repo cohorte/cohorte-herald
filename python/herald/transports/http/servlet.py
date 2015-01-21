@@ -40,11 +40,12 @@ from . import ACCESS_ID, SERVICE_HTTP_DIRECTORY, SERVICE_HTTP_RECEIVER, \
     FACTORY_SERVLET
 from . import beans
 import herald.beans
+import herald.transports.peer_contact as peer_contact
 import herald.utils as utils
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property, Validate, RequiresBest
+    Property, Validate, Invalidate, RequiresBest
 from pelix.utilities import to_bytes, to_unicode
 import pelix.http
 import pelix.misc.jabsorb as jabsorb
@@ -99,6 +100,9 @@ class HeraldServlet(object):
         self._directory = None
         self._probe = None
 
+        # Peer contact handling
+        self.__contact = None
+
         # Herald HTTP directory
         self._http_directory = None
 
@@ -119,7 +123,20 @@ class HeraldServlet(object):
         """
         # Normalize the servlet path
         if not self._servlet_path.startswith('/'):
-            self._servlet_path = '/' + self._servlet_path
+            self._servlet_path = '/{0}'.format(self._servlet_path)
+
+        # Prepare the peer contact handler
+        self.__contact = peer_contact.PeerContact(self._directory, None,
+                                                  __name__ + ".contact")
+
+    @Invalidate
+    def invalidate(self, _):
+        """
+        Component invalidated
+        """
+        # Clean up internal storage
+        self.__contact.clear()
+        self.__contact = None
 
     def get_access_info(self):
         """
@@ -259,8 +276,12 @@ class HeraldServlet(object):
                  "source": sender_uid, "repliesTo": reply_to or "",
                  "transportSource": "[{0}]:{1}".format(host, port)})
 
-            # Let Herald handle the message
-            self._core.handle_message(message)
+            if subject.startswith(peer_contact.SUBJECT_DISCOVERY_PREFIX):
+                # Handle discovery message
+                self.__contact.herald_message(self._core, message)
+            else:
+                # All other messages are given to Herald Core
+                self._core.handle_message(message)
 
         # Convert content (Python 3)
         if content:

@@ -46,7 +46,7 @@ import herald.transports.peer_contact as peer_contact
 
 # Pelix/iPOPO
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
-    Invalidate, Property, Provides, RequiresBest
+    Invalidate, Property, RequiresBest
 from pelix.utilities import to_bytes, to_unicode
 
 # Standard library
@@ -65,6 +65,9 @@ PACKET_TYPE_HEARTBEAT = 1
 
 # Last beat packet type
 PACKET_TYPE_LASTBEAT = 2
+
+PROBE_CHANNEL_MULTICAST = "http_multicast"
+""" Name of the multicast discovery probe channel """
 
 _logger = logging.getLogger(__name__)
 
@@ -410,7 +413,6 @@ class MulticastReceiver(object):
             try:
                 app_id, data = self._unpack_string(data)
             except struct.error:
-                # FIXME: to remove when all apps will have been updated
                 # Compatibility with previous version
                 app_id = herald.DEFAULT_APPLICATION_ID
 
@@ -482,20 +484,15 @@ class MulticastReceiver(object):
 
 # ------------------------------------------------------------------------------
 
-PROBE_CHANNEL_MULTICAST = "http_multicast"
-
 
 @ComponentFactory(FACTORY_DISCOVERY_MULTICAST)
 @RequiresBest('_probe', herald.SERVICE_PROBE)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_receiver', SERVICE_HTTP_RECEIVER)
 @Requires('_transport', SERVICE_HTTP_TRANSPORT)
-@Provides(herald.SERVICE_LISTENER)
 @Property('_group', PROP_MULTICAST_GROUP, '239.0.0.1')
 @Property('_port', PROP_MULTICAST_PORT, 42000)
 @Property('_peer_ttl', 'peer.ttl', 30)
-@Property('_filters', herald.PROP_FILTERS,
-          [peer_contact.SUBJECT_DISCOVERY_PREFIX + "/*"])
 class MulticastHeartbeat(object):
     """
     Discovery of Herald peers based on multicast
@@ -512,9 +509,6 @@ class MulticastHeartbeat(object):
 
         # Local peer bean
         self._local_peer = None
-
-        # Peer contact handler
-        self.__contact = None
 
         # Properties
         self._group = "239.0.0.1"
@@ -542,10 +536,6 @@ class MulticastHeartbeat(object):
         """
         Component validated
         """
-        # Setup the contact
-        self.__contact = peer_contact.PeerContact(
-            self._directory, self.__load_dump, __name__ + ".contact")
-
         self._port = int(self._port)
         self._peer_ttl = int(self._peer_ttl)
         self._local_peer = self._directory.get_local_peer()
@@ -596,8 +586,6 @@ class MulticastHeartbeat(object):
 
         # Clear storage
         self._peer_lst.clear()
-        self.__contact.clear()
-        self.__contact = None
 
     def handle_heartbeat(self, kind, peer_uid, app_id, host, port, path):
         """
@@ -690,15 +678,6 @@ class MulticastHeartbeat(object):
             description['accesses'][ACCESS_ID] = \
                 HTTPAccess(extra['host'], extra['port'], extra['path']).dump()
         return description
-
-    def herald_message(self, herald_svc, message):
-        """
-        Handles a message received by Herald
-
-        :param herald_svc: Herald service
-        :param message: Received message
-        """
-        self.__contact.herald_message(herald_svc, message)
 
     def __heart_loop(self):
         """
