@@ -56,7 +56,7 @@ import pelix.shell
 @Instantiate("herald-shell")
 class HeraldCommands(object):
     """
-    iPOPO shell commands
+    Herald shell commands
     """
     def __init__(self):
         """
