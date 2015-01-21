@@ -74,8 +74,20 @@ SERVICE_TRANSPORT_DIRECTORY = "herald.transport.directory"
 Specification of the directory associated to a transport implementation
 """
 
+# ------------------------------------------------------------------------------
+# Probe service and constants
+
 SERVICE_PROBE = 'herald.probe'
 """ Core probe service """
+
+PROBE_CHANNEL_MSG_RECV = "msg_recv"
+""" Message reception channel """
+
+PROBE_CHANNEL_MSG_SEND = "msg_sent"
+""" Message emission channel """
+
+PROBE_CHANNEL_MSG_CONTENT = "msg_content"
+""" Message content channel """
 
 # ------------------------------------------------------------------------------
 # Service properties
