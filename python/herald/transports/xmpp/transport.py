@@ -401,7 +401,7 @@ class XmppTransport(object):
                 # Group message: resource is the isolate UID
                 sender_uid = msg['from'].resource
             else:
-                sender_uid = self._xmpp_directory.from_jid(sender_jid)
+                sender_uid = self._xmpp_directory.from_jid(sender_jid).uid
         except KeyError:
             sender_uid = "<unknown>"
 
@@ -427,7 +427,7 @@ class XmppTransport(object):
             herald.PROBE_CHANNEL_MSG_RECV,
             {"uid": message.uid, "timestamp": time.time(),
              "transport": ACCESS_ID, "subject": message.subject,
-             "source": str(sender_uid), "repliesTo": reply_to or "",
+             "source": sender_uid, "repliesTo": reply_to or "",
              "transportSource": str(sender_jid)})
 
         if subject.startswith(peer_contact.SUBJECT_DISCOVERY_PREFIX):
