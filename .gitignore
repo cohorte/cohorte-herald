@@ -31,3 +31,5 @@ META-INF/
 .sonar/
 sonar-project.properties
 
+# Temporary files
+*.db
