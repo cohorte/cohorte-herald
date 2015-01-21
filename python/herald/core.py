@@ -40,11 +40,13 @@ from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout, \
     NoListener, ForgotMessage
 import herald
 import herald.beans as beans
+import herald.probe
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Validate, Invalidate, Instantiate, RequiresMap, BindField, UpdateField, \
     UnbindField
+import pelix.constants
 import pelix.threadpool
 import pelix.utilities
 
@@ -229,8 +231,11 @@ class Herald(object):
         self.__listeners_lock = threading.Lock()
         self.__gc_lock = threading.Lock()
 
+        # Dummy probe registration
+        self._probe_registration = None
+
     @Validate
-    def _validate(self, _):
+    def _validate(self, context):
         """
         Component validated
         """
@@ -243,11 +248,20 @@ class Herald(object):
                                     name="Herald-GC")
         self.__gc_timer.start()
 
+        # Register the dummy probe service
+        self._probe_registration = context.register_service(
+            herald.SERVICE_PROBE, herald.probe.DummyProbe(),
+            {pelix.constants.SERVICE_RANKING: -100})
+
     @Invalidate
     def _invalidate(self, _):
         """
         Component invalidated
         """
+        # Unregister the dummy probe service
+        self._probe_registration.unregister()
+        self._probe_registration = None
+
         # Stop the garbage collector
         self.__gc_timer.cancel()
         self.__gc_timer.join()
