@@ -41,6 +41,7 @@ import herald
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, RequiresBest, \
     Provides, Instantiate, Validate, Invalidate
+from pelix.ipopo.constants import use_ipopo
 import pelix.constants
 import pelix.shell
 
@@ -150,8 +151,21 @@ class ProbeCommands(object):
         """
         Installs the default probe bundles (doesn't enable it)
         """
-        for bundle in ("herald.probe.core", "herald.probe.store_log"):
+        for bundle in ("herald.probe.core", "herald.probe.store_log",
+                       "herald.probe.store_sqlite"):
             try:
                 self._context.install_bundle(bundle).start()
             except pelix.constants.BundleException as ex:
                 session.write_line("Error installing {0}: {1}", bundle, ex)
+
+        with use_ipopo(self._context) as ipopo:
+            # Instantiate components
+            # ... Log store
+            ipopo.instantiate(
+                'herald-probe-log-factory', 'herald-probe-log',
+                {'logger.prefix': 'herald.debug'})
+
+            # ... SQLite store
+            ipopo.instantiate(
+                'herald-probe-sqlite-factory', 'herald-probe-sqlite',
+                {'db.file': 'herald_probe.db'})

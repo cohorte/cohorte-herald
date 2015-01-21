@@ -42,7 +42,7 @@ from herald.probe import SERVICE_STORE
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Provides, Property, \
-    Validate, Instantiate
+    Validate
 
 # Standard library
 import logging
@@ -80,7 +80,6 @@ FAILSAFE_CHANNELS = (PROBE_CHANNEL_MSG_CONTENT,)
 @ComponentFactory('herald-probe-sqlite-factory')
 @Provides(SERVICE_STORE)
 @Property("_db_name", "db.file", "herald_probe.db")
-@Instantiate("herald-sqlite-log")
 class SqliteStore(object):
     """
     Traces data into a logger

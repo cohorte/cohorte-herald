@@ -40,7 +40,7 @@ from . import SERVICE_STORE
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Provides, Property, \
-    Validate, Instantiate
+    Validate
 
 # Standard library
 from pprint import pformat
@@ -52,7 +52,6 @@ import logging
 @ComponentFactory('herald-probe-log-factory')
 @Provides(SERVICE_STORE)
 @Property("_prefix", "logger.prefix", "herald.debug")
-@Instantiate("herald-probe-log")
 class LogStore(object):
     """
     Traces data into a logger
