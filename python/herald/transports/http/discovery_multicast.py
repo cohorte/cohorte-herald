@@ -46,7 +46,7 @@ import herald.transports.peer_contact as peer_contact
 
 # Pelix/iPOPO
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
-    Invalidate, Property, Provides
+    Invalidate, Property, Provides, RequiresBest
 from pelix.utilities import to_bytes, to_unicode
 
 # Standard library
@@ -482,8 +482,11 @@ class MulticastReceiver(object):
 
 # ------------------------------------------------------------------------------
 
+PROBE_CHANNEL_MULTICAST = "http_multicast"
+
 
 @ComponentFactory(FACTORY_DISCOVERY_MULTICAST)
+@RequiresBest('_probe', herald.SERVICE_PROBE)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_receiver', SERVICE_HTTP_RECEIVER)
 @Requires('_transport', SERVICE_HTTP_TRANSPORT)
@@ -505,6 +508,7 @@ class MulticastHeartbeat(object):
         self._directory = None
         self._receiver = None
         self._transport = None
+        self._probe = None
 
         # Local peer bean
         self._local_peer = None
@@ -619,6 +623,11 @@ class MulticastHeartbeat(object):
                     # We weren't aware of that peer
                     pass
 
+            self._probe.store(
+                PROBE_CHANNEL_MULTICAST,
+                {"uid": peer_uid, "timestamp": time.time(),
+                 "event": "lastbeat"})
+
             try:
                 # Peer is going away
                 peer = self._directory.get_peer(peer_uid)
@@ -630,11 +639,15 @@ class MulticastHeartbeat(object):
         elif kind == PACKET_TYPE_HEARTBEAT:
             with self._lst_lock:
                 # Update the peer LST
-                to_register = peer_uid not in self._peer_lst
                 self._peer_lst[peer_uid] = time.time()
 
-            if to_register:
-                # The peer wasn't known, register it
+            if peer_uid not in self._directory:
+                # The peer isn't known, register it
+                self._probe.store(
+                    PROBE_CHANNEL_MULTICAST,
+                    {"uid": peer_uid, "timestamp": time.time(),
+                     "event": "discovered"})
+
                 self.__discover_peer(host, port, path)
 
     def __discover_peer(self, host, port, path):
@@ -723,6 +736,11 @@ class MulticastHeartbeat(object):
                         # TTL reached
                         to_delete.add(uid)
                         _logger.debug("Peer %s reached TTL.", uid)
+
+                        self._probe.store(
+                            PROBE_CHANNEL_MULTICAST,
+                            {"uid": uid, "timestamp": time.time(),
+                             "event": "timeout"})
 
                 for uid in to_delete:
                     # Unregister those peers

@@ -49,7 +49,7 @@ import herald.utils as utils
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property, BindField, Validate, Invalidate, Instantiate
+    Property, BindField, Validate, Invalidate, Instantiate, RequiresBest
 import pelix.utilities
 import pelix.threadpool
 import pelix.misc.jabsorb as jabsorb
@@ -65,8 +65,11 @@ _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 
+PROBE_CHANNEL_MSG_SEND = "msg_sent"
+PROBE_CHANNEL_MSG_CONTENT = "msg_content"
 
 @ComponentFactory('herald-http-transport-factory')
+@RequiresBest('_probe', herald.SERVICE_PROBE)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_local_recv', SERVICE_HTTP_RECEIVER)
 @Provides((herald.SERVICE_TRANSPORT, SERVICE_HTTP_TRANSPORT))
@@ -82,6 +85,9 @@ class HttpTransport(object):
         """
         # Herald Core directory
         self._directory = None
+
+        # Debug probe
+        self._probe = None
 
         # Properties
         self._access_id = ACCESS_ID
@@ -229,6 +235,19 @@ class HttpTransport(object):
 
         # Send the HTTP request (blocking) and raise an error if necessary
         headers, content = self.__prepare_message(message, parent_uid)
+
+        # Log before sending
+        self._probe.store(
+            PROBE_CHANNEL_MSG_SEND,
+            {"uid": message.uid, "timestamp": time.time(),
+             "transport": ACCESS_ID, "subject": message.subject,
+             "target": peer.uid if peer else "<unknown>",
+             "transportTarget": url, "repliesTo": parent_uid or ""})
+
+        self._probe.store(
+            PROBE_CHANNEL_MSG_CONTENT,
+            {"uid": message.uid, "content": content}
+        )
 
         response = self.__post_message(url, content, headers)
         if response is None:

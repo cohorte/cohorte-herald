@@ -44,7 +44,7 @@ import herald.utils as utils
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
-    Property, Validate
+    Property, Validate, RequiresBest
 from pelix.utilities import to_bytes, to_unicode
 import pelix.http
 import pelix.misc.jabsorb as jabsorb
@@ -53,6 +53,7 @@ import pelix.misc.jabsorb as jabsorb
 import json
 import logging
 import threading
+import time
 
 # ------------------------------------------------------------------------------
 
@@ -77,7 +78,11 @@ def _make_json_result(code, message="", results=None):
                              'results': results})
 
 
+PROBE_CHANNEL_MSG_RECV = "msg_recv"
+
+
 @ComponentFactory(FACTORY_SERVLET)
+@RequiresBest('_probe', herald.SERVICE_PROBE)
 @Requires('_core', herald.SERVICE_HERALD_INTERNAL)
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_http_directory', SERVICE_HTTP_DIRECTORY)
@@ -95,6 +100,7 @@ class HeraldServlet(object):
         # Herald services
         self._core = None
         self._directory = None
+        self._probe = None
 
         # Herald HTTP directory
         self._http_directory = None
@@ -243,10 +249,20 @@ class HeraldServlet(object):
                 # Unknown peer UID: keep it as is
                 pass
 
-            # Let Herald handle the message
+            # Prepare the bean
             message = herald.beans.MessageReceived(uid, subject, msg_content,
                                                    sender_uid, reply_to,
                                                    ACCESS_ID, timestamp, extra)
+
+            # Log before giving message to Herald
+            self._probe.store(
+                PROBE_CHANNEL_MSG_RECV,
+                {"uid": message.uid, "timestamp": time.time(),
+                 "transport": ACCESS_ID, "subject": message.subject,
+                 "source": sender_uid, "repliesTo": reply_to or "",
+                 "transportSource": "[{0}]:{1}".format(host, port)})
+
+            # Let Herald handle the message
             self._core.handle_message(message)
 
         # Convert content (Python 3)
