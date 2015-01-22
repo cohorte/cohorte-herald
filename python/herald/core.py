@@ -66,6 +66,36 @@ _logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
+@pelix.constants.BundleActivator
+class _BundleActivator(object):
+    """
+    Bundle activator: registers a dummy probe service
+    """
+    def __init__(self):
+        """
+        Sets up members
+        """
+        self._registration = None
+
+    def start(self, context):
+        """
+        Bundle started
+        """
+        # Register the dummy probe service
+        self._registration = context.register_service(
+            herald.SERVICE_PROBE, herald.probe.DummyProbe(),
+            {pelix.constants.SERVICE_RANKING: -100})
+
+    def stop(self, context):
+        """
+        Bundle stopped
+        """
+        self._registration.unregister()
+        self._registration = None
+
+# ------------------------------------------------------------------------------
+
+
 class _WaitingPost(object):
     """
     A bean that describes parameters of a post() call
@@ -193,9 +223,6 @@ class Herald(object):
         self.__listeners_lock = threading.Lock()
         self.__gc_lock = threading.Lock()
 
-        # Dummy probe registration
-        self._probe_registration = None
-
     @Validate
     def _validate(self, context):
         """
@@ -210,20 +237,11 @@ class Herald(object):
                                     name="Herald-GC")
         self.__gc_timer.start()
 
-        # Register the dummy probe service
-        self._probe_registration = context.register_service(
-            herald.SERVICE_PROBE, herald.probe.DummyProbe(),
-            {pelix.constants.SERVICE_RANKING: -100})
-
     @Invalidate
     def _invalidate(self, _):
         """
         Component invalidated
         """
-        # Unregister the dummy probe service
-        self._probe_registration.unregister()
-        self._probe_registration = None
-
         # Stop the garbage collector
         self.__gc_timer.cancel()
         self.__gc_timer.join()
