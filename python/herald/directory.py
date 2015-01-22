@@ -492,7 +492,6 @@ class HeraldDirectory(object):
             try:
                 app_id = description['app_id']
             except KeyError:
-                # FIXME: to remove when all apps will have been updated
                 app_id = herald.DEFAULT_APPLICATION_ID
 
             if app_id != self._local.app_id:

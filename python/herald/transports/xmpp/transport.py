@@ -434,7 +434,7 @@ class XmppTransport(object):
             # Handle discovery message
             self.__contact.herald_message(self._herald, message)
         else:
-            # All other messages are give to Herald Core
+            # All other messages are given to Herald Core
             self._herald.handle_message(message)
 
     def __get_jid(self, peer, extra):
