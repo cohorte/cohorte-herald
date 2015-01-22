@@ -38,6 +38,7 @@ __docformat__ = "restructuredtext en"
 # Herald
 from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout, \
     NoListener, ForgotMessage
+from herald.utils import LoopTimer
 import herald
 import herald.beans as beans
 import herald.probe
@@ -63,45 +64,6 @@ import time
 _logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
-
-
-class LoopTimer(threading.Thread):
-    """
-    Same as Python's Timer class, but executes the requested method
-    again and again, until cancel() is called.
-    """
-    def __init__(self, interval, function, args=None, kwargs=None, name=None):
-        """
-        Sets up the timer
-
-        :param interval: Time to wait between calls (in seconds)
-        :param function: Function to call
-        :param args: Function arguments (as a list)
-        :param kwargs: Function keyword arguments (as a dictionary)
-        :param name: Name of the loop thread
-        """
-        threading.Thread.__init__(self, name=name)
-        self.daemon = True
-        self.interval = interval
-        self.function = function
-        self.args = args if args is not None else []
-        self.kwargs = kwargs if kwargs is not None else {}
-        self.finished = threading.Event()
-
-    def cancel(self):
-        """
-        Cancels the timer if it hasn't finished yet
-        """
-        self.finished.set()
-
-    def run(self):
-        """
-        Runs the given method until cancel() is called
-        """
-        # The "or" part is for Python 2.6
-        while not (self.finished.wait(self.interval)
-                   or self.finished.is_set()):
-            self.function(*self.args, **self.kwargs)
 
 
 class _WaitingPost(object):
