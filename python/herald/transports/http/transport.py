@@ -187,9 +187,12 @@ class HttpTransport(object):
         if parent_uid:
             headers['herald-reply-to'] = parent_uid
 
-        # Convert content to JSON
-        jabsorb_content = jabsorb.to_jabsorb(message.content)
-        content = json.dumps(jabsorb_content, default=utils.json_converter)
+        if message.subject == herald.SUBJECT_RAW:
+            content = str(message.content)
+        else:
+            # Convert content to JSON
+            jabsorb_content = jabsorb.to_jabsorb(message.content)
+            content = json.dumps(jabsorb_content, default=utils.json_converter)
         return headers, content
 
     def __post_message(self, url, content, headers):

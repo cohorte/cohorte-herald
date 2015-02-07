@@ -55,6 +55,7 @@ import json
 import logging
 import threading
 import time
+import uuid
 
 # ------------------------------------------------------------------------------
 
@@ -228,25 +229,30 @@ class HeraldServlet(object):
         code = 200
         content = ""
 
-        # Check content type
+        # Extract headers
         content_type = request.get_header('content-type')
-        if content_type not in (None, CONTENT_TYPE_JSON):
-            # Unknown content type -> Error 412 "Precondition failed"
-            _logger.error("Bad content type: %s", content_type)
-            code, content = _make_json_result(412, "Unknown content type")
+        subject = request.get_header('herald-subject')
+        uid = request.get_header('herald-uid')
+        reply_to = request.get_header('herald-reply-to')
+        timestamp = request.get_header('herald-timestamp')
+        sender_uid = request.get_header('herald-sender-uid')
+        raw_content = to_unicode(request.read_data())
 
+        # Client information
+        host = utils.normalize_ip(request.get_client_address()[0])
+
+        if not uid or not subject or not content_type == CONTENT_TYPE_JSON:
+            # Raw message
+            uid = str(uuid.uuid4())
+            subject = herald.SUBJECT_RAW
+            msg_content = raw_content
+            port = -1
+            extra = {'host': host, 'raw': True}
         else:
-            # Extract headers
-            subject = request.get_header('herald-subject')
-            uid = request.get_header('herald-uid')
-            reply_to = request.get_header('herald-reply-to')
-            timestamp = request.get_header('herald-timestamp')
-            sender_uid = request.get_header('herald-sender-uid')
-            json_content = to_unicode(request.read_data())
-            msg_content = jabsorb.from_jabsorb(json.loads(json_content))
+            # Herald message
+            msg_content = jabsorb.from_jabsorb(json.loads(raw_content))
 
             # Store sender information
-            host = utils.normalize_ip(request.get_client_address()[0])
             port = int(request.get_header('herald-port', 80))
             extra = {'host': host, 'port': port,
                      'path': request.get_header('herald-path'),
@@ -263,25 +269,25 @@ class HeraldServlet(object):
                 # Unknown peer UID: keep it as is
                 pass
 
-            # Prepare the bean
-            message = herald.beans.MessageReceived(uid, subject, msg_content,
-                                                   sender_uid, reply_to,
-                                                   ACCESS_ID, timestamp, extra)
+        # Prepare the bean
+        message = herald.beans.MessageReceived(uid, subject, msg_content,
+                                               sender_uid, reply_to,
+                                               ACCESS_ID, timestamp, extra)
 
-            # Log before giving message to Herald
-            self._probe.store(
-                herald.PROBE_CHANNEL_MSG_RECV,
-                {"uid": message.uid, "timestamp": time.time(),
-                 "transport": ACCESS_ID, "subject": message.subject,
-                 "source": sender_uid, "repliesTo": reply_to or "",
-                 "transportSource": "[{0}]:{1}".format(host, port)})
+        # Log before giving message to Herald
+        self._probe.store(
+            herald.PROBE_CHANNEL_MSG_RECV,
+            {"uid": message.uid, "timestamp": time.time(),
+             "transport": ACCESS_ID, "subject": message.subject,
+             "source": sender_uid, "repliesTo": reply_to or "",
+             "transportSource": "[{0}]:{1}".format(host, port)})
 
-            if subject.startswith(peer_contact.SUBJECT_DISCOVERY_PREFIX):
-                # Handle discovery message
-                self.__contact.herald_message(self._core, message)
-            else:
-                # All other messages are given to Herald Core
-                self._core.handle_message(message)
+        if subject.startswith(peer_contact.SUBJECT_DISCOVERY_PREFIX):
+            # Handle discovery message
+            self.__contact.herald_message(self._core, message)
+        else:
+            # All other messages are given to Herald Core
+            self._core.handle_message(message)
 
         # Convert content (Python 3)
         if content:
