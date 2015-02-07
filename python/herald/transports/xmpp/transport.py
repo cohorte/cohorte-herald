@@ -62,6 +62,7 @@ import json
 import logging
 import threading
 import time
+import uuid
 
 # ------------------------------------------------------------------------------
 
@@ -384,7 +385,8 @@ class XmppTransport(object):
         """
         subject = msg['subject']
         if not subject:
-            # No subject: not an Herald message. Abandon.
+            # No subject: not an Herald message, treat it differently
+            self.__handle_raw_message(msg)
             return
 
         if msg['delay']['stamp'] is not None:
@@ -437,6 +439,41 @@ class XmppTransport(object):
             # All other messages are given to Herald Core
             self._herald.handle_message(message)
 
+    def __handle_raw_message(self, msg):
+        """
+        Handles a message that is not from Herald
+
+        :param msg: An XMPP message
+        """
+        # Generate a UUID for this message
+        uid = str(uuid.uuid4())
+
+        # No sender
+        sender_uid = "<unknown>"
+
+        # Give the raw body as content
+        content = msg['body']
+
+        # Extra parameters, for a reply
+        sender_jid = msg['from'].full
+        extra = {"sender_jid": sender_jid, "raw": True}
+
+        # Call back the core service
+        message = beans.MessageReceived(uid, herald.SUBJECT_RAW,
+                                        content, sender_uid,
+                                        None, self._access_id, extra=extra)
+
+        # Log before giving message to Herald
+        self._probe.store(
+            herald.PROBE_CHANNEL_MSG_RECV,
+            {"uid": message.uid, "timestamp": time.time(),
+             "transport": ACCESS_ID, "subject": message.subject,
+             "source": sender_uid, "repliesTo": "",
+             "transportSource": str(sender_jid)})
+
+        # All other messages are given to Herald Core
+        self._herald.handle_message(message)
+
     def __get_jid(self, peer, extra):
         """
         Retrieves the JID to use to communicate with a peer
@@ -470,8 +507,11 @@ class XmppTransport(object):
         :param parent_uid: UID of the message this one replies to (optional)
         """
         # Convert content to JSON
-        content = json.dumps(jabsorb.to_jabsorb(message.content),
-                             default=utils.json_converter)
+        if message.subject == herald.SUBJECT_RAW:
+            content = str(message.content)
+        else:
+            content = json.dumps(jabsorb.to_jabsorb(message.content),
+                                 default=utils.json_converter)
 
         # Prepare an XMPP message, based on the Herald message
         xmpp_msg = self._bot.make_message(mto=target,

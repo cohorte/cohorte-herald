@@ -75,6 +75,16 @@ Specification of the directory associated to a transport implementation
 """
 
 # ------------------------------------------------------------------------------
+# Special subjects
+
+SUBJECT_RAW = "herald/raw"
+"""
+Subject of raw message.
+Set by transports when receiving a non-Herald message.
+Used to send raw data to a peer
+"""
+
+# ------------------------------------------------------------------------------
 # Probe service and constants
 
 SERVICE_PROBE = 'herald.probe'
