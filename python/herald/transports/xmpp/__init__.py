@@ -60,36 +60,15 @@ PROP_XMPP_PORT = "xmpp.port"
 XMPP server port
 """
 
-PROP_MONITOR_JID = "xmpp.monitor.jid"
+PROP_XMPP_JID = "xmpp.user.jid"
 """
-JID of the Monitor Bot to contact to join Herald rooms
-"""
-
-PROP_MONITOR_KEY = "xmpp.monitor.key"
-"""
-Key to send to the Monitor Bot when requesting for an invite
+JID to connect the server (None for anonymous login)
 """
 
-PROP_XMPP_ROOM_JID = "xmpp.room.jid"
-"""
-Full JID of the Herald main room
-"""
-
-PROP_XMPP_ROOM_NAME = "xmpp.room.name"
-"""
-Simple name of the Herald main room
-"""
-
-PROP_MONITOR_PASSWORD = 'xmpp.monitor.password'
+PROP_XMPP_PASSWORD = 'xmpp.user.password'
 """
 Password of the account of the Monitor Bot
 """
-
-PROP_MONITOR_NICK = 'xmpp.monitor.nick'
-"""
-Nickname used by the Monitor Bot in the Multi-User Chat
-"""
-
 
 # ------------------------------------------------------------------------------
 

@@ -35,7 +35,7 @@ __docformat__ = "restructuredtext en"
 
 # Herald XMPP
 from . import FACTORY_TRANSPORT, SERVICE_XMPP_DIRECTORY, ACCESS_ID, \
-    PROP_XMPP_SERVER, PROP_XMPP_PORT
+    PROP_XMPP_SERVER, PROP_XMPP_PORT, PROP_XMPP_JID, PROP_XMPP_PASSWORD
 from .beans import XMPPAccess
 from .bot import HeraldBot
 import herald.transports.peer_contact as peer_contact
@@ -82,6 +82,8 @@ FEATURE_MUC = 'http://jabber.org/protocol/muc'
 @Property('_access_id', herald.PROP_ACCESS_ID, ACCESS_ID)
 @Property('_host', PROP_XMPP_SERVER, 'localhost')
 @Property('_port', PROP_XMPP_PORT, 5222)
+@Property('_username', PROP_XMPP_JID)
+@Property('_password', PROP_XMPP_PASSWORD)
 class XmppTransport(object):
     """
     XMPP Messenger for Herald.
@@ -112,6 +114,8 @@ class XmppTransport(object):
         self._access_id = ACCESS_ID
         self._host = "localhost"
         self._port = 5222
+        self._username = None
+        self._password = None
 
         # XMPP bot
         self._authenticated = False
@@ -137,7 +141,8 @@ class XmppTransport(object):
                                                   __name__ + ".contact")
 
         # Setup the bot
-        self._bot = HeraldBot(nick=self._directory.local_uid)
+        self._bot = HeraldBot(self._username, self._password,
+                              self._directory.local_uid)
 
         # Register to session events
         self._bot.add_event_handler("session_start", self._on_session_start)
