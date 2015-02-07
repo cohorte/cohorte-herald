@@ -902,7 +902,7 @@ class Herald(object):
         """
         # Normalize subject. By default, add a 'reply' prefix,
         # to avoid potential loops
-        if not subject:
+        if subject is None:
             subject = '/'.join(('reply', message.subject))
 
         try:
