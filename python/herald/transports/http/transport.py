@@ -50,6 +50,7 @@ import herald.utils as utils
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, BindField, Validate, Invalidate, Instantiate, RequiresBest
+from pelix.utilities import to_str
 import pelix.utilities
 import pelix.threadpool
 import pelix.misc.jabsorb as jabsorb
@@ -188,7 +189,7 @@ class HttpTransport(object):
             headers['herald-reply-to'] = parent_uid
 
         if message.subject == herald.SUBJECT_RAW:
-            content = str(message.content)
+            content = to_str(message.content)
         else:
             # Convert content to JSON
             jabsorb_content = jabsorb.to_jabsorb(message.content)

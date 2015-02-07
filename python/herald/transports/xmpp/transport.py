@@ -55,6 +55,7 @@ import sleekxmpp
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, Validate, Invalidate, RequiresBest
+from pelix.utilities import to_str
 import pelix.misc.jabsorb as jabsorb
 
 # Standard library
@@ -513,7 +514,7 @@ class XmppTransport(object):
         """
         # Convert content to JSON
         if message.subject == herald.SUBJECT_RAW:
-            content = str(message.content)
+            content = to_str(message.content)
         else:
             content = json.dumps(jabsorb.to_jabsorb(message.content),
                                  default=utils.json_converter)
