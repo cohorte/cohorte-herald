@@ -513,7 +513,7 @@ class XmppTransport(object):
         :param parent_uid: UID of the message this one replies to (optional)
         """
         # Convert content to JSON
-        if message.subject == herald.SUBJECT_RAW:
+        if message.subject in (herald.SUBJECT_RAW, ""):
             content = to_str(message.content)
         else:
             content = json.dumps(jabsorb.to_jabsorb(message.content),
