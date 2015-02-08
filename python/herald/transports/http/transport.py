@@ -188,7 +188,7 @@ class HttpTransport(object):
         if parent_uid:
             headers['herald-reply-to'] = parent_uid
 
-        if message.subject in (herald.SUBJECT_RAW, ""):
+        if message.subject in herald.SUBJECTS_RAW:
             content = to_str(message.content)
         else:
             # Convert content to JSON

@@ -389,14 +389,14 @@ class XmppTransport(object):
 
         :param msg: A message stanza
         """
+        if msg['delay']['stamp'] is not None:
+            # Delayed message: ignore
+            return
+
         subject = msg['subject']
         if not subject:
             # No subject: not an Herald message, treat it differently
             self.__handle_raw_message(msg)
-            return
-
-        if msg['delay']['stamp'] is not None:
-            # Delayed message: ignore
             return
 
         # Check if the message is from Multi-User Chat or direct
@@ -513,7 +513,7 @@ class XmppTransport(object):
         :param parent_uid: UID of the message this one replies to (optional)
         """
         # Convert content to JSON
-        if message.subject in (herald.SUBJECT_RAW, ""):
+        if message.subject in herald.SUBJECTS_RAW:
             content = to_str(message.content)
         else:
             content = json.dumps(jabsorb.to_jabsorb(message.content),

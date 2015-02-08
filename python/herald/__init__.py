@@ -84,6 +84,9 @@ Set by transports when receiving a non-Herald message.
 Used to send raw data to a peer
 """
 
+SUBJECTS_RAW = ('', SUBJECT_RAW, "reply/" + SUBJECT_RAW)
+""" Subjects of messages considered as raw """
+
 # ------------------------------------------------------------------------------
 # Probe service and constants
 
