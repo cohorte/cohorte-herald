@@ -50,11 +50,12 @@ import logging
 # ------------------------------------------------------------------------------
 
 
-def main(http_port, peer_name, node_name, app_id):
+def main(http_port, peer_uid, peer_name, node_name, app_id):
     """
     Runs the framework
 
     :param http_port: HTTP port to listen to
+    :param peer_uid: UID of the peer
     :param peer_name: Name of the peer
     :param node_name: Name (also, UID) of the node hosting the peer
     :param app_id: Application ID
@@ -79,6 +80,11 @@ def main(http_port, peer_name, node_name, app_id):
          'herald.transports.http.servlet',
          'herald.transports.http.transport',
 
+         # Herald tunnel
+         'herald.tunnel.tunnel',
+         'herald.tunnel.out_socket',
+         'herald.tunnel.shell',
+
          # RPC
          'pelix.remote.dispatcher',
          'pelix.remote.registry',
@@ -88,6 +94,9 @@ def main(http_port, peer_name, node_name, app_id):
          herald.FWPROP_NODE_NAME: node_name,
          herald.FWPROP_PEER_NAME: peer_name,
          herald.FWPROP_APPLICATION_ID: app_id})
+
+    if peer_uid:
+        framework.add_property(herald.FWPROP_PEER_UID, peer_uid)
 
     # Start everything
     framework.start()
@@ -125,6 +134,8 @@ if __name__ == "__main__":
     # Peer info
     group = parser.add_argument_group("Peer Configuration",
                                       "Identity of the Peer")
+    group.add_argument("-u", "--uid", action="store", default=None,
+                       dest="uid", help="Peer UID")
     group.add_argument("-n", "--name", action="store", default=None,
                        dest="name", help="Peer name")
     group.add_argument("--node", action="store", default=None,
@@ -142,4 +153,4 @@ if __name__ == "__main__":
     logging.getLogger('requests').setLevel(logging.WARNING)
 
     # Run the framework
-    main(args.http_port, args.name, args.node, args.app_id)
+    main(args.http_port, args.uid, args.name, args.node, args.app_id)
