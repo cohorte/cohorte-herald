@@ -31,6 +31,11 @@ __docformat__ = "restructuredtext en"
 
 # ------------------------------------------------------------------------------
 
+CONTENT_TYPE_JSON = "application/json"
+""" MIME type: JSON data """
+
+# ------------------------------------------------------------------------------
+
 ACCESS_ID = "http"
 """
 Access ID used by the HTTP transport implementation

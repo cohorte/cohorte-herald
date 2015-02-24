@@ -37,7 +37,7 @@ __docformat__ = "restructuredtext en"
 
 # Herald
 from . import ACCESS_ID, SERVICE_HTTP_DIRECTORY, SERVICE_HTTP_RECEIVER, \
-    FACTORY_SERVLET
+    FACTORY_SERVLET, CONTENT_TYPE_JSON
 from . import beans
 import herald.beans
 import herald.transports.peer_contact as peer_contact
@@ -58,9 +58,6 @@ import time
 import uuid
 
 # ------------------------------------------------------------------------------
-
-CONTENT_TYPE_JSON = "application/json"
-""" MIME type: JSON data """
 
 _logger = logging.getLogger(__name__)
 
@@ -241,7 +238,7 @@ class HeraldServlet(object):
         # Client information
         host = utils.normalize_ip(request.get_client_address()[0])
 
-        if not uid or not subject or not content_type == CONTENT_TYPE_JSON:
+        if not uid or not subject or content_type != CONTENT_TYPE_JSON:
             # Raw message
             uid = str(uuid.uuid4())
             subject = herald.SUBJECT_RAW

@@ -36,7 +36,8 @@ __docformat__ = "restructuredtext en"
 # ------------------------------------------------------------------------------
 
 # Herald HTTP
-from . import ACCESS_ID, SERVICE_HTTP_RECEIVER, SERVICE_HTTP_TRANSPORT
+from . import ACCESS_ID, SERVICE_HTTP_RECEIVER, SERVICE_HTTP_TRANSPORT, \
+    CONTENT_TYPE_JSON
 
 # HTTP requests
 import requests.exceptions
@@ -179,7 +180,8 @@ class HttpTransport(object):
         :return: A (headers, content) tuple
         """
         # Prepare headers
-        headers = {'herald-subject': message.subject,
+        headers = {'content-type': CONTENT_TYPE_JSON,
+                   'herald-subject': message.subject,
                    'herald-uid': message.uid,
                    'herald-sender-uid': self.__peer_uid,
                    'herald-timestamp': int(time.time() * 1000),
