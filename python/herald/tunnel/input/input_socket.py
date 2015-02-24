@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -- Content-Encoding: UTF-8 --
 """
-Tunnel socket server implementation
+Tunnel output: socket server
 
 :author: Thomas Calmant
 :copyright: Copyright 2015, isandlaTech
@@ -37,9 +37,13 @@ __docformat__ = "restructuredtext en"
 
 # Herald
 from herald.exceptions import HeraldException
+import herald
 import herald.beans as beans
+import herald.tunnel as htunnel
 
 # Pelix
+from pelix.ipopo.decorators import ComponentFactory, Provides, Property, \
+    Requires, Instantiate
 from pelix.utilities import to_str
 
 # Standard library
@@ -59,24 +63,24 @@ BUFFER_SIZE = 4096
 # ------------------------------------------------------------------------------
 
 
-class SocketTunnelIn(object):
+class SocketInputTunnel(object):
     """
     Socket entry side of the tunnel
     """
-    def __init__(self, herald):
+    def __init__(self, herald_svc, tunnel_uid, out_peer):
         """
         Sets up members
 
-        :param herald: The Herald core service
+        :param herald_svc: The Herald core service
         """
+        # The Herald core service
+        self.__herald = herald_svc
+
         # The targeted peer
-        self.__peer = None
+        self.__peer = out_peer
 
         # Tunnel UID
-        self.__tunnel_uid = None
-
-        # The Herald core service
-        self.__herald = herald
+        self.__tunnel_uid = tunnel_uid
 
         # Server sockets
         self.__server_socks = []
@@ -109,7 +113,7 @@ class SocketTunnelIn(object):
         """
         # Get the possible server addresses and families
         # => can raise a socket.gaierror
-        addr_info = socket.getaddrinfo(address, port, type=sock_type)
+        addr_info = socket.getaddrinfo(address, port, 0, sock_type)
         server_sockets = self.__server_socks
 
         for info in addr_info:
@@ -132,15 +136,14 @@ class SocketTunnelIn(object):
             raise socket.error("No server socket have been bound")
         return True
 
-    def link(self, tunnel_uid, out_peer):
+    def start(self):
         """
-        Links to the output side of the tunnel
-
-        :param tunnel_uid: UID of the tunnel
-        :param out_peer: The output peer
+        Starts the tunnel
         """
-        self.__tunnel_uid = tunnel_uid
-        self.__peer = out_peer
+        thread = threading.Thread(target=self.read_loop,
+                                  name="Herald-Tunnel-SocketInput")
+        thread.daemon = True
+        thread.start()
 
     def close(self, send_close=True):
         """
@@ -166,7 +169,7 @@ class SocketTunnelIn(object):
         self.__clients_socks.clear()
 
         if send_close and self.__peer is not None:
-            msg = beans.Message("herald/tunnel/close",
+            msg = beans.Message(htunnel.SUBJECT_CLOSE_OUTPUT_TUNNEL,
                                 {"tunnel": self.__tunnel_uid})
             self.__herald.fire(self.__peer, msg)
 
@@ -241,7 +244,7 @@ class SocketTunnelIn(object):
             self.__next_id += 1
 
         # Create link on remote peer
-        msg = beans.Message("herald/tunnel/create_link",
+        msg = beans.Message(htunnel.SUBJECT_CREATE_OUTPUT_LINK,
                             {"tunnel": self.__tunnel_uid, "link_id": link_id})
         try:
             recv_msg = self.__herald.send(self.__peer, msg)
@@ -304,7 +307,7 @@ class SocketTunnelIn(object):
             clt_sock.close()
 
         # Close link in the remote peer
-        msg = beans.Message("herald/tunnel/close_link",
+        msg = beans.Message(htunnel.SUBJECT_CLOSE_OUTPUT_LINK,
                             {"tunnel": self.__tunnel_uid, "link_id": link_id})
         try:
             self.__herald.fire(self.__peer, msg)
@@ -325,7 +328,7 @@ class SocketTunnelIn(object):
             logger.warning("Unknown client socket")
         else:
             msg = beans.Message(
-                "herald/tunnel/data",
+                htunnel.SUBJECT_DATA_FROM_INPUT,
                 {"tunnel": self.__tunnel_uid, "link_id": link_id,
                  "data": to_str(base64.b64encode(data))})
             try:
@@ -333,3 +336,35 @@ class SocketTunnelIn(object):
                 self.__herald.fire(self.__peer, msg)
             except HeraldException as ex:
                 logger.error("Error sending data back to link: %s", ex)
+
+# ------------------------------------------------------------------------------
+
+
+@ComponentFactory('herald-tunnel-input-socket-factory')
+@Requires('_herald', herald.SERVICE_HERALD)
+@Provides(htunnel.SERVICE_TUNNEL_INPUT_CREATOR)
+@Property('_kind', 'kind', 'socket')
+@Instantiate('herald-tunnel-input-socket')
+class SocketTunnelInputHandler(object):
+    """
+    Creates socket tunnel output
+    """
+    def __init__(self):
+        """
+        Sets up members
+        """
+        self._herald = None
+        self._kind = 'socket'
+
+    def create_tunnel(self, tunnel_uid, in_config, out_peer):
+        """
+        Creates a tunnel
+
+        :param tunnel_uid: ID of the tunnel
+        :param in_config: Input configuration bean
+        :param out_peer: Output peer
+        :return: The configured tunnel
+        """
+        tunnel = SocketInputTunnel(self._herald, tunnel_uid, out_peer)
+        tunnel.setup(in_config.address, in_config.port, in_config.sock_type)
+        return tunnel

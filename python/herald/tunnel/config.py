@@ -91,7 +91,7 @@ class OutputSocketConfiguration(object):
         self.sock_type = sock_type
 
         # Compute address family
-        info = socket.getaddrinfo(address, port, type=sock_type)
+        info = socket.getaddrinfo(address, port, 0, sock_type)
         self.sock_family = info[0][0]
 
     def __str__(self):

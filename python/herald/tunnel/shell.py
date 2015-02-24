@@ -59,18 +59,20 @@ SOCK_TYPE = {
 
 @ComponentFactory("herald-tunnel-shell-factory")
 @Requires("_tunnel", herald.tunnel.SERVICE_TUNNEL)
+@Requires("_tunnel_out", herald.tunnel.SERVICE_TUNNEL_OUTPUT)
 @Requires("_utils", pelix.shell.SERVICE_SHELL_UTILS)
 @Provides(pelix.shell.SERVICE_SHELL_COMMAND)
 @Instantiate("herald-tunnel-shell")
-class HeraldCommands(object):
+class TunnelCommands(object):
     """
-    Herald shell commands
+    Herald Tunnel shell commands
     """
     def __init__(self):
         """
         Sets up the object
         """
         self._tunnel = None
+        self._tunnel_out = None
         self._utils = None
 
     @staticmethod
@@ -134,5 +136,5 @@ class HeraldCommands(object):
         Lists the output tunnels
         """
         header = ('UID', 'Source Peer', 'Output')
-        lines = [info for info in self._tunnel.get_output_info()]
+        lines = [info for info in self._tunnel_out.get_output_info()]
         io_handler.write_line(self._utils.make_table(header, lines))

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -- Content-Encoding: UTF-8 --
 """
-Tunnel service implementation
+Tunnel output: client socket
 
 :author: Thomas Calmant
 :copyright: Copyright 2015, isandlaTech
@@ -37,8 +37,9 @@ __docformat__ = "restructuredtext en"
 
 # Herald
 from herald.tunnel.config import OutputSocketConfiguration
-import herald.tunnel
+import herald
 import herald.beans as beans
+import herald.tunnel as htunnel
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Provides, Property, \
@@ -114,8 +115,6 @@ class SocketOutputTunnel(object):
         """
         Starts the tunnel
         """
-        logger.info("Created output tunnel: %s", self.__tunnel_uid)
-
         thread = threading.Thread(target=self.__read_loop,
                                   name="Herald-Tunnel-Socket-Output")
         thread.daemon = True
@@ -160,18 +159,16 @@ class SocketOutputTunnel(object):
         """
         A socket has been closed: send message
         """
-        msg = beans.Message("herald/tunnel/close-end",
-                            {"tunnel": self.__tunnel_uid,
-                             "link_id": link_id})
+        msg = beans.Message(htunnel.SUBJECT_CLOSE_INPUT_LINK,
+                            {"tunnel": self.__tunnel_uid, "link_id": link_id})
         self.__herald.fire(self.__peer, msg)
 
     def _on_recv(self, link_id, data):
         """
         A socket has been closed: send message
         """
-        msg = beans.Message("herald/tunnel/data-end",
-                            {"tunnel": self.__tunnel_uid,
-                             "link_id": link_id,
+        msg = beans.Message(htunnel.SUBJECT_DATA_FROM_OUTPUT,
+                            {"tunnel": self.__tunnel_uid, "link_id": link_id,
                              "data": to_str(base64.b64encode(data))})
         self.__herald.fire(self.__peer, msg)
 
@@ -182,14 +179,10 @@ class SocketOutputTunnel(object):
         :param link_id: ID of the link
         :raise socket.error: Error creating the socket
         """
-        logger.info("Creating output link %s...", link_id)
-
         # Create socket and connect
         sock = socket.socket(self.__config.sock_family,
                              self.__config.sock_type)
         sock.connect((self.__config.address, self.__config.port))
-
-        logger.info("Created output link %s: %s", link_id, sock)
 
         # Store socket
         self.__links[link_id] = sock
@@ -209,8 +202,6 @@ class SocketOutputTunnel(object):
             pass
         finally:
             sock.close()
-
-        logger.info("Closed output link %s (%s)", link_id, sock)
 
     def send(self, link_id, data):
         """
@@ -237,15 +228,16 @@ class SocketOutputTunnel(object):
 
         self.__links.clear()
         self.__sockets.clear()
-        logger.info("Closed output link: %s", self.__tunnel_uid)
+
+# ------------------------------------------------------------------------------
 
 
-@ComponentFactory('herald-tunnel-out-socket-factory')
+@ComponentFactory('herald-tunnel-output-socket-factory')
 @Requires('_herald', herald.SERVICE_HERALD)
-@Provides(herald.tunnel.SERVICE_TUNNEL_CREATOR)
+@Provides(htunnel.SERVICE_TUNNEL_OUTPUT_CREATOR)
 @Property('_kind', 'kind', 'socket')
-@Instantiate('herald-tunnel-out-socket')
-class SocketOutTunnelHandler(object):
+@Instantiate('herald-tunnel-output-socket')
+class SocketTunnelOutputHandler(object):
     """
     Creates socket tunnel output
     """

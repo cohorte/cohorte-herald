@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -- Content-Encoding: UTF-8 --
 """
-Tunnel service implementation
+Tunnel output manager
 
 :author: Thomas Calmant
 :copyright: Copyright 2015, isandlaTech
@@ -37,10 +37,9 @@ __docformat__ = "restructuredtext en"
 
 # Herald
 from herald.exceptions import HeraldException
-import herald.tunnel
+import herald
 import herald.beans as beans
-
-from .server import SocketTunnelIn
+import herald.tunnel as htunnel
 
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
@@ -50,26 +49,22 @@ from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
 import base64
 import binascii
 import logging
-import threading
-import uuid
 
 # ------------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
-SUBJECT_CREATE_TUNNEL = "herald/tunnel/create_tunnel"
-
 # ------------------------------------------------------------------------------
 
 
-@ComponentFactory('herald-tunnel-factory')
-@Provides((herald.tunnel.SERVICE_TUNNEL, herald.SERVICE_LISTENER))
+@ComponentFactory('herald-tunnel-output-factory')
+@Provides((htunnel.SERVICE_TUNNEL_OUTPUT, herald.SERVICE_LISTENER))
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_herald', herald.SERVICE_HERALD)
-@RequiresMap('_tunnel_creator', herald.tunnel.SERVICE_TUNNEL_CREATOR, 'kind',
-             optional=True)
-@Property('_filters', herald.PROP_FILTERS, ['herald/tunnel/*'])
-@Instantiate('herald-tunnel')
+@RequiresMap('_tunnel_creator', htunnel.SERVICE_TUNNEL_OUTPUT_CREATOR,
+             'kind', optional=True)
+@Property('_filters', herald.PROP_FILTERS, [htunnel.MATCH_OUTPUT_SUBJECTS])
+@Instantiate('herald-tunnel-output')
 class HeraldTunnel(object):
     """
     Implementation of the tunnels provider
@@ -83,13 +78,6 @@ class HeraldTunnel(object):
         self._herald = None
         self._tunnel_creator = None
 
-        # Active input tunnels (UID -> Tunnel)
-        self.__in_tunnels = {}
-
-        # Configuration of input tunnels
-        # (UID -> (in_config, out_peer, out_config)
-        self.__in_configs = {}
-
         # Active output tunnel (UID -> TunnelOut)
         self.__out_tunnels = {}
 
@@ -101,46 +89,38 @@ class HeraldTunnel(object):
         """
         Component invalidate
         """
-        # Close input tunnels
-        for tunnel_uid in list(self.__in_tunnels.keys()):
-            self.close_tunnel(tunnel_uid)
-
-        # Notify the remote tunnels
+        # Notify the input tunnels
         for tunnel in list(self.__out_tunnels.values()):
-            msg = beans.Message("herald/tunnel/close_tunnel",
+            msg = beans.Message(htunnel.SUBJECT_CLOSE_INPUT_TUNNEL,
                                 {'tunnel': tunnel.tunnel_uid})
-            self._herald.fire(tunnel.peer, msg)
+            try:
+                self._herald.fire(tunnel.peer, msg)
+            except (HeraldException, KeyError) as ex:
+                logger.error("Couldn't close tunnel input: %s", ex)
 
     def herald_message(self, herald_svc, message):
         """
         An Herald message has been received
         """
-        action = message.subject.split('/')[-1]
+        subject = message.subject
         content = message.content
         result = None
 
-        if action == "create_tunnel":
+        if subject == htunnel.SUBJECT_CREATE_OUTPUT_TUNNEL:
             result = self._create_tunnel(content['tunnel'], message.sender,
                                          content['out_config'])
-        elif action == "close_tunnel":
+        elif subject == htunnel.SUBJECT_CLOSE_OUTPUT_TUNNEL:
             self._close_tunnel(content['tunnel'])
-        elif action == "create_link":
+        elif subject == htunnel.SUBJECT_CREATE_OUTPUT_LINK:
             result = self._create_link(content['tunnel'], content['link_id'])
-        elif action == "close_link":
+        elif subject == htunnel.SUBJECT_CLOSE_OUTPUT_LINK:
             result = self._close_link(content['tunnel'], content['link_id'])
-        elif action == "data":
+        elif subject == htunnel.SUBJECT_DATA_FROM_INPUT:
             self._handle_data(content['tunnel'], content['link_id'],
                               content['data'])
-        elif action == "close-end":
-            self.__in_tunnels[content['tunnel']].close(content['link_id'])
-        elif action == "data-end":
-            self.__in_tunnels[content['tunnel']].send(
-                content['link_id'], content['data'])
-        elif action == "close_tunnel-end":
-            self.close_tunnel(content['tunnel'])
         else:
             result = {"success": False,
-                      "message": "Unknown command: {0}".format(action)}
+                      "message": "Unknown command: '{0}'".format(subject)}
 
         if result:
             herald_svc.reply(message, result)
@@ -252,83 +232,6 @@ class HeraldTunnel(object):
                     "message": "Error closing link: {0}".format(ex)}
         else:
             return {"success": True, "message": ""}
-
-    def open_tunnel(self, in_config, out_peer, out_config):
-        """
-        Opens a tunnel to join the remote peer
-
-        :param in_config: Tunnel input configuration
-        :param out_peer: Output peer UID
-        :param out_config: Tunnel output configuration
-        :return: The UID of the tunnel or None
-        """
-        # Generate tunnel UID
-        tunnel_uid = str(uuid.uuid4()).replace('-', '').upper()
-
-        logger.info("Opening input tunnel %s...", tunnel_uid)
-
-        # Create tunnel entry side
-        tunnel_in = SocketTunnelIn(self._herald)
-        tunnel_in.setup(in_config.address, in_config.port, in_config.sock_type)
-
-        try:
-            # Create tunnel output side
-            message = beans.Message(
-                SUBJECT_CREATE_TUNNEL,
-                {"tunnel": tunnel_uid, "out_config": out_config.to_map()})
-
-            recv_msg = self._herald.send(out_peer, message)
-            result = recv_msg.content
-            if not result["success"]:
-                logger.error("Error on remote side: %s", result["message"])
-                tunnel_in.close(False)
-                return
-        except HeraldException as ex:
-            logger.error("Error contacting the remote peer: %s", ex)
-            tunnel_in.close(False)
-            return
-
-        # Link tunnel_in to the output side
-        tunnel_in.link(tunnel_uid, out_peer)
-
-        # Store the tunnel
-        self.__in_tunnels[tunnel_uid] = tunnel_in
-        self.__in_configs[tunnel_uid] = (in_config, out_peer, out_config)
-
-        # Start the tunnel
-        thread = threading.Thread(target=tunnel_in.read_loop,
-                                  name="Herald-Tunnel")
-        thread.daemon = True
-        thread.start()
-
-        logger.info("Opened input tunnel: %s", tunnel_uid)
-        return tunnel_uid
-
-    def close_tunnel(self, tunnel_uid):
-        """
-        Closes the tunnel
-
-        :param tunnel_uid: UID of the tunnel to close
-        """
-        # Close the whole tunnel
-        tunnel_in = self.__in_tunnels.pop(tunnel_uid)
-        tunnel_in.close(True)
-        del self.__in_configs[tunnel_uid]
-        logger.info("Closing input tunnel: %s", tunnel_uid)
-
-    def get_input_info(self, tunnel_uid=None):
-        """
-        Get the list of input tunnel descriptions
-
-        :param tunnel_uid: UID filter
-        :return: A list of (uid, in_config, out_peer, out_config)
-        :raise KeyError: Unknown UID
-        """
-        if tunnel_uid:
-            return tunnel_uid, self.__in_configs[tunnel_uid]
-        else:
-            return tuple([uid] + list(values)
-                         for uid, values in self.__in_configs.items())
 
     def get_output_info(self):
         """
