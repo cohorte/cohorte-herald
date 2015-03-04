@@ -58,14 +58,15 @@ logger = logging.getLogger(__name__)
 
 
 @ComponentFactory('herald-tunnel-output-factory')
-@Provides((htunnel.SERVICE_TUNNEL_OUTPUT, herald.SERVICE_LISTENER))
+@Provides((htunnel.SERVICE_TUNNEL_OUTPUT, herald.SERVICE_LISTENER,
+           herald.SERVICE_DIRECTORY_LISTENER))
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_herald', herald.SERVICE_HERALD)
 @RequiresMap('_tunnel_creator', htunnel.SERVICE_TUNNEL_OUTPUT_CREATOR,
              'kind', optional=True)
 @Property('_filters', herald.PROP_FILTERS, [htunnel.MATCH_OUTPUT_SUBJECTS])
 @Instantiate('herald-tunnel-output')
-class HeraldTunnel(object):
+class HeraldTunnelOutput(object):
     """
     Implementation of the tunnels provider
     """
@@ -165,6 +166,7 @@ class HeraldTunnel(object):
             out_tunnel = self.__out_tunnels.pop(tunnel_uid)
             del self.__out_configs[tunnel_uid]
             out_tunnel.close()
+            logger.info("Closed output tunnel %s", tunnel_uid)
         except Exception as ex:
             logger.exception("Error closing tunnel: %s", ex)
 
@@ -241,3 +243,41 @@ class HeraldTunnel(object):
         """
         return tuple([uid] + list(values)
                      for uid, values in self.__out_configs.items())
+
+    @staticmethod
+    def peer_registered(peer):
+        """
+        A new peer has been registered in Herald: send it a contact information
+        """
+        pass
+
+    @staticmethod
+    def peer_updated(peer, access_id, data, previous):
+        """
+        An access to a peer have been updated: ignore
+        """
+        pass
+
+    def peer_unregistered(self, peer):
+        """
+        All accesses to a peer have been lost: forget about it
+
+        :param peer: The lost peer
+        """
+        # Close tunnel, without notifying the output part (as it disappeared)
+        to_close = [uid for uid, config in self.__out_configs.items()
+                    if config[0] == peer.uid]
+
+        if to_close:
+            logger.info("Closing output tunnels to the unregistration of "
+                        "%s: %s", peer, ', '.join(to_close))
+
+            # Close tunnels
+            for tunnel_uid in to_close:
+                try:
+                    del self.__out_configs[tunnel_uid]
+                    out_tunnel = self.__out_tunnels.pop(tunnel_uid)
+                    out_tunnel.close()
+                except KeyError:
+                    # Maybe we got a late closing message
+                    pass
