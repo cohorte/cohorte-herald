@@ -84,7 +84,7 @@ def main(http_port, peer_uid, peer_name, node_name, app_id):
          'herald.tunnel.input.core',
          'herald.tunnel.input.in_socket',
          'herald.tunnel.output.core',
-         'herald.tunnel.output.output_socket',
+         'herald.tunnel.output.out_socket',
          'herald.tunnel.shell',
 
          # RPC
