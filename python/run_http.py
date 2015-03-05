@@ -82,7 +82,7 @@ def main(http_port, peer_uid, peer_name, node_name, app_id):
 
          # Herald tunnel
          'herald.tunnel.input.core',
-         'herald.tunnel.input.input_socket',
+         'herald.tunnel.input.in_socket',
          'herald.tunnel.output.core',
          'herald.tunnel.output.output_socket',
          'herald.tunnel.shell',

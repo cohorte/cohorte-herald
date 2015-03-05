@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -- Content-Encoding: UTF-8 --
 """
-Tunnel output: socket server
+Tunnel input: socket server
 
 :author: Thomas Calmant
 :copyright: Copyright 2015, isandlaTech
@@ -63,9 +63,9 @@ BUFFER_SIZE = 4096
 # ------------------------------------------------------------------------------
 
 
-class SocketInputTunnel(object):
+class SocketInputTCP(object):
     """
-    Socket entry side of the tunnel
+    Socket TCP entry side of the tunnel
     """
     def __init__(self, herald_svc, tunnel_uid, out_peer):
         """
@@ -103,17 +103,16 @@ class SocketInputTunnel(object):
         # Run flag
         self.__running = True
 
-    def setup(self, address, port, sock_type=socket.SOCK_STREAM):
+    def setup(self, address, port):
         """
         Setup the tunnel entry
         :param address: Binding address
         :param port: Binding port
-        :param sock_type: Socket type (SOCK_STREAM, SOCK_DGRAM)
         :raise socket.gaierror: Error getting server address info
         """
         # Get the possible server addresses and families
         # => can raise a socket.gaierror
-        addr_info = socket.getaddrinfo(address, port, 0, sock_type)
+        addr_info = socket.getaddrinfo(address, port, 0, socket.SOCK_STREAM)
         server_sockets = self.__server_socks
 
         for info in addr_info:
@@ -141,7 +140,7 @@ class SocketInputTunnel(object):
         Starts the tunnel
         """
         thread = threading.Thread(target=self.read_loop,
-                                  name="Herald-Tunnel-SocketInput")
+                                  name="Herald-Tunnel-SocketTCPInput")
         thread.daemon = True
         thread.start()
 
@@ -340,6 +339,201 @@ class SocketInputTunnel(object):
 # ------------------------------------------------------------------------------
 
 
+class SocketInputUDP(object):
+    """
+    Socket UDP entry of a tunnel
+    """
+    def __init__(self, herald_svc, tunnel_uid, out_peer):
+        """
+        Sets up members
+
+        :param herald_svc: The Herald core service
+        """
+        # The Herald core service
+        self.__herald = herald_svc
+
+        # The targeted peer
+        self.__peer = out_peer
+
+        # Tunnel UID
+        self.__tunnel_uid = tunnel_uid
+
+        # Server sockets
+        self.__server_socks = []
+
+        # Thread safety (just in case...)
+        self.__lock = threading.Lock()
+
+        # Run flag
+        self.__running = True
+
+    def setup(self, address, port):
+        """
+        Setup the tunnel entry
+        :param address: Binding address
+        :param port: Binding port
+        :raise socket.gaierror: Error getting server address info
+        """
+        # Get the possible server addresses and families
+        # => can raise a socket.gaierror
+        addr_info = socket.getaddrinfo(address, port, 0, socket.SOCK_DGRAM)
+        server_sockets = self.__server_socks
+
+        for info in addr_info:
+            # Unpack address info
+            family, socktype, proto, _, sockaddr = info
+
+            try:
+                # Create and bind socket
+                sock = socket.socket(family, socktype, proto)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                sock.bind(sockaddr)
+            except socket.error as ex:
+                logger.error("Error creating socket: %s", ex)
+            else:
+                # Socket has been bound correctly
+                server_sockets.append(sock)
+
+        if not server_sockets:
+            raise socket.error("No server socket have been bound")
+        return True
+
+    def start(self):
+        """
+        Starts the tunnel
+        """
+        thread = threading.Thread(target=self.read_loop,
+                                  name="Herald-Tunnel-SocketUDPInput")
+        thread.daemon = True
+        thread.start()
+
+    def close(self, send_close=True):
+        """
+        Close all the sockets and cleans up references.
+
+        :param send_close: Sends the close message to the remote peer
+        """
+        self.__running = False
+
+        # Close server sockets
+        for sock in self.__server_socks:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except IOError:
+                pass
+            finally:
+                sock.close()
+        del self.__server_socks[:]
+
+        if send_close and self.__peer is not None:
+            msg = beans.Message(htunnel.SUBJECT_CLOSE_OUTPUT_TUNNEL,
+                                {"tunnel": self.__tunnel_uid})
+            self.__herald.fire(self.__peer, msg)
+
+        # Clean up
+        self.__tunnel_uid = None
+        self.__peer = None
+
+    @staticmethod
+    def _make_link_id(server_idx, clt_addr):
+        """
+        Generates a link ID string containing the server index and the client
+        address
+
+        :param server_idx: Index of the server
+        :param clt_addr: Address and port of the client (tuple)
+        :return: An ID string
+        """
+        return "{0};{1};{2}".format(server_idx, clt_addr[0], clt_addr[1])
+
+    @staticmethod
+    def _parse_link_id(link_id):
+        """
+        Returns the index of the server to use and the client address and port
+        to send a reply to, according to the link ID
+
+        :param link_id: A link ID
+        :return: A tuple: (server_idx, (client host, client port))
+        :raise ValueError: Invalid link ID format
+        """
+        values = link_id.split(";")
+        try:
+            return values[0], (values[1], int(values[2]))
+        except IndexError:
+            raise ValueError("Invalid link ID: not enough fields")
+        except TypeError:
+            raise ValueError("Invalid port number in link ID")
+
+    def send(self, link_id, data):
+        """
+        Write data back to the client
+
+        :param link_id: ID of the link
+        :param data: Base64 encoded data
+        """
+        srv_idx, clt_addr = self._parse_link_id(link_id)
+        try:
+            self.__server_socks[srv_idx] \
+                .sendto(base64.b64decode(data), clt_addr)
+        except KeyError:
+            logger.error("Unknown UDP server index: %s", srv_idx)
+        except socket.error as ex:
+            logger.exception("Error sending packet back to client: %s", ex)
+
+    def read_loop(self):
+        """
+        Main read loop
+        """
+        while self.__running:
+            self.read_once()
+
+    def read_once(self):
+        """
+        Read step
+        """
+        # List of the sockets to read
+        with self.__lock:
+            read_socks = self.__server_socks[:]
+
+        # Wait for data
+        input_ready, _, _ = select.select(read_socks, [], [], 1.0)
+
+        for in_sock in input_ready:
+            try:
+                # Read data and get client address
+                data, clt_addr = in_sock.recvfrom(BUFFER_SIZE)
+            except socket.error as ex:
+                logger.error("Error reading socket: %s", ex)
+            else:
+                try:
+                    srv_idx = read_socks.index(in_sock)
+                except ValueError:
+                    logger.error("Invalid UDP server socket: %s", in_sock)
+                else:
+                    self._on_recv(srv_idx, clt_addr, data)
+
+    def _on_recv(self, srv_idx, clt_addr, data):
+        """
+        Some data have been read from a client socket
+
+        :param srv_idx: Server position in the servers list
+        :param clt_sock: Address of the client
+        :param data: Data read from client
+        """
+        msg = beans.Message(
+            htunnel.SUBJECT_DATA_FROM_INPUT,
+            {"tunnel": self.__tunnel_uid,
+             "link_id": self._make_link_id(srv_idx, clt_addr),
+             "data": to_str(base64.b64encode(data))})
+        try:
+            # Send data to the remote peer
+            self.__herald.fire(self.__peer, msg)
+        except HeraldException as ex:
+            logger.error("Error sending data back to link: %s", ex)
+
+# ------------------------------------------------------------------------------
+
+
 @ComponentFactory('herald-tunnel-input-socket-factory')
 @Requires('_herald', herald.SERVICE_HERALD)
 @Provides(htunnel.SERVICE_TUNNEL_INPUT_CREATOR)
@@ -347,7 +541,7 @@ class SocketInputTunnel(object):
 @Instantiate('herald-tunnel-input-socket')
 class SocketTunnelInputHandler(object):
     """
-    Creates socket tunnel output
+    Creates socket TCP tunnel output
     """
     def __init__(self):
         """
@@ -365,6 +559,14 @@ class SocketTunnelInputHandler(object):
         :param out_peer: Output peer
         :return: The configured tunnel
         """
-        tunnel = SocketInputTunnel(self._herald, tunnel_uid, out_peer)
-        tunnel.setup(in_config.address, in_config.port, in_config.sock_type)
+        sock_type = in_config.sock_type
+
+        if sock_type == socket.SOCK_STREAM:
+            tunnel = SocketInputTCP(self._herald, tunnel_uid, out_peer)
+        elif sock_type == socket.SOCK_DGRAM:
+            tunnel = SocketInputUDP(self._herald, tunnel_uid, out_peer)
+        else:
+            raise ValueError("Unhandled kind of socket: %s", sock_type)
+
+        tunnel.setup(in_config.address, in_config.port)
         return tunnel
