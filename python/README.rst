@@ -33,21 +33,21 @@ Herald provides an RPC transport implementations for Pelix Remote Services.
 Transports
 ==========
 
-Currently, Herald supports two protocols in Python, and one in Java:
+Currently, Herald supports two protocols in Python and Java:
 
-* HTTP (Python & Java):
+* HTTP :
 
   * Each message is sent as a POST request.
   * Peer discovery is based on a home-made multicast heart beat protocol
   * Best transport for LAN applications and for single-peer messages
-  * Implementation is based on `requests <http://docs.python-requests.org/>`_.
+  * Python Implementation is based on `requests <http://docs.python-requests.org/>`_.
 
-* XMPP (Python only, for now):
+* XMPP :
 
   * Each message is a either a message or a group message
   * Discovery is based on a Multi-User Chat room (XEP-0045)
   * Best transport for distributed applications and for group messages
-  * Implementation is based on `SleekXMPP <http://sleekxmpp.com/>`_
+  * Python Implementation is based on `SleekXMPP <http://sleekxmpp.com/>`_
 
 
 License

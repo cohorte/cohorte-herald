@@ -90,10 +90,18 @@ public class ClientSession implements ISession {
             throw new ClientError("Error sending RPC request: " + ex, ex);
         }
 
+        if (result instanceof String) {
+            try {
+                return new JSONObject((String) result);
+            } catch(org.json.JSONException e) {
+                throw new ClientError("Cannot create a JSONObject from the String : " + result);
+            }
+        }
+
         // The reply has already been converted to a map
-        if (!(result instanceof Map)) {
+        else if (!(result instanceof Map)) {
             // Bad result
-            throw new ClientError("Bad result content: not a map");
+            throw new ClientError("Bad result content: not a map > " + result.toString() + " -- type=" + result.getClass());
         }
 
         return new JSONObject((Map<?, ?>) result);
