@@ -33,3 +33,5 @@ sonar-project.properties
 
 # Temporary files
 *.db
+
+build.sh
