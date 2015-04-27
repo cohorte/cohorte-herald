@@ -57,6 +57,7 @@ from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, Validate, Invalidate, RequiresBest
 from pelix.utilities import to_str
 import pelix.misc.jabsorb as jabsorb
+import pelix.threadpool as threadpool
 
 # Standard library
 import json
@@ -129,6 +130,10 @@ class XmppTransport(object):
         self.__countdowns = set()
         self.__countdowns_lock = threading.Lock()
 
+        # Message sending queue
+        self.__pool = threadpool.ThreadPool(max_threads=1,
+                                            logname="Herald-XMPP-SendThread")
+
     @Validate
     def _validate(self, _):
         """
@@ -136,6 +141,10 @@ class XmppTransport(object):
         """
         # Ensure we do not provide the service at first
         self._controller = False
+
+        # Clear & Start the thread pool
+        self.__pool.clear()
+        self.__pool.start()
 
         # Prepare the peer contact handler
         self.__contact = peer_contact.PeerContact(self._directory, None,
@@ -169,6 +178,10 @@ class XmppTransport(object):
         """
         Component invalidated
         """
+        # Stop & Clear the pool
+        self.__pool.stop()
+        self.__pool.clear()
+
         # Disconnect the bot and clear callbacks
         self._bot.disconnect()
         self._bot.set_message_callback(None)
@@ -534,8 +547,9 @@ class XmppTransport(object):
             {"uid": message.uid, "content": content}
         )
 
-        # Send it
-        xmpp_msg.send()
+        # Send it, using the 1-thread pool, and wait for its execution
+        future = self.__pool.enqueue(xmpp_msg.send)
+        return future.result()
 
     def fire(self, peer, message, extra=None):
         """
