@@ -282,7 +282,9 @@ class Herald(object):
         A transport implementation has been bound
         """
         # Activate the service
-        self._controller = True
+        def set_svc():
+            self._controller = True
+        threading.Thread(target=set_svc, name="Herald-Bind").start()
 
     @UnbindField('_transports')
     def _unbind_transport(self, _, listener, svc_ref):
@@ -291,7 +293,9 @@ class Herald(object):
         """
         if len(self._transports) == 1:
             # Last transport is going away
-            self._controller = False
+            def set_svc():
+                self._controller = False
+            threading.Thread(target=set_svc, name="Herald-Unbind").start()
 
     @BindField('_listeners')
     def _bind_listener(self, _, listener, svc_ref):

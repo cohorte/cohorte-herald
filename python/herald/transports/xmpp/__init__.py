@@ -70,6 +70,16 @@ PROP_XMPP_PASSWORD = 'xmpp.user.password'
 Password of the account of the Monitor Bot
 """
 
+PROP_XMPP_KEEPALIVE_INTERVAL = 'xmpp.keepalive.interval'
+"""
+Time in seconds between two keepalive messages
+"""
+
+PROP_XMPP_KEEPALIVE_DELAY = 'xmpp.keepalive.delay'
+"""
+Time in seconds to consider when not receiving response from the target server
+"""
+
 # ------------------------------------------------------------------------------
 
 FACTORY_TRANSPORT = "herald-xmpp-transport-factory"

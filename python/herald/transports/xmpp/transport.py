@@ -35,7 +35,8 @@ __docformat__ = "restructuredtext en"
 
 # Herald XMPP
 from . import FACTORY_TRANSPORT, SERVICE_XMPP_DIRECTORY, ACCESS_ID, \
-    PROP_XMPP_SERVER, PROP_XMPP_PORT, PROP_XMPP_JID, PROP_XMPP_PASSWORD
+    PROP_XMPP_SERVER, PROP_XMPP_PORT, PROP_XMPP_JID, PROP_XMPP_PASSWORD, \
+    PROP_XMPP_KEEPALIVE_INTERVAL, PROP_XMPP_KEEPALIVE_DELAY
 from .beans import XMPPAccess
 from .bot import HeraldBot
 import herald.transports.peer_contact as peer_contact
@@ -86,10 +87,13 @@ FEATURE_MUC = 'http://jabber.org/protocol/muc'
 @Property('_port', PROP_XMPP_PORT, 5222)
 @Property('_username', PROP_XMPP_JID)
 @Property('_password', PROP_XMPP_PASSWORD)
+@Property('_xmpp_keepalive_interval', PROP_XMPP_KEEPALIVE_INTERVAL, 15)
+@Property('_xmpp_keepalive_delay', PROP_XMPP_KEEPALIVE_DELAY, 5)
 class XmppTransport(object):
     """
     XMPP Messenger for Herald.
     """
+
     def __init__(self):
         """
         Sets up the transport
@@ -118,6 +122,10 @@ class XmppTransport(object):
         self._port = 5222
         self._username = None
         self._password = None
+        # Herald XMPP Keppalive interval
+        self._xmpp_keepalive_interval = 15
+        # Herald XMPP Keepalive delay
+        self._xmpp_keepalive_delay = 5
 
         # XMPP bot
         self._authenticated = False
@@ -134,14 +142,41 @@ class XmppTransport(object):
         self.__pool = threadpool.ThreadPool(max_threads=1,
                                             logname="Herald-XMPP-SendThread")
 
+        # Bot possible states : creating, created, destroying, destroyed
+        self._bot_state = "destroyed"
+
+        # Bot state's lock
+        self._bot_lock = threading.Lock()
+
+        # Bot threads
+        self._bot_creation_thread = None
+        self._bot_destroy_thread = None
+
     @Validate
     def _validate(self, _):
         """
         Component validated
         """
-        # Ensure we do not provide the service at first
-        self._controller = False
+        self.__create_new_bot()
 
+    def __create_new_bot(self):
+              
+        if self._bot_lock:
+            if self._bot_state == "destroyed":
+                self._bot_creation_thread = threading.Thread(target=self._create_new_bot, name="Herald-CreateBot")
+                self._bot_creation_thread.start()
+                self._bot_state = "creating"
+                _logger.info("changing XMPP bot state to : creating")
+            elif self._bot_state == "destroying":
+                # wait before trying to create new bot
+                time.sleep(1)
+                self.__create_new_bot()
+            elif self._bot_state == "creating":
+                pass
+            elif self._bot_state == "created":
+                pass
+
+    def _create_new_bot(self):
         # Clear & Start the thread pool
         self.__pool.clear()
         self.__pool.start()
@@ -150,14 +185,20 @@ class XmppTransport(object):
         self.__contact = peer_contact.PeerContact(self._directory, None,
                                                   __name__ + ".contact")
 
-        # Setup the bot
-        self._bot = HeraldBot(self._username, self._password,
+        # Setup the bot : resource is set to be peer's UUID
+        self._bot = HeraldBot(self._username + "/" + self._directory.local_uid, self._password,
                               self._directory.local_uid)
+
+        # avoids bot's auto reconnection.
+        # when disconnected event is captured, we destroy the old bot and re-create a new one.
+        self._bot.auto_reconnect = False
+        self._bot.reconnect_max_delay = 5
 
         # Register to session events
         self._bot.add_event_handler("session_start", self._on_session_start)
         self._bot.add_event_handler("failed_auth", self._on_failed_auth)
         self._bot.add_event_handler("session_end", self._on_session_end)
+        self._bot.add_event_handler("disconnected", self._on_disconnected)
 
         # Register the Multi-User Chat plug-in
         self._bot.register_plugin('xep_0045')
@@ -169,30 +210,65 @@ class XmppTransport(object):
         self._bot.set_message_callback(self.__on_message)
 
         # Connect to the server
-        if not self._bot.connect(self._host, self._port):
+        # set reattempt to True to try to reconnect to the server in case of network problems
+        if not self._bot.connect(self._host, self._port, reattempt=True):
             _logger.error("Can't connect to the XMPP server at %s port %s",
                           self._host, self._port)
+            # the bot is fully created and activated when all rooms are created (see __on_ready)
+
+    def __destroy_bot(self):
+        if self._bot_lock:
+            if self._bot_state == "destroyed":
+                pass
+            elif self._bot_state == "destroying":
+                pass
+            elif self._bot_state == "creating":
+                # wait before trying to destroy on creation bot
+                time.sleep(1)
+                self.__destroy_bot()
+            elif self._bot_state == "created":
+                self._bot_destroy_thread = threading.Thread(target=self._destroy_bot, name="Herald-DestroyBot")
+                self._bot_destroy_thread.start()
+                self._bot_state = "destroying"
+                _logger.info("changing XMPP bot state to : destroying")
+
+    def _destroy_bot(self):
+        # Stop & Clear the pool
+        self.__pool.stop()
+        self.__pool.clear()
+
+        # Disconnect the bot and clear callbacks
+        if self._bot is not None:
+            # self._bot.plugin['xep_0199'].disable_keepalive()
+            self._bot.set_message_callback(None)
+            self._bot.del_event_handler("session_start", self._on_session_start)
+            self._bot.del_event_handler("failed_auth", self._on_failed_auth)
+            self._bot.del_event_handler("session_end", self._on_session_end)
+            self._bot.del_event_handler("disconnected", self._on_disconnected)
+
+            self._bot.disconnect(reconnect=False)
+            self._bot.set_stop()
+            self._bot = None
+        else:
+            _logger.warning("trying to destroy an already destroyed XMPP bot!")
+
+        # Clean up internal storage
+        if self.__contact is not None:
+            self.__contact.clear()
+            self.__contact = None
+        if self._bot_lock:
+            # unregister provided service
+            self._controller = False
+            # change state
+            self._bot_state = "destroyed"
+            _logger.info("changing XMPP bot state to : destroyed")
 
     @Invalidate
     def _invalidate(self, _):
         """
         Component invalidated
         """
-        # Stop & Clear the pool
-        self.__pool.stop()
-        self.__pool.clear()
-
-        # Disconnect the bot and clear callbacks
-        self._bot.disconnect()
-        self._bot.set_message_callback(None)
-        self._bot.del_event_handler("session_start", self._on_session_start)
-        self._bot.del_event_handler("failed_auth", self._on_failed_auth)
-        self._bot.del_event_handler("session_end", self._on_session_end)
-        self._bot = None
-
-        # Clean up internal storage
-        self.__contact.clear()
-        self.__contact = None
+        self.__destroy_bot()
 
     def room_jid(self, room_name):
         """
@@ -320,6 +396,10 @@ class XmppTransport(object):
         _logger.debug("Creating XMPP rooms...")
         self.__create_rooms(all_rooms, peer.uid)
 
+        # activate keepalive (ping) plugin xep_0199
+        self._bot.plugin['xep_0199'].enable_keepalive(self._xmpp_keepalive_interval, self._xmpp_keepalive_delay)
+
+
     def __on_ready(self, joined, erroneous):
         """
         Called when all MUC rooms have created or joined
@@ -331,11 +411,6 @@ class XmppTransport(object):
         if erroneous:
             _logger.error("Error joining rooms: %s", ", ".join(erroneous))
 
-        # We're on line, register our service
-        _logger.debug("XMPP transport service activating...")
-        self._controller = True
-        _logger.info("XMPP transport service activated")
-
         # Register our local access
         local_peer = self._directory.get_local_peer()
         local_peer.set_access(self._access_id,
@@ -345,6 +420,14 @@ class XmppTransport(object):
         self._bot.add_event_handler(
             "muc::{0}::got_offline".format(self.room_jid(local_peer.app_id)),
             self._on_room_out)
+
+        if self._bot_lock:
+            # We're on line, register our service
+            _logger.debug("XMPP transport service activating...")
+            self._controller = True
+            _logger.info("XMPP transport service activated")
+            self._bot_state = "created"
+            _logger.info("changing XMPP bot state to : created")
 
         # Start the discovery handshake, with everybody
         _logger.debug("Sending discovery step 1...")
@@ -362,18 +445,26 @@ class XmppTransport(object):
         else:
             _logger.warning("End of session due to authentication error")
 
-        # Clean up our access
-        local_peer = self._directory.get_local_peer()
-        local_peer.unset_access(self._access_id)
+        if self._bot_lock:
+            if self._bot_state in ["creating", "created"]:
+                # disable keepalive plugin
+                self._bot.plugin['xep_0199'].disable_keepalive()
+                # try:
+                # Clean up our access
+                local_peer = self._directory.get_local_peer()
+                if local_peer is not None:
+                    local_peer.unset_access(self._access_id)
 
-        # Shut down the service
-        self._controller = False
+                    # Shut down the service (MOD: see _destry_bot)
+                    # self._controller = False
 
-        # Stop listening to the main room
-        # Listen to peers going away from the main room
-        self._bot.del_event_handler(
-            "muc::{0}::got_offline".format(self.room_jid(local_peer.app_id)),
-            self._on_room_out)
+                    # Stop listening to the main room
+                    # Listen to peers going away from the main room
+                    self._bot.del_event_handler(
+                        "muc::{0}::got_offline".format(self.room_jid(local_peer.app_id)),
+                        self._on_room_out)
+                    # except:
+                    # pass
 
     def _on_room_out(self, data):
         """
@@ -396,6 +487,16 @@ class XmppTransport(object):
             else:
                 _logger.debug("Peer %s disconnected from XMPP", peer)
 
+    def _on_disconnected(self, _):
+        # when the bot disconnects (network problems):
+        # creates new bot (which implies the deletion of the old one)
+        print("- - - - - - - on disconnected: " + self._bot_state)
+        # destroy the old bot
+        if self._bot_lock:
+            if self._bot_state == "created":
+                self.__destroy_bot()
+        self.__create_new_bot()
+
     def __on_message(self, msg):
         """
         Received an XMPP message
@@ -414,7 +515,7 @@ class XmppTransport(object):
 
         # Check if the message is from Multi-User Chat or direct
         muc_message = (msg['type'] == 'groupchat') \
-            or (msg['from'].domain == self.__muc_service)
+                      or (msg['from'].domain == self.__muc_service)
 
         sender_jid = msg['from'].full
         try:
