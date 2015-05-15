@@ -148,6 +148,9 @@ class XmppTransport(object):
         # Bot state's lock
         self._bot_lock = threading.Lock()
 
+        # Bot method recall timer
+        self._bot_recall_timer = None
+
         # Room name -> Room JID dictionary
         self.__rooms_jids = {}
 
@@ -162,16 +165,24 @@ class XmppTransport(object):
         """
         (Re)Creates a new XMPP bot object
         """
+        # Cancel the current timer
+        if self._bot_recall_timer is not None:
+            self._bot_recall_timer.cancel()
+            self._bot_recall_timer = None
+
         with self._bot_lock:
             if self._bot_state == "destroyed":
                 threading.Thread(target=self._create_new_bot,
                                  name="Herald-CreateBot").start()
                 self._bot_state = "creating"
                 _logger.info("changing XMPP bot state to : creating")
+
             elif self._bot_state == "destroying":
-                # wait before trying to create new bot
-                time.sleep(1)
-                self.__create_new_bot()
+                # Wait before trying to create new bot
+                self._bot_recall_timer = \
+                    threading.Timer(1, self.__create_new_bot)
+                self._bot_recall_timer.start()
+
             elif self._bot_state == "creating":
                 pass
             elif self._bot_state == "created":
@@ -238,15 +249,22 @@ class XmppTransport(object):
         """
         Destroys the current bot
         """
+        # Cancel the current timer
+        if self._bot_recall_timer is not None:
+            self._bot_recall_timer.cancel()
+            self._bot_recall_timer = None
+
         with self._bot_lock:
             if self._bot_state == "destroyed":
                 pass
             elif self._bot_state == "destroying":
                 pass
+
             elif self._bot_state == "creating":
-                # wait before trying to destroy on creation bot
-                time.sleep(1)
-                self.__destroy_bot()
+                # Wait before trying to destroying existing bot
+                self._bot_recall_timer = threading.Timer(1, self.__destroy_bot)
+                self._bot_recall_timer.start()
+
             elif self._bot_state == "created":
                 # Destroy the bot, in a new thread
                 threading.Thread(target=self._destroy_bot,
