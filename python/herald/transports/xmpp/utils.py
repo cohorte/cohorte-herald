@@ -137,7 +137,7 @@ class RoomCreator(object):
         self.__lock = threading.Lock()
 
     def create_room(self, room, service, nick, config=None,
-                    callback=None, errback=None):
+                    callback=None, errback=None, room_jid=None):
         """
         Prepares the creation of a room.
 
@@ -157,12 +157,16 @@ class RoomCreator(object):
         :param config: Configuration of the room
         :param callback: Method called back on success
         :param errback: Method called on error
+        :param room_jid: Forced room JID
         """
         self.__logger.debug("Creating room: %s", room)
 
         with self.__lock:
-            # Format the room JID
-            room_jid = sleekxmpp.JID(local=room, domain=service).bare
+            if not room_jid:
+                # Generate/Format the room JID if not given
+                room_jid = sleekxmpp.JID(local=room, domain=service).bare
+
+            self.__logger.debug("... Room JID: %s", room_jid)
 
             if not self.__rooms:
                 # First room to create: register to events
