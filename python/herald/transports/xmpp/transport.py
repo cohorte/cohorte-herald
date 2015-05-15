@@ -152,6 +152,9 @@ class XmppTransport(object):
         self._bot_creation_thread = None
         self._bot_destroy_thread = None
 
+        # Room name -> Room JID dictionary
+        self.__rooms_jids = {}
+
     @Validate
     def _validate(self, _):
         """
@@ -160,7 +163,7 @@ class XmppTransport(object):
         self.__create_new_bot()
 
     def __create_new_bot(self):
-              
+
         if self._bot_lock:
             if self._bot_state == "destroyed":
                 self._bot_creation_thread = threading.Thread(target=self._create_new_bot, name="Herald-CreateBot")
@@ -277,6 +280,12 @@ class XmppTransport(object):
         :param room_name: The short name of a room
         :return: A JID object
         """
+        if self.__muc_service == "groupchat.google.com":
+            # Special case: Google Talk requires a specific room name format
+            # Also, keep the JID to avoid having a new name each time
+            room_name = self.__rooms_jids.setdefault(
+                room_name, "private-chat-{0}".format(str(uuid.uuid4())))
+
         return sleekxmpp.JID(local=room_name, domain=self.__muc_service)
 
     def __create_rooms(self, rooms, nickname):
@@ -289,14 +298,22 @@ class XmppTransport(object):
         """
         # Look for the MUC service if necessary
         if not self.__muc_service:
-            try:
-                self.__muc_service = next(self._bot.iter_services(FEATURE_MUC))
-            except StopIteration:
-                raise ValueError("No Multi-User Chat service on server")
+            if self._bot.boundjid.domain == "gmail.com":
+                # Special case: Google Talk
+                self.__muc_service = "groupchat.google.com"
+            else:
+                try:
+                    self.__muc_service = next(
+                        self._bot.iter_services(FEATURE_MUC))
+                except StopIteration:
+                    raise ValueError("No Multi-User Chat service on server")
+
+        # Generate rooms JIDs
+        rooms_jids = {room: self.room_jid(room) for room in rooms}
 
         # Prepare a callback
         self.__countdowns.add(
-            MarksCallback((self.room_jid(room) for room in rooms),
+            MarksCallback((str(room_jid) for room_jid in rooms_jids.values()),
                           self.__on_ready, __name__ + ".RoomCreator"))
 
         # Prepare the room creator
@@ -315,11 +332,11 @@ class XmppTransport(object):
             # ... OpenFire: Forbid nick changes
             'x-muc#roomconfig_canchangenick': '0'}
 
-        # Create rooms
-        for room in rooms:
+        # Create rooms, with our computing JID
+        for room, room_jid in rooms_jids.items():
             creator.create_room(room, self.__muc_service, nickname,
                                 rooms_config, self.__room_created,
-                                self.__room_error)
+                                self.__room_error, room_jid)
 
     def __room_created(self, room, _):
         """
