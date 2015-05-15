@@ -296,7 +296,8 @@ class MarksCallback(object):
         :param logname: The name of the logger to use in case of error
         """
         self.__logger = logging.getLogger(logname or __name__)
-        self.__elements = set(elements)
+        # Use a dictionary to keep a reference to the original element
+        self.__elements = {element: element for element in elements}
         self.__callback = callback
         self.__called = False
         self.__successes = set()
@@ -324,8 +325,10 @@ class MarksCallback(object):
         :return: True if the element was known
         """
         try:
-            self.__elements.remove(element)
-            mark_set.add(element)
+            # The given element can be of a different type than the original
+            # one (JID instead of str, ...), so we retrieve the original one
+            original = self.__elements.pop(element)
+            mark_set.add(original)
         except KeyError:
             return False
         else:
