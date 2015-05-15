@@ -49,7 +49,8 @@ import logging
 # ------------------------------------------------------------------------------
 
 
-def main(xmpp_server, xmpp_port, peer_name, node_name, app_id):
+def main(xmpp_server, xmpp_port, peer_name, node_name, app_id,
+         xmpp_jid=None, xmpp_password=None):
     """
     Runs the framework
 
@@ -58,6 +59,8 @@ def main(xmpp_server, xmpp_port, peer_name, node_name, app_id):
     :param peer_name: Name of the peer
     :param node_name: Name (also, UID) of the node hosting the peer
     :param app_id: Application ID
+    :param xmpp_jid: XMPP JID, None for Anonymous login
+    :param xmpp_password: XMPP account password
     """
     # Create the framework
     framework = pelix.framework.create_framework(
@@ -96,7 +99,9 @@ def main(xmpp_server, xmpp_port, peer_name, node_name, app_id):
         ipopo.add(herald.transports.xmpp.FACTORY_TRANSPORT,
                   "herald-xmpp-transport",
                   {herald.transports.xmpp.PROP_XMPP_SERVER: xmpp_server,
-                   herald.transports.xmpp.PROP_XMPP_PORT: xmpp_port})
+                   herald.transports.xmpp.PROP_XMPP_PORT: xmpp_port,
+                   herald.transports.xmpp.PROP_XMPP_JID: xmpp_jid,
+                   herald.transports.xmpp.PROP_XMPP_PASSWORD: xmpp_password})
 
     # Start the framework and wait for it to stop
     framework.wait_for_stop()
@@ -115,6 +120,12 @@ if __name__ == "__main__":
     group.add_argument("-p", "--port", action="store", type=int, default=5222,
                        dest="xmpp_port", help="Port of the XMPP server")
 
+    # XMPP login
+    group.add_argument("-j", "--jid", action="store", default=None,
+                       dest="xmpp_jid", help="JID to login with")
+    group.add_argument("--password", action="store", default=None,
+                       dest="xmpp_password", help="Password for authentication")
+
     # Peer info
     group = parser.add_argument_group("Peer Configuration",
                                       "Identity of the Peer")
@@ -130,8 +141,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Configure the logging package
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     logging.getLogger('herald').setLevel(logging.DEBUG)
 
     # Run the framework
-    main(args.xmpp_server, args.xmpp_port, args.name, args.node, args.app_id)
+    main(args.xmpp_server, args.xmpp_port, args.name, args.node, args.app_id,
+         args.xmpp_jid, args.xmpp_password)
