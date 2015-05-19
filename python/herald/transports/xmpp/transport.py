@@ -56,11 +56,12 @@ import sleekxmpp
 # Pelix
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, Validate, Invalidate, RequiresBest
-from pelix.utilities import to_str
+from pelix.utilities import to_str, to_bytes
 import pelix.misc.jabsorb as jabsorb
 import pelix.threadpool as threadpool
 
 # Standard library
+import hashlib
 import json
 import logging
 import threading
@@ -150,9 +151,6 @@ class XmppTransport(object):
 
         # Bot method recall timer
         self._bot_recall_timer = None
-
-        # Room name -> Room JID dictionary
-        self.__rooms_jids = {}
 
     @Validate
     def _validate(self, _):
@@ -322,9 +320,13 @@ class XmppTransport(object):
         """
         if self.__muc_service == "groupchat.google.com":
             # Special case: Google Talk requires a specific room name format
-            # Also, keep the JID to avoid having a new name each time
-            room_name = self.__rooms_jids.setdefault(
-                room_name, "private-chat-{0}".format(str(uuid.uuid4())))
+            # Make a MD5 hash of the full room name
+            app_id = self._directory.get_local_peer().app_id
+            full_name = "cohorte-{0}-{1}".format(app_id, room_name)
+            md5 = hashlib.md5(to_bytes(full_name)).hexdigest()
+
+            # Format the room name to be Google Talk-compatible
+            room_name = "private-chat-{0}".format(str(uuid.UUID(md5)))
 
         return sleekxmpp.JID(local=room_name, domain=self.__muc_service)
 
