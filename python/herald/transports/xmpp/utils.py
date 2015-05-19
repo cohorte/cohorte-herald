@@ -253,8 +253,10 @@ class RoomCreator(object):
                 config = self.__muc.getRoomConfig(room_jid)
             except ValueError:
                 # Can't differentiate IQ errors from a "no configuration"
-                # result
-                pass
+                # result: consider it OK
+                self.__logger.warning("Can't get the configuration form for "
+                                      "XMPP room %s", room_jid)
+                self.__safe_callback(room_data)
             else:
                 # Prepare our configuration
                 custom_values = room_data.configuration or {}
