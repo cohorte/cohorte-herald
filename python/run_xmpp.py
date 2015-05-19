@@ -125,6 +125,9 @@ if __name__ == "__main__":
                        dest="xmpp_jid", help="JID to login with")
     group.add_argument("--password", action="store", default=None,
                        dest="xmpp_password", help="Password for authentication")
+    group.add_argument("--ask-password", action="store_true", default=False,
+                       dest="ask_password",
+                       help="Ask password for authentication")
 
     # Peer info
     group = parser.add_argument_group("Peer Configuration",
@@ -144,6 +147,12 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger('herald').setLevel(logging.DEBUG)
 
+    if args.xmpp_jid and args.ask_password:
+        import getpass
+        password = getpass.getpass("Password for {0}: ".format(args.xmpp_jid))
+    else:
+        password = args.xmpp_password
+
     # Run the framework
     main(args.xmpp_server, args.xmpp_port, args.name, args.node, args.app_id,
-         args.xmpp_jid, args.xmpp_password)
+         args.xmpp_jid, password)
