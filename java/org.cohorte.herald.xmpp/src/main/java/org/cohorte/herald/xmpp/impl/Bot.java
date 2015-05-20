@@ -91,7 +91,7 @@ public class Bot implements SessionStatusListener, MessageListener {
         final TcpConnectionConfiguration tcpConfig;
         try {
             tcpConfig = TcpConnectionConfiguration.builder().hostname(aHost)
-                    .port(aPort).sslContext(makeSSLContext()).build();
+                    .port(aPort).sslContext(makeSSLContext()).keepAliveInterval(5).build();
 
         } catch (final NoSuchAlgorithmException | KeyManagementException ex) {
             pLogger.log(LogService.LOG_ERROR, "Can't create the SSL context: "
