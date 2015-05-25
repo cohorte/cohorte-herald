@@ -93,8 +93,8 @@ class NoListener(HeraldException):
         :param uid: Original message UID
         :param subject: Subject of the original message
         """
-        super(NoListener, self).__init__(target, "No listener for {0}"
-                                         .format(uid))
+        super(NoListener, self).__init__(
+            target, "No listener for {0} ({1})".format(uid, subject))
         self.uid = uid
         self.subject = subject
 
