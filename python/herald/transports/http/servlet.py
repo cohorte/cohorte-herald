@@ -114,6 +114,23 @@ class HeraldServlet(object):
         self._port = None
         self._servlet_path = None
 
+    @staticmethod
+    def __load_dump(message, description):
+        """
+        Loads and updates the remote peer dump with its HTTP access
+
+        :param message: A message containing a remote peer description
+        :param description: The parsed remote peer description
+        :return: The peer dump map
+        """
+        if message.access == ACCESS_ID:
+            # Forge the access to the HTTP server using extra information
+            extra = message.extra
+            description['accesses'][ACCESS_ID] = \
+                beans.HTTPAccess(extra['host'], extra['port'],
+                                 extra['path']).dump()
+        return description
+
     @Validate
     def validate(self, _):
         """
@@ -124,8 +141,8 @@ class HeraldServlet(object):
             self._servlet_path = '/{0}'.format(self._servlet_path)
 
         # Prepare the peer contact handler
-        self.__contact = peer_contact.PeerContact(self._directory, None,
-                                                  __name__ + ".contact")
+        self.__contact = peer_contact.PeerContact(
+            self._directory, self.__load_dump, __name__ + ".contact")
 
     @Invalidate
     def invalidate(self, _):

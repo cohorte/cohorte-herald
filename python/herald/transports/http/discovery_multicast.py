@@ -38,7 +38,6 @@ __docformat__ = "restructuredtext en"
 # Herald
 from . import ACCESS_ID, SERVICE_HTTP_TRANSPORT, SERVICE_HTTP_RECEIVER, \
     FACTORY_DISCOVERY_MULTICAST, PROP_MULTICAST_GROUP, PROP_MULTICAST_PORT
-from .beans import HTTPAccess
 import herald
 import herald.beans as beans
 import herald.utils as utils
@@ -663,21 +662,6 @@ class MulticastHeartbeat(object):
                               local_dump), extra)
         except Exception as ex:
             _logger.exception("Error contacting peer: %s", ex)
-
-    def __load_dump(self, message, description):
-        """
-        Loads and updates the remote peer dump with its HTTP access
-
-        :param message: A message containing a remote peer description
-        :param description: The parsed remote peer description
-        :return: The peer dump map
-        """
-        if message.access == ACCESS_ID:
-            # Forge the access to the HTTP server using extra information
-            extra = message.extra
-            description['accesses'][ACCESS_ID] = \
-                HTTPAccess(extra['host'], extra['port'], extra['path']).dump()
-        return description
 
     def __heart_loop(self):
         """
