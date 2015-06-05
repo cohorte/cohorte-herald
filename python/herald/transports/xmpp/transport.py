@@ -147,7 +147,7 @@ class XmppTransport(object):
         self._bot_state = "destroyed"
 
         # Bot state's lock
-        self._bot_lock = threading.Lock()
+        self._bot_lock = threading.RLock()
 
         # Bot method recall timer
         self._bot_recall_timer = None

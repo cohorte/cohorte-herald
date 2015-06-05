@@ -1,0 +1,14 @@
+Changes form the 0.0.3 to 0.0.4.dev
+-----------------------------------
+
+** New Feature	
+	*
+
+** Improvements
+	* 
+
+** Bug Fix
+	* Fixing synchronisation problem: XMPP transport blocked on _on_disconnected (isandlaTech/cohorte-herald/issues/14). 
+	
+	
+
