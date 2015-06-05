@@ -41,6 +41,10 @@ import threading
 import time
 import uuid
 
+
+# import herald module to use constantes
+import herald
+
 # ------------------------------------------------------------------------------
 
 
@@ -400,23 +404,48 @@ class Message(object):
     """
     Represents a message to be sent
     """
-    def __init__(self, subject, content=None):
+    def __init__(self, subject, content=None,
+                       target_id=None, target_type=None, 
+                       sender_uid=None, send_mode=None, replies_to=None):
         """
         Sets up members
 
         :param subject: Subject of the message
         :param content: Content of the message (optional)
+        :param target_id: Target of the message (peer uid or group name) (optional)
+        :param target_type: Type of the target (peer or group) (optional)
+        :param sender_uid: UID of the peer sender of the message (optional)
+        :param send_mode: sending mode (fire, post, send) (optional)
+        :param replies_to: UID of the message that triggered this one as response (optional).
         """
-        self._uid = str(uuid.uuid4()).replace('-', '').upper()
-        self._timestamp = int(time.time() * 1000)
+        # set herald specification version
+        self._herald_version = herald.HERALD_SPECIFICATION_VERSION   
+
+        # init headers
+        self._headers = {}
+        self._headers[herald.MESSAGE_HEADER_UID] = str(uuid.uuid4()).replace('-', '').upper()
+        self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = int(time.time() * 1000)        
+        self._headers[herald.MESSAGE_HEADER_SENDER_UID] = sender_uid
+        self._headers[herald.MESSAGE_HEADER_SEND_MODE] = send_mode
+        self._headers[herald.MESSAGE_HEADER_REPLIES_TO] = replies_to
+
+        # transport related data
+        self._transport_data = {}
+
+        # init target. e.g., peer:1234567890 or group:all        
+        self._target = "{0}:{1}".format(target_type, target_id)
+
         self._subject = subject
         self._content = content
+        
+        # extra information
+        self._extra = {}
 
     def __str__(self):
         """
         String representation
         """
-        return "{0} ({1})".format(self._subject, self._uid)
+        return "{0} ({1})".format(self.subject, self.uid)
 
     @property
     def subject(self):
@@ -437,14 +466,27 @@ class Message(object):
         """
         Time stamp of the message
         """
-        return self._timestamp
+        return self._headers[herald.MESSAGE_HEADER_TIMESTAMP]
 
     @property
     def uid(self):
         """
         Message UID
         """
-        return self._uid
+        return self._headers[herald.MESSAGE_HEADER_UID]
+
+    @property
+    def sender(self):
+        """
+        Sender Peer UID
+        """
+        return self._headers[herald.MESSAGE_HEADER_SENDER_UID]
+
+    def set_target(self, target_type, target_id):
+        """
+        Sets target
+        """
+        self._target = "{0}:{1}".format(target_type, target_id)
 
 
 class MessageReceived(Message):
@@ -466,44 +508,37 @@ class MessageReceived(Message):
         :param extra: Extra configuration for the transport in case of reply
         """
         Message.__init__(self, subject, content)
-        self._uid = uid
-        self._sender = sender_uid
-        self._reply_to = reply_to
-        self._access = access
-        self._extra = extra
-        self._timestamp = timestamp
+        self._headers[herald.MESSAGE_HEADER_UID] = uid
+        self._headers[herald.MESSAGE_HEADER_SENDER_UID] = sender_uid
+        self._headers[herald.MESSAGE_HEADER_REPLIES_TO] = reply_to
+        self._headers[herald.MESSAGE_HEADER_ACCESS] = access        
+        self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = timestamp
+        self._transport_data = extra
 
     def __str__(self):
         """
         String representation
         """
-        return "{0} ({1}) from {2}".format(self._subject, self._uid,
-                                           self._sender)
+        return "{0} ({1}) from {2}".format(self.subject, self.uid,
+                                           self.sender)
 
     @property
     def access(self):
         """
         Returns the access ID of the transport which received this message
         """
-        return self._access
+        return self._headers[herald.MESSAGE_HEADER_ACCESS]
 
     @property
     def reply_to(self):
         """
         UID of the message this one replies to
         """
-        return self._reply_to
-
-    @property
-    def sender(self):
-        """
-        UID of the peer that sent this message
-        """
-        return self._sender
+        return self._headers[herald.MESSAGE_HEADER_REPLIES_TO]
 
     @property
     def extra(self):
         """
         Extra information set by the transport that received this message
         """
-        return self._extra
+        return self._transport_data
