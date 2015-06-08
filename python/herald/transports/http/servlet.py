@@ -124,11 +124,11 @@ class HeraldServlet(object):
         :return: The peer dump map
         """
         if message.access == ACCESS_ID:
-            # Forge the access to the HTTP server using extra information
-            extra = message.extra
+            # Forge the access to the HTTP server using transport_data information
+            transport_data = message.transport_data
             description['accesses'][ACCESS_ID] = \
-                beans.HTTPAccess(extra['host'], extra['port'],
-                                 extra['path']).dump()
+                beans.HTTPAccess(transport_data['host'], transport_data['port'],
+                                 transport_data['path']).dump()
         return description
 
     @Validate
@@ -224,20 +224,20 @@ class HeraldServlet(object):
 
         :param _: The HTTP request bean
         :param response: The HTTP response handler
-        """
+        """        
         # pylint: disable=C0103
         peer_dump = self._directory.get_local_peer().dump()
         jabsorb_content = jabsorb.to_jabsorb(peer_dump)
         content = json.dumps(jabsorb_content, default=utils.json_converter)
         response.send_content(200, content, CONTENT_TYPE_JSON)
-
+        
     def do_POST(self, request, response):
         """
         Handles a POST request, i.e. the reception of a message
 
         :param request: The HTTP request bean
         :param response: The HTTP response handler
-        """
+        """        
         # pylint: disable=C0103
         # Default code and content
         code = 200
@@ -247,28 +247,30 @@ class HeraldServlet(object):
         content_type = request.get_header('content-type')
         subject = request.get_header('herald-subject')
         uid = request.get_header('herald-uid')
-        reply_to = request.get_header('herald-reply-to')
+        reply_to = request.get_header('herald-replies-to')
         timestamp = request.get_header('herald-timestamp')
         sender_uid = request.get_header('herald-sender-uid')
         raw_content = to_unicode(request.read_data())
-
+        
+        received_msg = herald.beans.MessageReceived.from_json(raw_content)        
+        
         # Client information
         host = utils.normalize_ip(request.get_client_address()[0])
-
-        if not uid or not subject or content_type != CONTENT_TYPE_JSON:
+        
+        if not uid or not subject or content_type != CONTENT_TYPE_JSON:           
             # Raw message
             uid = str(uuid.uuid4())
-            subject = herald.SUBJECT_RAW
-            msg_content = raw_content
+            subject = herald.SUBJECT_RAW            
+            msg_content = received_msg.content
             port = -1
-            extra = {'host': host, 'raw': True}
-        else:
-            # Herald message
-            msg_content = jabsorb.from_jabsorb(json.loads(raw_content))
-
+            transport_data = {'host': host, 'raw': True}
+        else:            
+            
+            msg_content = jabsorb.from_jabsorb(received_msg.content)
+            
             # Store sender information
             port = int(request.get_header('herald-port', 80))
-            extra = {'host': host, 'port': port,
+            transport_data = {'host': host, 'port': port,
                      'path': request.get_header('herald-path'),
                      'parent_uid': uid}
 
@@ -282,11 +284,11 @@ class HeraldServlet(object):
             except ValueError:
                 # Unknown peer UID: keep it as is
                 pass
-
+    	
         # Prepare the bean
         message = herald.beans.MessageReceived(uid, subject, msg_content,
                                                sender_uid, reply_to,
-                                               ACCESS_ID, timestamp, extra)
+                                               ACCESS_ID, timestamp, transport_data)
 
         # Log before giving message to Herald
         self._probe.store(
@@ -311,3 +313,4 @@ class HeraldServlet(object):
 
         # Send response
         response.send_content(code, content, CONTENT_TYPE_JSON)
+                

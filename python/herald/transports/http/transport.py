@@ -133,22 +133,22 @@ class HttpTransport(object):
         self.__session.close()
         self.__pool.stop()
 
-    def __get_access(self, peer, extra=None):
+    def __get_access(self, peer, transport_data=None):
         """
         Computes the URL to access the Herald servlet on the given peer
 
         :param peer: A Peer bean
-        :param extra: Extra information, given for replies
+        :param transport_data: Extra information, given for replies
         :return: A URL, or None
         """
         host = None
         port = 0
         path = None
-        if extra is not None:
+        if transport_data is not None:
             # Try to use extra information
-            host = extra.get('host')
-            port = extra.get('port')
-            path = extra.get('path')
+            host = transport_data.get('host')
+            port = transport_data.get('port')
+            path = transport_data.get('path')
 
         if not host:
             try:
@@ -187,15 +187,23 @@ class HttpTransport(object):
                    'herald-timestamp': int(time.time() * 1000),
                    'herald-port': self.__access_port,
                    'herald-path': self.__access_path}
+        
+        # update headers
+        message._headers[herald.MESSAGE_HEADER_SENDER_UID] = self.__peer_uid        
+        message.add_transport_data('herald-port', self.__access_port)
+        message.add_transport_data('herald-path', self.__access_path)
+        
         if parent_uid:
-            headers['herald-reply-to'] = parent_uid
+            headers['herald-replies-to'] = parent_uid
+            message._headers[herald.MESSAGE_HEADER_REPLIES_TO] = parent_uid
 
         if message.subject in herald.SUBJECTS_RAW:
             content = to_str(message.content)
         else:
             # Convert content to JSON
             jabsorb_content = jabsorb.to_jabsorb(message.content)
-            content = json.dumps(jabsorb_content, default=utils.json_converter)
+            message._content = jabsorb_content              
+            content = message.to_json()
         return headers, content
 
     def __post_message(self, url, content, headers):
@@ -207,30 +215,30 @@ class HttpTransport(object):
         :param headers: Request headers
         :return: A response bean
         """
-        try:
+        try:            
             return self.__session.post(url, content, headers=headers)
         except requests.exceptions.ConnectionError as ex:
             # Connection aborted during request
             _logger.error("Connection error while posting a message: %s", ex)
             return None
 
-    def fire(self, peer, message, extra=None):
+    def fire(self, peer, message, transport_data=None):
         """
         Fires a message to a peer
 
         :param peer: A Peer bean
         :param message: Message bean to send
-        :param extra: Extra information used in case of a reply
+        :param transport_data: Extra information used in case of a reply
         :raise InvalidPeerAccess: No information found to access the peer
         :raise Exception: Error sending the request or on the server side
-        """
+        """        
         # Get the request message UID, if any
         parent_uid = None
-        if extra is not None:
-            parent_uid = extra.get('parent_uid')
+        if transport_data is not None:
+            parent_uid = transport_data.get('parent_uid')
 
-        # Try to read extra information
-        url = self.__get_access(peer, extra)
+        # Try to read transport_data information
+        url = self.__get_access(peer, transport_data)
         if not url:
             # No HTTP access description
             raise InvalidPeerAccess(beans.Target(peer=peer),
@@ -239,7 +247,7 @@ class HttpTransport(object):
 
         # Send the HTTP request (blocking) and raise an error if necessary
         headers, content = self.__prepare_message(message, parent_uid)
-
+                
         # Log before sending
         self._probe.store(
             herald.PROBE_CHANNEL_MSG_SEND,
@@ -259,7 +267,7 @@ class HttpTransport(object):
             raise IOError("Error sending message {0}".format(message.uid))
         else:
             # Raise an error if the status isn't 2XX
-            response.raise_for_status()
+            response.raise_for_status()       
 
     def fire_group(self, group, peers, message):
         """
@@ -270,7 +278,7 @@ class HttpTransport(object):
         :param message: Message to send
         :return: The list of reached peers
 
-        """
+        """        
         # Prepare the message
         headers, content = self.__prepare_message(message)
 
@@ -320,5 +328,5 @@ class HttpTransport(object):
         # Wait for the requests to be sent (no more than 30s)
         if not countdown.wait(10):
             _logger.warning("Not all peers have been reached after 10s...")
-
+                	
         return set(accessed_peers)
