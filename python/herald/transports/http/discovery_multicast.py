@@ -652,14 +652,14 @@ class MulticastHeartbeat(object):
         # Normalize the address of the sender
         host = utils.normalize_ip(host)
 
-        # Prepare the "extra" information, like for a reply
-        extra = {'host': host, 'port': port, 'path': path}
+        # Prepare the "transport_data" information, like for a reply
+        transport_data = {'host': host, 'port': port, 'path': path}
         local_dump = self._directory.get_local_peer().dump()
         try:
             self._transport.fire(
                 None,
                 beans.Message(peer_contact.SUBJECT_DISCOVERY_STEP_1,
-                              local_dump), extra)
+                              local_dump), transport_data)
         except Exception as ex:
             _logger.exception("Error contacting peer: %s", ex)
 
