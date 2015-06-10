@@ -624,7 +624,7 @@ class MessageReceived(Message):
     Represents a message received by a transport
     """
     def __init__(self, uid, subject, content, sender_uid, reply_to, access,
-                 timestamp=None, transport_data=None):                                                           # TODO add transport_data
+                 timestamp=None, transport_data=None):
         """
         Sets up the bean
 

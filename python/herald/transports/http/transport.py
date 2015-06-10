@@ -230,8 +230,8 @@ class HttpTransport(object):
         :param message: Message bean to send
         :param transport_data: Extra information used in case of a reply
         :raise InvalidPeerAccess: No information found to access the peer
-        :raise Exception: Error sending the request or on the server side
-        """        
+        :raise Exception: Error sending the request or on the server side      
+        """              
         # Get the request message UID, if any
         parent_uid = None
         if transport_data is not None:
