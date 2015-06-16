@@ -29,38 +29,27 @@ Herald core package
 # Documentation strings format
 __docformat__ = "restructuredtext en"
 
-
 # ------------------------------------------------------------------------------
-# TARGET TYPES
-"""
-When sending a message we should indicate the type of the target (receiver). 
-"""
-
-PEER = "peer"
-"""
-The receiver is a Herald Peer (identified by its UID)
-"""
-
-
-GROUP = "group"
-"""
-The receiver is a Herald Group (identified by its name)
-"""
-
-# ------------------------------------------------------------------------------
-# MESSAGE HEADERS
+# Message Format
 
 HERALD_SPECIFICATION_VERSION = 1
 """
 Specification number of Herald. This is an integer incrementing number.
 """
 
-
 MESSAGE_HERALD_VERSION = "herald-version"
 """
 """
 
 MESSAGE_HEADERS = "headers"
+"""
+"""
+
+MESSAGE_SUBJECT = "subject"
+"""
+"""
+
+MESSAGE_CONTENT = "content"
 """
 """
 
@@ -78,12 +67,7 @@ It is set by the Message constructor. Can not be modified with "set_header" meth
 
 MESSAGE_HEADER_SENDER_UID = "sender-uid"
 """
-Message header containing the UID of the sender of the message.
-"""
-
-MESSAGE_HEADER_SEND_MODE = "send-mode"
-"""
-Message header containing the sending mode (fire, post, send)
+Message header containing the UID of the peer sender of the message.
 """
 
 MESSAGE_HEADER_REPLIES_TO = "replies-to"
@@ -97,33 +81,6 @@ MESSAGE_HEADER_ACCESS = "access"
 Message header containing the access on which this message was received 
 (only for MessageReceived)
 """
-
-MESSAGE_HEADER_REPLIED = "replied"
-"""  
-Message header containing a tag indicating if the message is replied or not 
-(only for MessageReceived with header MESSAGE_HEADER_SEND_MODE sets to "send")
-"""
-
-MESSAGE_TARGET = "target"
-"""
-The target of the message
-"""
-
-MESSAGE_SUBJECT = "subject"
-"""
-"""
-
-MESSAGE_CONTENT = "content"
-"""
-"""
-
-MESSAGE_TRANSPORT_DATA = "transport-data"
-"""
-"""
-
-MESSAGE_EXTRA = "extra"
-"""
-""" 
 
 # ------------------------------------------------------------------------------
 # Service specifications

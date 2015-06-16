@@ -36,9 +36,18 @@ __docformat__ = "restructuredtext en"
 # ------------------------------------------------------------------------------
 
 import threading
+import json
+import logging
+
+import herald
+
+import pelix.misc.jabsorb as jabsorb
 
 # ------------------------------------------------------------------------------
 
+_logger = logging.getLogger(__name__)
+
+# ------------------------------------------------------------------------------
 
 def json_converter(obj):
     """
@@ -48,6 +57,81 @@ def json_converter(obj):
         return tuple(obj)
 
     raise TypeError
+
+def to_json(msg):
+    """
+    Returns a JSON string representation of this message
+    """
+    result = {}
+    
+    # herald specification version
+    result[herald.MESSAGE_HERALD_VERSION] = herald.HERALD_SPECIFICATION_VERSION
+    
+    # headers
+    result[herald.MESSAGE_HEADERS] = {}        
+    if msg.headers is not None:
+        for key in msg.headers:
+            result[herald.MESSAGE_HEADERS][key] = msg.headers.get(key) or None        
+    
+    # basic infos
+    result[herald.MESSAGE_SUBJECT] = msg.subject
+    if msg.content is not None:
+        if isinstance(msg.content, str):
+            # string content
+            result[herald.MESSAGE_CONTENT] = msg.content
+        else:
+            # jaborb content
+            result[herald.MESSAGE_CONTENT] = jabsorb.to_jabsorb(msg.content)
+    
+    return json.dumps(result, default=herald.utils.json_converter)
+
+
+def from_json(json_string):
+    """
+    Returns a new MessageReceived from the provided json_string string
+    """
+    # parse the provided json_message
+    try:            
+        parsed_msg = json.loads(json_string)            
+    except ValueError as ex:            
+        # if the provided json_message is not a valid JSON
+        return None
+    except TypeError as ex:
+        # if json_message not string or buffer
+        return None
+    # check if it is a valid Herald JSON message
+    if herald.MESSAGE_HERALD_VERSION in parsed_msg:
+        herald_version = parsed_msg[herald.MESSAGE_HERALD_VERSION]                         
+        if herald_version is None or herald_version != herald.HERALD_SPECIFICATION_VERSION:
+            _logger.error("Herald specification of the received message is not supported!")
+            return None   
+    # construct new Message object from the provided JSON object    
+    msg = herald.beans.MessageReceived(uid=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_UID) or None), 
+                          subject=parsed_msg[herald.MESSAGE_SUBJECT], 
+                          content=None, 
+                          sender_uid=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_SENDER_UID) or None), 
+                          reply_to=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_REPLIES_TO) or None), 
+                          access=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_ACCESS) or None),
+                          timestamp=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_TIMESTAMP) or None) 
+                          )                           
+    # set content
+    try:
+        if herald.MESSAGE_CONTENT in parsed_msg:
+            parsed_content = parsed_msg[herald.MESSAGE_CONTENT]                              
+            if parsed_content is not None:
+                if isinstance(parsed_content, str):
+                    msg.set_content(parsed_content)
+                else:
+                    msg.set_content(jabsorb.from_jabsorb(parsed_content))
+    except KeyError as ex:
+        _logger.error("Error retrieving message content! " + str(ex)) 
+    # other headers
+    if herald.MESSAGE_HEADERS in parsed_msg:
+        for key in parsed_msg[herald.MESSAGE_HEADERS]:
+            if key not in msg._headers:
+                msg._headers[key] = parsed_msg[herald.MESSAGE_HEADERS][key]         
+           
+    return msg
 
 # ------------------------------------------------------------------------------
 

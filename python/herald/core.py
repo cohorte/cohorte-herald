@@ -498,11 +498,11 @@ class Herald(object):
 
         :param message: The received message
         """
-        if message.replies_to:
+        if message.reply_to:
             # ... unlock send() calls
             try:
                 # This is an answer to a message: unlock the sender
-                self.__waiting_events.pop(message.replies_to).set(message)
+                self.__waiting_events.pop(message.reply_to).set(message)
             except KeyError:
                 # Nobody was waiting for the event
                 pass
@@ -510,7 +510,7 @@ class Herald(object):
             # ... notify post() callers
             try:
                 with self.__gc_lock:
-                    waiting_post = self.__waiting_posts[message.replies_to]
+                    waiting_post = self.__waiting_posts[message.reply_to]
             except KeyError:
                 # Nobody was waiting for an answer
                 pass
@@ -518,7 +518,7 @@ class Herald(object):
                 waiting_post.callback(self, message)
                 if waiting_post.forget_on_first:
                     # First answer received: forget about the message
-                    del self.__waiting_posts[message.replies_to]
+                    del self.__waiting_posts[message.reply_to]
 
         # Compute the list of listeners to notify
         msg_listeners = set()
@@ -547,37 +547,37 @@ class Herald(object):
             except Exception as ex:
                 _logger.error("Can't send an error back to the sender: %s", ex)
 
-    def _fire_reply(self, message, replies_to):
+    def _fire_reply(self, message, reply_to):
         """
         Tries to fire a reply to the given message
 
         :param message: Message to send as a reply
-        :param replies_to: Message the first argument replies to
+        :param reply_to: Message the first argument replies to
         :return: The UID of the sent message
         """
         # Use the message source peer
         try:
-            transport = self._transports[replies_to.access]
+            transport = self._transports[reply_to.access]
         except KeyError:
             # Reception transport is not available anymore...
-            raise NoTransport(beans.Target(uid=replies_to.sender),
+            raise NoTransport(beans.Target(uid=reply_to.sender),
                               "No reply transport for access {0}"
-                              .format(replies_to.access))
+                              .format(reply_to.access))
         else:
             # Try to get the Peer bean. If unknown, consider that the
-            # "transport_data" data will help the transport to reply
+            # "extra" data will help the transport to reply
             try:
-                peer = self._directory.get_peer(replies_to.sender)
+                peer = self._directory.get_peer(reply_to.sender)
             except KeyError:
                 peer = None
 
             try:
                 # Send the reply
-                transport.fire(peer, message, replies_to.transport_data)
+                transport.fire(peer, message, reply_to.extra)
             except InvalidPeerAccess:
-                raise NoTransport(beans.Target(uid=replies_to.sender),
+                raise NoTransport(beans.Target(uid=reply_to.sender),
                                   "Can't reply to {0} using {1} transport"
-                                  .format(peer, replies_to.access))
+                                  .format(peer, reply_to.access))
             else:
                 # Reply sent. Stop here
                 return message.uid
@@ -591,7 +591,7 @@ class Herald(object):
         :return: The UID of the message sent
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
-        """        
+        """
         # Standard behavior
         # Get the Peer object
         if not isinstance(target, beans.Peer):
@@ -614,8 +614,6 @@ class Herald(object):
                 pass
             else:
                 try:
-                    # Update message headers
-                    message.set_target(herald.PEER, peer.uid)
                     # Call it
                     transport.fire(peer, message)
                 except InvalidPeerAccess as ex:
@@ -633,7 +631,7 @@ class Herald(object):
             raise NoTransport(beans.Target(uid=peer.uid),
                               "No working transport found for peer {0}"
                               .format(peer))
-                                  	
+
         return message.uid
 
     def fire_group(self, group, message):
@@ -645,7 +643,7 @@ class Herald(object):
         :return: A tuple: the UID of the message sent and the list of peers
         :raise KeyError: Unknown group
         :raise NoTransport: No transport found to send the message
-        """        
+        """
         # Get all peers known in the group
         all_peers = self._directory.get_peers_for_group(group)
         if not all_peers:
@@ -704,7 +702,7 @@ class Herald(object):
                                 ', '.join(str(peer) for peer in missing))
             else:
                 _logger.debug("No peer to send the message to.")
-        
+
         return message.uid, missing
 
     def send(self, target, message, timeout=None):
@@ -913,7 +911,7 @@ class Herald(object):
 
         try:
             # Try to reuse the same transport
-            self._fire_reply(beans.Message(subject, content, replies_to=message.uid), message)
+            self._fire_reply(beans.Message(subject, content), message)
         except NoTransport:
             # Continue...
             pass

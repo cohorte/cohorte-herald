@@ -477,4 +477,9 @@ public class HttpReceiver implements IHttpReceiver, IContactHook {
         // Activate our server
         pController = true;
     }
+
+	public LogService getLogger() {
+		// TODO Auto-generated method stub
+		return pLogger;
+	}
 }

@@ -36,6 +36,12 @@
 			<version>${project.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.cohorte.jabsorb</groupId>
+			<artifactId>org.jabsorb.ng</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -54,9 +60,11 @@
 						<Import-Package>
 							org.osgi.framework;version="1.3.0",
 							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.utils;version=${pkg-version}
+							org.cohorte.herald.utils;version=${pkg-version},							
+							org.jabsorb.ng,
+							org.json,
 						</Import-Package>
-						<Export-Package>!*</Export-Package>
+						<Export-Package>org.cohorte.herald.core.utils, !*</Export-Package>
 					</instructions>
 				</configuration>
 			</plugin>

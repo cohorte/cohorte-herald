@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.ValueError;
+import org.cohorte.herald.core.utils.MessageUtils;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
 import org.jabsorb.ng.serializer.MarshallException;
@@ -107,91 +108,113 @@ public class HttpReceiverServlet extends HttpServlet {
     protected void doPost(final HttpServletRequest aReq,
             final HttpServletResponse aResp) throws ServletException,
             IOException {
-
-        final String contentType = aReq.getContentType();
-        if (contentType != null
-                && !IHttpConstants.CONTENT_TYPE_JSON
-                        .equalsIgnoreCase(contentType)) {
-            pReceiver.log(LogService.LOG_WARNING, "Bad content type: "
-                    + contentType);
-            aResp.sendError(HttpServletResponse.SC_PRECONDITION_FAILED,
-                    "Unhandled content type");
-            return;
-        }
-
-        // Extract headers
-        final String subject = aReq.getHeader("herald-subject");
-        final String msgUid = aReq.getHeader("herald-uid");
-        final String replyTo = aReq.getHeader("herald-reply-to");
-        String senderUid = aReq.getHeader("herald-sender-uid");
-        final String senderPath = aReq.getHeader("herald-path");
-        final String strTimestamp = aReq.getHeader("herald-timestamp");
-
-        // Convert time stamp
-        Long timestamp = null;
-        if (strTimestamp != null) {
-            try {
-                timestamp = Long.valueOf(strTimestamp);
-            } catch (final NumberFormatException ex) {
-                // Bad string: no time stamp
-                timestamp = null;
-            }
-        }
-
-        // Get sender port
-        int port;
-        try {
-            port = aReq.getIntHeader("herald-port");
-        } catch (final NumberFormatException ex) {
-            port = 80;
-        }
-
-        // Store sender information
-        final String host = aReq.getRemoteAddr();
-        final HTTPExtra extra = new HTTPExtra(host, port, senderPath, msgUid);
-
-        try {
-            // Check sender access
-            if (!pReceiver.checkAccess(senderUid, host, port)) {
-                // Check failed: invalid UID
-                senderUid = "<invalid>";
-            }
-        } catch (final ValueError ex) {
-            // Unknown peer: keep the sender UID as is
-        }
-
-        // Parse the content
-        final byte[] rawData = pReceiver.inputStreamToBytes(aReq
-                .getInputStream());
-
-        String charsetName = aReq.getCharacterEncoding();
-        if (charsetName == null) {
-            charsetName = IHttpConstants.CHARSET_UTF8;
-        }
-        final String strData = new String(rawData, charsetName);
-        try {
-            final Object content = pReceiver.deserialize(strData);
-
-            // Prepare the received message bean
-            final MessageReceived message = new MessageReceived(msgUid,
-                    subject, content, senderUid, replyTo,
-                    IHttpConstants.ACCESS_ID, timestamp, extra);
-
-            // Let Herald handle the message
-            pReceiver.handleMessage(message);
-
-            // Send response
-            aResp.setStatus(HttpServletResponse.SC_OK);
-            aResp.setContentLength(0);
-
-        } catch (final UnmarshallException ex) {
-            // Error parsing the message
-            pReceiver.log(LogService.LOG_ERROR,
-                    "Error parsing message content: " + ex, ex);
-
-            // Send the error
-            aResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Error parsing message content: " + ex);
+    	try {
+	        final String contentType = aReq.getContentType();
+	        if (contentType != null
+	                && !IHttpConstants.CONTENT_TYPE_JSON
+	                        .equalsIgnoreCase(contentType)) {
+	            pReceiver.log(LogService.LOG_WARNING, "Bad content type: "
+	                    + contentType);
+	            aResp.sendError(HttpServletResponse.SC_PRECONDITION_FAILED,
+	                    "Unhandled content type");
+	            return;
+	        }
+	
+	        // Parse the content
+	        final byte[] rawData = pReceiver.inputStreamToBytes(aReq
+	                .getInputStream());
+	
+	        String charsetName = aReq.getCharacterEncoding();
+	        if (charsetName == null) {
+	            charsetName = IHttpConstants.CHARSET_UTF8;
+	        }
+	        final String strData = new String(rawData, charsetName);
+	        
+	        try {
+	            
+	        	final MessageReceived rcv_msg;
+	        	final Object content;
+	        	if(!strData.isEmpty())
+	        	{	
+	        		rcv_msg = MessageUtils.fromJSON(strData);
+	        		if (rcv_msg != null) 
+	        			content = rcv_msg.getContent();
+	        		else {
+	        			content = null;	        			
+	        		}
+	        	} else {
+	        		rcv_msg = null;
+	        		content = null;
+	        	}	        	        	
+	        	
+	        	// Extract headers
+		        String subject = null;
+		        String msgUid = null;
+		        String replyTo = null;
+		        String senderUid = null;
+		        String senderPath = null;
+		        Long timestamp = null;
+		
+		        HTTPExtra extra = null; 
+		        
+		        if (rcv_msg != null) {
+		        	subject = rcv_msg.getSubject();
+			        msgUid = rcv_msg.getUid();
+			        replyTo = rcv_msg.getReplyTo();
+			        senderUid = rcv_msg.getSender();
+			        Object wPath = rcv_msg.getHeader(IHttpConstants.MESSAGE_HEADER_PATH);
+			        senderPath = (wPath != null) ? wPath.toString() : null;
+			        timestamp = rcv_msg.getTimestamp();		        
+			
+			        // Get sender port
+			        int port;
+			        try {
+			        	Object wPort = rcv_msg.getHeader(IHttpConstants.MESSAGE_HEADER_PORT);
+			            port = (wPort != null) ? new Integer(wPort.toString()).intValue() : 80;
+			        } catch (final NumberFormatException ex) {
+			            port = 80;
+			        }
+			
+			        // Store sender information
+			        final String host = aReq.getRemoteAddr();
+			        extra = new HTTPExtra(host, port, senderPath, msgUid);
+			
+			        try {
+			            // Check sender access
+			            if (!pReceiver.checkAccess(senderUid, host, port)) {
+			                // Check failed: invalid UID
+			                senderUid = "<invalid>";
+			            }
+			        } catch (final ValueError ex) {
+			            // Unknown peer: keep the sender UID as is
+			        }		        	
+		        }
+	        	
+	            // Prepare the received message bean
+	            final MessageReceived message = new MessageReceived(msgUid,
+	                    subject, content, senderUid, replyTo,
+	                    IHttpConstants.ACCESS_ID, timestamp, extra);
+	
+	            // Let Herald handle the message
+	            pReceiver.handleMessage(message);
+	
+	            // Send response
+	            aResp.setStatus(HttpServletResponse.SC_OK);
+	            aResp.setContentLength(0);
+	
+	        } catch (final UnmarshallException ex) {
+	            // Error parsing the message
+	            pReceiver.log(LogService.LOG_ERROR,
+	                    "Error parsing message content: " + ex, ex);
+	
+	            // Send the error
+	            aResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+	                    "Error parsing message content: " + ex);
+	        }
+    	} catch(Throwable ex)
+        {
+            pReceiver.log(LogService.LOG_ERROR, "Error on do_Post : "
+                    + ex, ex);
         }
     }
 }

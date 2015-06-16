@@ -555,8 +555,7 @@ class XmppTransport(object):
         # create a new bot (which implies the deletion of the old one)
         _logger.warning("Bot disconnected: reconnect (state=%s)",
                         self._bot_state)
-        print("- - - - - - - on disconnected: " + self._bot_state)
-
+        
         with self._bot_lock:
             # Destroy the old bot, if any
             if self._bot_state == "created":
@@ -594,17 +593,14 @@ class XmppTransport(object):
                 sender_uid = self._xmpp_directory.from_jid(sender_jid).uid
         except KeyError:
             sender_uid = "<unknown>"
-        
-        received_msg = herald.beans.MessageReceived.from_json(msg['body'])
-                
-        try:
-            #content = jabsorb.from_jabsorb(json.loads(msg['body']))
-            content = jabsorb.from_jabsorb(received_msg.content)
+
+        try:            
+            received_msg = utils.from_json(msg['body'])
+            content = received_msg.content
         except ValueError:
             # Content can't be decoded, use its string representation as is
-            #content = msg['body']
-            content = received_msg.content
-                       
+            content = msg['body']
+
         uid = msg['thread']
         reply_to = msg['parent_thread']
 
@@ -614,7 +610,7 @@ class XmppTransport(object):
 
         # Call back the core service
         message = beans.MessageReceived(uid, subject, content, sender_uid,
-                                        reply_to, self._access_id, transport_data=extra)
+                                        reply_to, self._access_id, extra=extra)
 
         # Log before giving message to Herald
         self._probe.store(
@@ -653,7 +649,7 @@ class XmppTransport(object):
         # Call back the core service
         message = beans.MessageReceived(uid, herald.SUBJECT_RAW,
                                         content, sender_uid,
-                                        None, self._access_id, transport_data=extra)
+                                        None, self._access_id, extra=extra)
 
         # Log before giving message to Herald
         self._probe.store(
@@ -666,18 +662,18 @@ class XmppTransport(object):
         # All other messages are given to Herald Core
         self._herald.handle_message(message)
 
-    def __get_jid(self, peer, transport_data):
+    def __get_jid(self, peer, extra):
         """
         Retrieves the JID to use to communicate with a peer
 
         :param peer: A Peer bean or None
-        :param transport_data: The extra information for a reply or None
+        :param extra: The extra information for a reply or None
         :return: The JID to use to reply, or None
         """
         # Get JID from reply information
         jid = None
-        if transport_data is not None:
-            jid = transport_data.get('sender_jid')
+        if extra is not None:
+            jid = extra.get('sender_jid')
 
         # Try to read information from the peer
         if not jid and peer is not None:
@@ -702,12 +698,11 @@ class XmppTransport(object):
         if message.subject in herald.SUBJECTS_RAW:
             content = to_str(message.content)
         else:
-            #content = json.dumps(jabsorb.to_jabsorb(message.content),
-            #                     default=utils.json_converter)
-            jabsorb_content = jabsorb.to_jabsorb(message.content)
-            message._content = jabsorb_content              
-            content = message.to_json()
-
+            # update headers
+            local_peer = self._directory.get_local_peer()
+            message.add_header(herald.MESSAGE_HEADER_SENDER_UID, local_peer.uid)
+            content = utils.to_json(message)
+        
         # Prepare an XMPP message, based on the Herald message
         xmpp_msg = self._bot.make_message(mto=target,
                                           mbody=content,
@@ -727,21 +722,21 @@ class XmppTransport(object):
         future = self.__pool.enqueue(xmpp_msg.send)
         return future.result()
 
-    def fire(self, peer, message, transport_data=None):
+    def fire(self, peer, message, extra=None):
         """
         Fires a message to a peer
 
         :param peer: A Peer bean
         :param message: Message to send
-        :param transport_data: Extra information used in case of a reply
+        :param extra: Extra information used in case of a reply
         """
         # Get the request message UID, if any
         parent_uid = None
-        if transport_data is not None:
-            parent_uid = transport_data.get('parent_uid')
+        if extra is not None:
+            parent_uid = extra.get('parent_uid')
 
-        # Try to read transport_data information
-        jid = self.__get_jid(peer, transport_data)
+        # Try to read extra information
+        jid = self.__get_jid(peer, extra)
 
         if jid:
             # Log before sending

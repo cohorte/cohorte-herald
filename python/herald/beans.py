@@ -44,6 +44,7 @@ import json
 
 # import herald module to use constantes
 import herald
+import herald.utils as utils
 
 # ------------------------------------------------------------------------------
 
@@ -404,65 +405,27 @@ class Message(object):
     """
     Represents a message to be sent
     """
-    def __init__(self, subject, content=None,
-                       target_id=None, target_type=None, 
-                       sender_uid=None, send_mode=None, replies_to=None):
+    def __init__(self, subject, content=None):
         """
         Sets up members
 
         :param subject: Subject of the message
         :param content: Content of the message (optional)
-        :param target_id: Target of the message (peer uid or group name) (optional)
-        :param target_type: Type of the target (peer or group) (optional)
-        :param sender_uid: UID of the peer sender of the message (optional)
-        :param send_mode: sending mode (fire, post, send) (optional)
-        :param replies_to: UID of the message that triggered this one as response (optional).
         """
-        # set herald specification version
-        self._herald_version = herald.HERALD_SPECIFICATION_VERSION   
-
-        # init headers
-        self._headers = {}
-        self._headers[herald.MESSAGE_HEADER_UID] = str(uuid.uuid4()).replace('-', '').upper()
-        self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = int(time.time() * 1000)        
-        self._headers[herald.MESSAGE_HEADER_SENDER_UID] = sender_uid
-        self._headers[herald.MESSAGE_HEADER_SEND_MODE] = send_mode
-        self._headers[herald.MESSAGE_HEADER_REPLIES_TO] = replies_to
-
-        # transport related data
-        self._transport_data = {}
-
-        # init target. e.g., peer:1234567890 or group:all        
-        self._target_id = target_id
-        self._target_type = target_type
-
         self._subject = subject
         self._content = content
         
-        # extra information
-        self._extra = {}
+        self._headers = {}
+        self._headers[herald.MESSAGE_HERALD_VERSION] = herald.HERALD_SPECIFICATION_VERSION
+        self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = int(time.time() * 1000) 
+        self._headers[herald.MESSAGE_HEADER_UID] = str(uuid.uuid4()).replace('-', '').upper()
+          
 
     def __str__(self):
         """
         String representation
         """
-        return "{0} ({1})".format(self.subject, self.uid)
-
-    @property
-    def target(self):
-        if self.target_id is not None and self.target_type is not None:
-            return "{0}:{1}".format(self.target_type, self.target_id)
-        else:
-            return None
-    
-    @property
-    def target_id(self):
-        return self._target_id
-
-    @property
-    def target_type(self):
-        return self._target_type
-
+        return "{0} ({1})".format(self._subject, self.uid)
 
     @property
     def subject(self):
@@ -493,138 +456,38 @@ class Message(object):
         return self._headers[herald.MESSAGE_HEADER_UID]
 
     @property
-    def sender(self):
+    def headers(self):
         """
-        Sender Peer UID
+        Message headers
         """
-        return self._headers[herald.MESSAGE_HEADER_SENDER_UID]
+        return self._headers
 
-    @property
-    def sender_uid(self):
-        return self._headers[herald.MESSAGE_HEADER_SENDER_UID]
+    def add_header(self, key, value):
+        """
+        Adds a header
+        """
+        self._headers[key] = value
+        
+    def get_header(self, key):
+        """
+        Gets a header value 
+        """
+        if key in self._headers:
+            return self._headers[key]       
+        return None
 
-    @property
-    def send_mode(self):
-        return self._headers[herald.MESSAGE_HEADER_SEND_MODE]
-
-    @property
-    def replies_to(self):
-        return self._headers[herald.MESSAGE_HEADER_REPLIES_TO]
-
-    @property
-    def transport_data(self):
-        return self._transport_data
-
-    def set_target(self, target_type, target_id):
+    def set_content(self, content):
         """
-        Sets target
+        Set content
         """
-        self._target_id = target_id
-        self._target_type = target_type
-
-    def add_extra(self, key, value):
-        """
-        Adds an extra information to the Message.
-        If key already exists, the value will be updated
-        """
-        self._extra[key] = value       
-
-    def get_extra(self, key):
-        """
-        Returns extra info
-        """
-        return self._extra[key]
-    
-    def remove_extra(self, key):
-        """
-        Removes the extra information identified by the provided 'key'
-        """
-        if key in self._extra: del self._extra[key]
-
-
-    def add_transport_data(self, key, value):
-        """
-        Adds an transport data info to the Message.
-        If key already exists, the value will be updated
-        """
-        self._transport_data[key] = value       
-
-    def get_transport_data(self, key):
-        """
-        Returns transport data info
-        """
-        return self._transport_data[key] or None
-    
-    def remove_transport_data(self, key):
-        """
-        Removes the transport data information identified by the provided 'key'
-        """
-        if key in self._transport_data: del self._transport_data[key]
-
-
-    def to_json(self):
-        """
-        Returns a JSON representation of this message
-        """
-        result = {}
-        # Herald specification version
-        result[herald.MESSAGE_HERALD_VERSION] = self._herald_version
-        # all other provided headers which are not supported are not included in final JSON object
-        result[herald.MESSAGE_HEADERS] = {}
-
-        result[herald.MESSAGE_HEADERS][herald.MESSAGE_HEADER_UID] = self._headers.get(herald.MESSAGE_HEADER_UID) or None
-        result[herald.MESSAGE_HEADERS][herald.MESSAGE_HEADER_TIMESTAMP] = self._headers.get(herald.MESSAGE_HEADER_TIMESTAMP) or None
-        result[herald.MESSAGE_HEADERS][herald.MESSAGE_HEADER_SENDER_UID] = self._headers.get(herald.MESSAGE_HEADER_SENDER_UID) or None
-        result[herald.MESSAGE_HEADERS][herald.MESSAGE_HEADER_SEND_MODE] = self._headers.get(herald.MESSAGE_HEADER_SEND_MODE) or None
-        result[herald.MESSAGE_HEADERS][herald.MESSAGE_HEADER_REPLIES_TO] = self._headers.get(herald.MESSAGE_HEADER_REPLIES_TO) or None
-        result[herald.MESSAGE_HEADERS][herald.MESSAGE_HEADER_ACCESS] = self._headers.get(herald.MESSAGE_HEADER_ACCESS) or None
-        result[herald.MESSAGE_HEADERS][herald.MESSAGE_HEADER_REPLIED] = self._headers.get(herald.MESSAGE_HEADER_REPLIED) or None
-        # transport related data
-        result[herald.MESSAGE_TRANSPORT_DATA] = self._transport_data
-        # basic infos
-        result[herald.MESSAGE_TARGET] = self.target        
-        result[herald.MESSAGE_SUBJECT] = self.subject
-        result[herald.MESSAGE_CONTENT] = self.content
-        # all provided extra entries are included
-        result[herald.MESSAGE_EXTRA] = self._extra
-        # creates the JSON object and return it
-        # default=utils.json_converter
-        return json.dumps(result)
-
-
-    def dumps(self):
-        return """
---herald-version: {0} 
---headers: 
-----uid: {1} 
-----timestamp: {2} 
-----sender-uid: {3} 
-----send-mode: {4}
-----replies-to: {5}
---transport-data: {6}
---target: {7} 
---subject: {8} 
---content: {9} 
---extra: {10}  
-        """.format(str(self._herald_version),
-                   (self.uid or ""),
-                   str(self.timestamp),
-                    (self.sender_uid or ""),
-                    (self.send_mode or ""),
-                    (self.replies_to or ""),
-                    (str(self._transport_data) or ""),
-                    (self.target or ""),
-                    (self.subject or ""),
-                    (str(self.content) or ""),
-                    (str(self._extra) or "")
-                    )
+        self._content = content
 
 class MessageReceived(Message):
     """
     Represents a message received by a transport
     """
     def __init__(self, uid, subject, content, sender_uid, reply_to, access,
-                 timestamp=None, transport_data=None):
+                 timestamp=None, extra=None):
         """
         Sets up the bean
 
@@ -635,24 +498,21 @@ class MessageReceived(Message):
         :param reply_to: UID of the message this one replies to
         :param access: Access ID of the transport which received this message
         :param timestamp: Message sending time stamp
-        :param transport_data: Extra configuration for the transport in case of reply
+        :param extra: Extra configuration for the transport in case of reply
         """
         Message.__init__(self, subject, content)
         self._headers[herald.MESSAGE_HEADER_UID] = uid
         self._headers[herald.MESSAGE_HEADER_SENDER_UID] = sender_uid
-        self._headers[herald.MESSAGE_HEADER_REPLIES_TO] = reply_to        
-        self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = timestamp
-
+        self._headers[herald.MESSAGE_HEADER_REPLIES_TO] = reply_to
         self._headers[herald.MESSAGE_HEADER_ACCESS] = access
-        self._headers[herald.MESSAGE_HEADER_REPLIED] = False
-
-        self._transport_data = transport_data
+        self._extra = extra
+        self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = timestamp
 
     def __str__(self):
         """
         String representation
         """
-        return "{0} ({1}) from {2}".format(self.subject, self.uid,
+        return "{0} ({1}) from {2}".format(self._subject, self.uid,
                                            self.sender)
 
     @property
@@ -662,56 +522,23 @@ class MessageReceived(Message):
         """
         return self._headers[herald.MESSAGE_HEADER_ACCESS]
 
+    @property
+    def reply_to(self):
+        """
+        UID of the message this one replies to
+        """
+        return self._headers[herald.MESSAGE_HEADER_REPLIES_TO]
 
     @property
-    def replied(self):        
-        return self._headers[herald.MESSAGE_HEADER_REPLIED]
-
-
-    def set_replied(self, replied):
-        if replied is not None: self._headers[herald.MESSAGE_HEADER_REPLIED] = replied
-
-    @staticmethod
-    def from_json(json_message):
+    def sender(self):
         """
-        Returns a new Message from the provided json_message
+        UID of the peer that sent this message
         """
-        # parse the provided json_message
-        try:            
-            parsed_msg = json.loads(json_message)            
-        except ValueError as ex:            
-            # if the provided json_message is not a valid JSON
-            return None
-        except TypeError as ex:
-            # if json_message not string or buffer
-            return None
-        # check if it is a valid Herald JSON message
-        if herald.MESSAGE_HERALD_VERSION not in parsed_msg:
-            # throw exception, not valid Herald message!
-            return None
-            
-        # construct new Message object from the provided JSON object                                        
-        msg = MessageReceived(uid=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_UID) or None),
-                              subject=parsed_msg[herald.MESSAGE_SUBJECT],
-                              content=parsed_msg[herald.MESSAGE_CONTENT],
-                              sender_uid=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_SENDER_UID) or None), 
-                              reply_to=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_REPLIES_TO) or None), 
-                              access=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_ACCESS) or None),
-                              timestamp=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_TIMESTAMP) or None), 
-                              transport_data=None
-                            )
-        # original target
-        msg_target_id = parsed_msg.get(herald.MESSAGE_TARGET) 
-        if msg_target_id is not None: msg_target_id = msg_target_id.split(":")[0]
-        msg_target_type = parsed_msg.get(herald.MESSAGE_TARGET) 
-        if msg_target_type is not None: msg_target_type = msg_target_type.split(":")[1]   
+        return self._headers[herald.MESSAGE_HEADER_SENDER_UID]
 
-        msg.set_target(msg_target_type, msg_target_id)
-        # retrieve remaining headers
-        msg._headers[herald.MESSAGE_HEADER_SEND_MODE] = parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_SEND_MODE) or None
-        msg._headers[herald.MESSAGE_HEADER_REPLIED] = parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_REPLIED) or None
-        # transport related data
-        msg._transport_data = parsed_msg.get(herald.MESSAGE_TRANSPORT_DATA) 
-        # extra info
-        msg._extra = parsed_msg.get(herald.MESSAGE_EXTRA) 
-        return msg
+    @property
+    def extra(self):
+        """
+        Extra information set by the transport that received this message
+        """
+        return self._extra

@@ -36,9 +36,16 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.cohorte.herald</groupId>
+			<artifactId>org.cohorte.herald.core</artifactId>
+			<version>${project.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.cohorte.jabsorb</groupId>
 			<artifactId>org.jabsorb.ng</artifactId>
-		</dependency>
+			<scope>provided</scope>
+		</dependency>		
 
 		<dependency>
 			<groupId>rocks.xmpp</groupId>
@@ -91,6 +98,7 @@
 							org.cohorte.herald;version=${pkg-version},
 							org.cohorte.herald.transport;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version},
+							org.cohorte.herald.core.utils,
 							javax.*
 						</Import-Package>
 						<Export-Package>!*</Export-Package>

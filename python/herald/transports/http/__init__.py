@@ -81,3 +81,14 @@ PROP_MULTICAST_PORT = "multicast.port"
 """
 Name of the multicast port configuration property
 """
+
+# ------------------------------------------------------------------------------
+
+MESSAGE_HEADER_PORT = "herald-http-tansport-port"
+"""
+"""
+
+MESSAGE_HEADER_PATH = "herald-http-tansport-path"
+"""
+"""
+

@@ -16,6 +16,8 @@
 
 package org.cohorte.herald;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -24,18 +26,33 @@ import java.util.UUID;
  * @author Thomas Calmant
  */
 public class Message {
-
+	
+	public static final int HERALD_SPECIFICATION_VERSION = 1;
+	
+	public static final String MESSAGE_HERALD_VERSION = "herald-version";
+	public static final String MESSAGE_HEADERS = "headers";
+    public static final String MESSAGE_HEADER_UID = "uid";
+    public static final String MESSAGE_HEADER_TIMESTAMP = "timestamp";
+	public static final String MESSAGE_HEADER_SENDER_UID = "sender-uid";
+	public static final String MESSAGE_HEADER_REPLIES_TO = "replies-to";
+	public static final String MESSAGE_HEADER_ACCESS = "access";
+	public static final String MESSAGE_SUBJECT = "subject";
+	public static final String MESSAGE_CONTENT = "content";
+	
+	/** Headers **/
+	protected final Map<String, Object> pHeaders;
+	
     /** Content of the message */
-    private final Object pContent;
+    private Object pContent;
 
     /** Subject of the message */
     private final String pSubject;
 
     /** Time stamp of the message (date of creation) */
-    private final Long pTimestamp;
+    //private final Long pTimestamp;
 
     /** Message UID */
-    private final String pUid;
+    //private final String pUid;
 
     /**
      * Sets up a message without content
@@ -76,11 +93,11 @@ public class Message {
      */
     protected Message(final String aSubject, final Object aContent,
             final String aUid, final Long aTimestamp) {
-
+    	pHeaders = new HashMap<String, Object>();
         pSubject = aSubject;
         pContent = aContent;
-        pUid = aUid.replace("-", "").toUpperCase();
-        pTimestamp = aTimestamp;
+        pHeaders.put(MESSAGE_HEADER_UID, aUid.replace("-", "").toUpperCase());
+        pHeaders.put(MESSAGE_HEADER_TIMESTAMP, aTimestamp);
     }
 
     /**
@@ -103,18 +120,55 @@ public class Message {
      * @return the time stamp (can be null)
      */
     public Long getTimestamp() {
-
-        return pTimestamp;
+    	Object timestamp = pHeaders.get(MESSAGE_HEADER_TIMESTAMP);
+        return (timestamp != null ? new Long(timestamp.toString()) : null);
     }
 
     /**
      * @return the uid
      */
     public String getUid() {
-
-        return pUid;
+    	Object uid = pHeaders.get(MESSAGE_HEADER_UID);
+        return (uid != null ? uid.toString() : null);
     }
-
+    
+    /**
+     * Sets the message content.
+     * @param aContent new content
+     */
+	public void setContent(Object aContent) {
+		pContent = aContent;
+	}
+	
+	/**
+	 * Gets the list of message headers
+	 * @return
+	 */
+	public Map<String, Object> getHeaders() {
+		return pHeaders;
+	}
+	
+	/**
+	 * Adding a header.
+	 * If key already exists, its value will be updated!.
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	public void addHeader(String key, Object value) {
+		pHeaders.put(key, value);
+	}
+	
+	/**
+	 * Gets a header value.
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public Object getHeader(String key) {		
+		return pHeaders.get(key);
+	}
+	
     /*
      * (non-Javadoc)
      * 
@@ -123,6 +177,6 @@ public class Message {
     @Override
     public String toString() {
 
-        return "" + pSubject + " (" + pUid + ")";
+        return "" + pSubject + " (" + getUid() + ")";
     }
 }

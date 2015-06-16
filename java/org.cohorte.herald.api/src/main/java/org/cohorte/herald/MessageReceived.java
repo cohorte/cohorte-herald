@@ -16,6 +16,7 @@
 
 package org.cohorte.herald;
 
+
 /**
  * Represents a message received by a transport
  *
@@ -24,16 +25,16 @@ package org.cohorte.herald;
 public class MessageReceived extends Message {
 
     /** The access ID of the transport which received this message */
-    private final String pAccess;
+    //private final String pAccess;
 
     /** Extra configuration for the transport in case of reply */
     private final Object pExtra;
 
     /** UID of the message this one replies to */
-    private final String pReplyTo;
+    //private final String pReplyTo;
 
     /** UID of the sending peer */
-    private final String pSender;
+    //private final String pSender;
 
     /**
      * Sets up the received message bean
@@ -61,9 +62,9 @@ public class MessageReceived extends Message {
             final Long aTimestamp, final Object aExtra) {
 
         super(aSubject, aContent, aUid, aTimestamp);
-        pSender = aSenderUid;
-        pReplyTo = aReplyTo;
-        pAccess = aAccessId;
+        pHeaders.put(Message.MESSAGE_HEADER_SENDER_UID, aSenderUid);
+        pHeaders.put(Message.MESSAGE_HEADER_REPLIES_TO, aReplyTo);
+        pHeaders.put(Message.MESSAGE_HEADER_ACCESS, aAccessId);
         pExtra = aExtra;
     }
 
@@ -97,8 +98,8 @@ public class MessageReceived extends Message {
      * @return the access
      */
     public String getAccess() {
-
-        return pAccess;
+    	Object access = pHeaders.get(Message.MESSAGE_HEADER_ACCESS);
+        return (access != null ? access.toString() : null);
     }
 
     /**
@@ -113,18 +114,19 @@ public class MessageReceived extends Message {
      * @return the replyTo
      */
     public String getReplyTo() {
-
-        return pReplyTo;
+    	Object repliesTo = pHeaders.get(Message.MESSAGE_HEADER_REPLIES_TO);
+        return (repliesTo != null ? repliesTo.toString() : null);
     }
 
     /**
      * @return the sender
      */
     public String getSender() {
-
-        return pSender;
+    	Object sender = pHeaders.get(Message.MESSAGE_HEADER_SENDER_UID);
+        return (sender != null) ? sender.toString() : null;
     }
-
+    
+	
     /*
      * (non-Javadoc)
      * 
@@ -133,6 +135,6 @@ public class MessageReceived extends Message {
     @Override
     public String toString() {
 
-        return "" + getSubject() + "(" + getUid() + ") from " + pSender;
+        return "" + getSubject() + "(" + getUid() + ") from " + getSender();
     }
 }

@@ -41,6 +41,7 @@ import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.Target;
 import org.cohorte.herald.UnknownPeer;
+import org.cohorte.herald.core.utils.MessageUtils;
 import org.cohorte.herald.transport.IDiscoveryConstants;
 import org.cohorte.herald.transport.PeerContact;
 import org.cohorte.herald.xmpp.IXmppConstants;
@@ -411,9 +412,17 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
         }
 
         // Parse content
-        Object content;
+        final MessageReceived rcv_msg;
+    	Object content;
+    	
         try {
-            content = pSerializer.fromJSON(aMessage.getBody());
+        	//content = pSerializer.fromJSON(aMessage.getBody());
+        	rcv_msg = MessageUtils.fromJSON(aMessage.getBody());
+    		if (rcv_msg != null) 
+    			content = rcv_msg.getContent();
+    		else {
+    			content = null;	        			
+    		}
         } catch (final UnmarshallException ex) {
             // Error parsing content: use the raw body
             pLogger.log(LogService.LOG_ERROR, "Error parsing message content: "
@@ -648,8 +657,9 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
             throws MarshallException {
 
         // Convert content to JSON
-        final String content = pSerializer.toJSON(aMessage.getContent());
-
+        //final String content = pSerializer.toJSON(aMessage.getContent());
+    	final String content = MessageUtils.toJSON(aMessage);
+    	
         // Prepare the XMPP message
         final rocks.xmpp.core.stanza.model.client.Message xmppMsg = new rocks.xmpp.core.stanza.model.client.Message(
                 aJid, aType, content);

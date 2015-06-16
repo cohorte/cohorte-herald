@@ -82,8 +82,8 @@ public class ClientSession implements ISession {
             // Send the request as a string
             result = pHerald
                     .send(pPeerUid,
-                            new Message(pSubject, JSONObject.quote(aMessage
-                                    .toString())));
+                            new Message(pSubject, new JSONObject(aMessage)
+                                    .toString()));
 
         } catch (final HeraldException ex) {
             // Error sending the message

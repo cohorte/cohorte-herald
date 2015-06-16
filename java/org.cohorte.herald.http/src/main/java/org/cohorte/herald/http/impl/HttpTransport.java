@@ -49,6 +49,7 @@ import org.cohorte.herald.InvalidPeerAccess;
 import org.cohorte.herald.Message;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.Target;
+import org.cohorte.herald.core.utils.MessageUtils;
 import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
@@ -134,7 +135,7 @@ public class HttpTransport implements ITransport {
 		final Map<String, String> headers = makeHeaders(aMessage, parentUid);
 		String content;
 		try {
-			content = makeContent(aMessage.getContent());
+			content = makeContent(aMessage);
 
 		} catch (final MarshallException ex) {
 			throw new HeraldException(new Target(aPeer),
@@ -159,7 +160,7 @@ public class HttpTransport implements ITransport {
 		final Map<String, String> headers = makeHeaders(aMessage, null);
 		final String content;
 		try {
-			content = makeContent(aMessage.getContent());
+			content = makeContent(aMessage);
 
 		} catch (final MarshallException ex) {
 			throw new HeraldException(
@@ -325,9 +326,8 @@ public class HttpTransport implements ITransport {
 	 * @throws MarshallException
 	 *             Error converting the object
 	 */
-	private String makeContent(final Object aContent) throws MarshallException {
-
-		return pSerializer.toJSON(aContent);
+	private String makeContent(final Message aMsg) throws MarshallException {
+		return MessageUtils.toJSON(aMsg);		
 	}
 
 	/**
@@ -343,19 +343,17 @@ public class HttpTransport implements ITransport {
 			final String aParentUid) {
 
 		final Map<String, String> headers = new LinkedHashMap<>();
-		headers.put("herald-subject", aMessage.getSubject());
-		headers.put("herald-uid", aMessage.getUid());
-		headers.put("herald-sender-uid", pLocalUid);
-		headers.put("herald-timestamp", aMessage.getTimestamp().toString());
 
 		final HTTPAccess localAccess = pReceiver.getAccessInfo();
-		headers.put("herald-port", Integer.toString(localAccess.getPort()));
-		headers.put("herald-path", localAccess.getPath());
 
+		aMessage.addHeader(Message.MESSAGE_HEADER_SENDER_UID, pLocalUid);
+		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PORT, Integer.toString(localAccess.getPort()));
+		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PATH, localAccess.getPath());
+		
 		if (aParentUid != null && !aParentUid.isEmpty()) {
-			headers.put("herald-reply-to", aParentUid);
+			aMessage.addHeader(Message.MESSAGE_HEADER_REPLIES_TO, aParentUid);
 		}
-
+		
 		return headers;
 	}
 

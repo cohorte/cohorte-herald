@@ -43,4 +43,11 @@ public interface IHttpConstants {
 
     /** The default/fixed path to the Herald servlet */
     String SERVLET_PATH = "/herald";
+    
+    /** Message header : port **/
+    String MESSAGE_HEADER_PORT = "herald-http-tansport-port";
+    
+    /** Message header : path **/
+    String MESSAGE_HEADER_PATH = "herald-http-tansport-path";
+
 }

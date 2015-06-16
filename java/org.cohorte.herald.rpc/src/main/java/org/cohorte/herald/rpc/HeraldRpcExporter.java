@@ -198,7 +198,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
                 .call(new Object[0], jsonReq);
 
         // Convert the result as a JSON string containing the JSON object
-        final String strResult = JSONObject.quote(result.toString());
+        final String strResult = new JSONObject(result).toString();
 
         // Send the result
         try {
