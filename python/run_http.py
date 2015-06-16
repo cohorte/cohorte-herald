@@ -139,6 +139,7 @@ if __name__ == "__main__":
     # Configure the logging package
     logging.basicConfig(level=logging.INFO)
     logging.getLogger('herald').setLevel(logging.DEBUG)
+    logging.getLogger('requests').setLevel(logging.WARNING)
 
     # Run the framework
     main(args.http_port, args.name, args.node, args.app_id)
