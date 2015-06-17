@@ -60,13 +60,26 @@ except ImportError:
 
 _logger = logging.getLogger(__name__)
 
+# Subject of the messages for the server
+_PREFIX_SERVER = "herald/shell"
+MSG_SERVER_OPEN = "{0}/open".format(_PREFIX_SERVER)
+MSG_SERVER_COMMAND = "{0}/command".format(_PREFIX_SERVER)
+MSG_SERVER_CLOSE = "{0}/close".format(_PREFIX_SERVER)
+
+# Subject of the messages for the client
+_PREFIX_CLIENT = "herald/shell-client"
+MSG_CLIENT_ERROR = "{0}/error".format(_PREFIX_CLIENT)
+MSG_CLIENT_PRINT = "{0}/print".format(_PREFIX_CLIENT)
+MSG_CLIENT_PROMPT = "{0}/prompt".format(_PREFIX_CLIENT)
+MSG_CLIENT_CLOSE = "{0}/close".format(_PREFIX_CLIENT)
+
 # ------------------------------------------------------------------------------
 
 
 @ComponentFactory("herald-remote-shell-client-factory")
 @Requires("_herald", herald.SERVICE_HERALD)
 @Provides((pelix.shell.SERVICE_SHELL_COMMAND, herald.SERVICE_LISTENER))
-@Property('_filters', herald.PROP_FILTERS, ['herald/shell-client/*'])
+@Property('_filters', herald.PROP_FILTERS, ['{0}/*'.format(_PREFIX_CLIENT)])
 @Instantiate("herald-remote-shell-client")
 class HeraldRemoteShellClient(object):
     """
@@ -102,7 +115,7 @@ class HeraldRemoteShellClient(object):
         try:
             # Open session
             shell_info_msg = self._herald.send(
-                peer, beans.Message("herald/shell/open"))
+                peer, beans.Message(MSG_SERVER_OPEN))
         except HeraldException as ex:
             session.write_line("Error opening session: {0}", ex)
             return
@@ -144,7 +157,7 @@ class HeraldRemoteShellClient(object):
                 # Prepare arguments
                 content = {"line": line, "session_id": session_id}
                 result_msg = self._herald.send(
-                    peer, beans.Message("herald/shell/command", content))
+                    peer, beans.Message(MSG_SERVER_COMMAND, content))
                 session.write_line(prompt_str, result_msg.content)
         except (HeraldException, KeyError) as ex:
             # Error sending message
@@ -164,7 +177,7 @@ class HeraldRemoteShellClient(object):
                 try:
                     # Close the session (don't worry about errors)
                     self._herald.fire(
-                        peer, beans.Message("herald/shell/close", session_id))
+                        peer, beans.Message(MSG_SERVER_CLOSE, session_id))
                 except Exception as ex:
                     _logger.warning("Error closing session: %s", ex)
 
@@ -189,15 +202,22 @@ class HeraldRemoteShellClient(object):
             # Request data from the client
             session_id = message.content['session_id']
             try:
-                line = self._sessions[session_id].prompt()
-                herald_svc.reply(message, line)
+                # Read command line
+                session = self._sessions[session_id]
             except KeyError:
                 _logger.warning("No session with ID: %s", session_id)
+            else:
+                try:
+                    line = session.prompt()
+                    herald_svc.reply(message, line)
+                except (EOFError, KeyboardInterrupt):
+                    # Ctrl+D received: close the session
+                    session.set("__herald_shell_running__", False)
+                    herald_svc.reply(message, None, MSG_SERVER_CLOSE)
 
         elif kind == "close":
             # Clean up a session
             session_id = message.content
-            print("Client Closing", session_id)
             try:
                 session = self._sessions.pop(session_id)
                 session.write_line("Session closed. Press Enter to exit.")
@@ -244,8 +264,7 @@ class _HeraldOutputStream(object):
 
         # Send the message
         content = {"session_id": self._session, "text": line}
-        self._herald.fire(
-            self._peer, beans.Message("herald/shell-client/print", content))
+        self._herald.fire(self._peer, beans.Message(MSG_CLIENT_PRINT, content))
 
 
 class _HeraldInputStream(object):
@@ -269,9 +288,13 @@ class _HeraldInputStream(object):
         Waits for a line from the Herald client
         """
         content = {"session_id": self._session}
-        return self._herald.send(
-            self._peer,
-            beans.Message("herald/shell-client/prompt", content)).content
+        prompt_msg = self._herald.send(
+            self._peer, beans.Message(MSG_CLIENT_PROMPT, content))
+        if prompt_msg.content is None:
+            # Client closed its shell
+            raise EOFError
+
+        return prompt_msg.content
 
 
 @ComponentFactory("herald-remote-shell-server-factory")
@@ -279,7 +302,7 @@ class _HeraldInputStream(object):
 @Requires("_herald", herald.SERVICE_HERALD)
 @Requires("_shell", pelix.shell.SERVICE_SHELL)
 @Provides(herald.SERVICE_LISTENER)
-@Property('_filters', herald.PROP_FILTERS, ['herald/shell/*'])
+@Property('_filters', herald.PROP_FILTERS, ['{0}/*'.format(_PREFIX_SERVER)])
 @Instantiate("herald-remote-shell-server")
 class HeraldRemoteShellServer(object):
     """
@@ -319,8 +342,7 @@ class HeraldRemoteShellServer(object):
 
             try:
                 self._herald.fire(
-                    peer_uid,
-                    beans.Message("herald/shell-client/close", session_id))
+                    peer_uid, beans.Message(MSG_CLIENT_CLOSE, session_id))
             except HeraldException as ex:
                 # Error sending message
                 _logger.error("Error sending session close message: %s", ex)
@@ -351,7 +373,7 @@ class HeraldRemoteShellServer(object):
         except Exception as ex:
             herald_svc.reply(
                 message, "Error handling message: {0}".format(ex),
-                "herald/shell-client/error")
+                MSG_CLIENT_ERROR)
 
     def _open_session(self, herald_svc, message):
         """
@@ -401,7 +423,7 @@ class HeraldRemoteShellServer(object):
         except KeyError:
             # Unknown session
             _logger.warning("Unknown session for execution: %s", session_id)
-            herald_svc.reply(message, session_id, "herald/shell-client/close")
+            herald_svc.reply(message, session_id, MSG_CLIENT_CLOSE)
             return
 
         # Execute the command
