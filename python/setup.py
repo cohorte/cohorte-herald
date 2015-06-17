@@ -6,7 +6,7 @@ Cohorte Herald installation script
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
 :license: Apache License 2.0
-:version: 0.0.3
+:version: 0.0.4.dev
 :status: Alpha
 
 ..
@@ -27,7 +27,7 @@ Cohorte Herald installation script
 """
 
 # Module version
-__version_info__ = (0, 0, 3)
+__version_info__ = (0, 0, 4, 'dev')
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
@@ -83,7 +83,7 @@ setup(
         'Programming Language :: Python :: 3.4'
     ],
     install_requires=[
-        'iPOPO>=0.5.7',
+        'iPOPO>=0.6.1',
         'sleekxmpp>=1.3.1',
         'requests>=2.3.0'
     ]
