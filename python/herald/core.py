@@ -37,7 +37,7 @@ __docformat__ = "restructuredtext en"
 
 # Herald
 from herald.exceptions import InvalidPeerAccess, NoTransport, HeraldTimeout, \
-    NoListener, ForgotMessage
+    NoListener, ForgotMessage, PeerLost
 from herald.utils import LoopTimer
 import herald
 import herald.beans as beans
@@ -96,11 +96,24 @@ class _BundleActivator(object):
 # ------------------------------------------------------------------------------
 
 
+class _WaitingSend(pelix.utilities.EventData):
+    """
+    A bean that describes a waiting send() call
+    """
+    def __init__(self, peer, msg_uid):
+        """
+        Sets up the bean
+        """
+        super(_WaitingSend, self).__init__()
+        self.peer = peer
+        self.msg_uid = msg_uid
+
+
 class _WaitingPost(object):
     """
     A bean that describes parameters of a post() call
     """
-    def __init__(self, callback, errback, timeout, forget_on_first):
+    def __init__(self, callback, errback, timeout, forget_on_first, peer=None):
         """
         Sets up members
 
@@ -110,7 +123,9 @@ class _WaitingPost(object):
                         (<= 0 or None for never)
         :param forget_on_first: If True, forget this post after the first
                                 answer
+        :param peer: Bean of the target peer, in single-target mode
         """
+        self.peer = peer
         self.__callback = callback
         self.__errback = errback
         self.__forget_on_first = forget_on_first
@@ -170,7 +185,7 @@ class _WaitingPost(object):
 
 
 @ComponentFactory("herald-core-factory")
-@Provides(herald.SERVICE_HERALD_INTERNAL)
+@Provides((herald.SERVICE_HERALD_INTERNAL, herald.SERVICE_DIRECTORY_LISTENER))
 @Provides(herald.SERVICE_HERALD, '_controller')
 @Requires('_directory', herald.SERVICE_DIRECTORY)
 @Requires('_listeners', herald.SERVICE_LISTENER, True, True)
@@ -491,6 +506,47 @@ class Herald(object):
             # A peer is going away
             self._directory.unregister(message.content)
 
+    def peer_unregistered(self, peer):
+        """
+        Peer unregistered: raise an exception in all pending send/post calls
+        """
+        # Prepare the exception to raise
+        exception = PeerLost(peer, "Peer {0} has been lost".format(peer))
+
+        # ... unlock send() calls
+        uids = [uid for uid, event in self.__waiting_events.items()
+                if peer == event.peer]
+        for uid in uids:
+            self.__waiting_events.pop(uid).raise_exception(exception)
+
+        with self.__gc_lock:
+            # ... list post() callers for this peer
+            entries = {uid: waiting_post
+                       for uid, waiting_post in self.__waiting_posts.items()
+                       if peer == waiting_post.peer}
+
+            # Clean up callers dictionary
+            for uid in entries:
+                del self.__waiting_posts[uid]
+
+        # ... notify post() callers
+        for waiting_post in entries.values():
+            waiting_post.errback(self, exception)
+
+    @staticmethod
+    def peer_registered(peer):
+        """
+        Peer registered: ignore
+        """
+        pass
+
+    @staticmethod
+    def peer_updated(peer, access_id, data, previous):
+        """
+        Peer updated: ignore
+        """
+        pass
+
     def __notify(self, message):
         """
         Calls back message senders about responses or notifies the reception of
@@ -719,15 +775,15 @@ class Herald(object):
                            listen to it
         :raise HeraldTimeout: Timeout raised before getting an answer
         """
-        # Prepare an event, which will be set when the answer will be received
-        event = pelix.utilities.EventData()
-        self.__waiting_events[message.uid] = event
-
         # Get the Peer object
         if not isinstance(target, beans.Peer):
             peer = self._directory.get_peer(target)
         else:
             peer = target
+
+        # Prepare an event, which will be set when the answer will be received
+        event = _WaitingSend(peer, message.uid)
+        self.__waiting_events[message.uid] = event
 
         try:
             # Fire the message
@@ -774,15 +830,21 @@ class Herald(object):
         :raise KeyError: Unknown peer UID
         :raise NoTransport: No transport found to send the message
         """
+        # Get the Peer object
+        if not isinstance(target, beans.Peer):
+            peer = self._directory.get_peer(target)
+        else:
+            peer = target
+
         with self.__gc_lock:
             # Prepare an entry in the waiting posts
             self.__waiting_posts[message.uid] = \
-                _WaitingPost(callback, errback, timeout, forget_on_first)
+                _WaitingPost(callback, errback, timeout, forget_on_first, peer)
 
         try:
             # Fire the message
             # pylint: disable=W0702
-            return self.fire(target, message)
+            return self.fire(peer, message)
         except:
             # Early clean up in case of exception
             try:
