@@ -656,8 +656,9 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
             final Message aMessage, final String aParentUid)
             throws MarshallException {
 
-        // Convert content to JSON
-        //final String content = pSerializer.toJSON(aMessage.getContent());
+    	// update headers
+    	aMessage.addHeader(Message.MESSAGE_HEADER_SENDER_UID, pDirectory.getLocalUid());
+        // Convert content to JSON        
     	final String content = MessageUtils.toJSON(aMessage);
     	
         // Prepare the XMPP message
