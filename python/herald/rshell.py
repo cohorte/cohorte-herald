@@ -73,6 +73,11 @@ MSG_CLIENT_PRINT = "{0}/print".format(_PREFIX_CLIENT)
 MSG_CLIENT_PROMPT = "{0}/prompt".format(_PREFIX_CLIENT)
 MSG_CLIENT_CLOSE = "{0}/close".format(_PREFIX_CLIENT)
 
+# Session properties
+SESSION_SHELL_RUNNING = "__herald_shell_running__"
+SESSION_SESSION_ID = "__session_id__"
+SESSION_CLIENT_ID = "__client_uid__"
+
 # ------------------------------------------------------------------------------
 
 
@@ -134,7 +139,7 @@ class HeraldRemoteShellClient(object):
             shell_info['peer_uid'], shell_info['ps1'])
 
         # Setup the session variables
-        session.set("__herald_shell_running__", True)
+        session.set(SESSION_SHELL_RUNNING, True)
 
         # Store the session
         self._sessions[session_id] = session
@@ -144,7 +149,7 @@ class HeraldRemoteShellClient(object):
 
         try:
             # REPL
-            while session.get("__herald_shell_running__"):
+            while session.get(SESSION_SHELL_RUNNING):
                 # Read command line
                 line = session.prompt(prompt_str)
                 if line.strip().lower() == "exit":
@@ -212,7 +217,7 @@ class HeraldRemoteShellClient(object):
                     herald_svc.reply(message, line)
                 except (EOFError, KeyboardInterrupt):
                     # Ctrl+D received: close the session
-                    session.set("__herald_shell_running__", False)
+                    session.set(SESSION_SHELL_RUNNING, False)
                     herald_svc.reply(message, None, MSG_SERVER_CLOSE)
 
         elif kind == "close":
@@ -221,7 +226,7 @@ class HeraldRemoteShellClient(object):
             try:
                 session = self._sessions.pop(session_id)
                 session.write_line("Session closed. Press Enter to exit.")
-                session.set("__herald_shell_running__", False)
+                session.set(SESSION_SHELL_RUNNING, False)
             except KeyError:
                 _logger.warning("No session with ID: %s", session_id)
 
@@ -337,8 +342,8 @@ class HeraldRemoteShellServer(object):
         Component invalidated
         """
         for session in self._sessions.values():
-            peer_uid = session.get("__client_uid__")
-            session_id = session.get("__session_id__")
+            peer_uid = session.get(SESSION_CLIENT_ID)
+            session_id = session.get(SESSION_SESSION_ID)
 
             try:
                 self._herald.fire(
@@ -394,8 +399,8 @@ class HeraldRemoteShellServer(object):
             _HeraldOutputStream(herald_svc, message.sender, session_id))
 
         session = pelix.shell.beans.ShellSession(io_handler)
-        session.set("__session_id__", session_id)
-        session.set("__client_uid__", message.sender)
+        session.set(SESSION_SESSION_ID, session_id)
+        session.set(SESSION_CLIENT_ID, message.sender)
 
         # Store it
         self._sessions[session_id] = session
