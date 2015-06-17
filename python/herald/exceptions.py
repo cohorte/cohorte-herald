@@ -65,6 +65,13 @@ class InvalidPeerAccess(HeraldException):
     pass
 
 
+class PeerLost(HeraldException):
+    """
+    A peer has been lost while we were waiting for it
+    """
+    pass
+
+
 class HeraldTimeout(HeraldException):
     """
     A timeout has been reached
