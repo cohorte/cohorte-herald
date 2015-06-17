@@ -83,6 +83,12 @@ def to_json(msg):
             # jaborb content
             result[herald.MESSAGE_CONTENT] = jabsorb.to_jabsorb(msg.content)
     
+    # metadata
+    result[herald.MESSAGE_METADATA] = {}        
+    if msg.metadata is not None:
+        for key in msg.metadata:
+            result[herald.MESSAGE_METADATA][key] = msg.metadata.get(key) or None
+            
     return json.dumps(result, default=herald.utils.json_converter)
 
 
@@ -130,7 +136,12 @@ def from_json(json_string):
         for key in parsed_msg[herald.MESSAGE_HEADERS]:
             if key not in msg._headers:
                 msg._headers[key] = parsed_msg[herald.MESSAGE_HEADERS][key]         
-           
+    # metadata
+    if herald.MESSAGE_METADATA in parsed_msg:
+        for key in parsed_msg[herald.MESSAGE_METADATA]:
+            if key not in msg._metadata:
+                msg._metadata[key] = parsed_msg[herald.MESSAGE_METADATA][key] 
+                       
     return msg
 
 # ------------------------------------------------------------------------------

@@ -419,7 +419,8 @@ class Message(object):
         self._headers[herald.MESSAGE_HERALD_VERSION] = herald.HERALD_SPECIFICATION_VERSION
         self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = int(time.time() * 1000) 
         self._headers[herald.MESSAGE_HEADER_UID] = str(uuid.uuid4()).replace('-', '').upper()
-          
+        
+        self._metadata = {}  
 
     def __str__(self):
         """
@@ -461,6 +462,13 @@ class Message(object):
         Message headers
         """
         return self._headers
+    
+    @property    
+    def metadata(self):
+        """
+        Message metadata
+        """
+        return self._metadata
 
     def add_header(self, key, value):
         """
@@ -481,6 +489,20 @@ class Message(object):
         Set content
         """
         self._content = content
+        
+    def add_metadata(self, key, value):
+        """
+        Adds a metadata
+        """
+        self._metadata[key] = value
+        
+    def get_metadata(self, key):
+        """
+        Gets a metadata
+        """
+        if key in self._metadata:
+            return self._metadata[key]
+        return None
 
 class MessageReceived(Message):
     """

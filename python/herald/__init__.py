@@ -53,6 +53,10 @@ MESSAGE_CONTENT = "content"
 """
 """
 
+MESSAGE_METADATA = "metadata"
+"""
+"""
+
 MESSAGE_HEADER_UID = "uid"
 """
 Message header containing the message Unique IDentifier.

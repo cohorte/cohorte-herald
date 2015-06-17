@@ -30,15 +30,15 @@ public class MessageUtils {
 		JSONObject json = new JSONObject();
 		try {						
 			json.put(Message.MESSAGE_HERALD_VERSION, Message.HERALD_SPECIFICATION_VERSION);
-			
+			// headers
 			JSONObject headers = new JSONObject();
 			for (String key : aMsg.getHeaders().keySet()) {
 				headers.put(key, aMsg.getHeaders().get(key));
-			}			
+			}					
 			json.put(Message.MESSAGE_HEADERS, headers);
-			
+			// subject
 			json.put(Message.MESSAGE_SUBJECT, aMsg.getSubject());
-			
+			// content
 			if (aMsg.getContent() != null) {
 				if (aMsg.getContent() instanceof String) {
 					json.put(Message.MESSAGE_CONTENT, aMsg.getContent());
@@ -47,6 +47,12 @@ public class MessageUtils {
 					json.put(Message.MESSAGE_CONTENT, content);
 				}
 			}
+			// metadata
+			JSONObject metadata = new JSONObject();
+			for (String key : aMsg.getMetadata().keySet()) {
+				metadata.put(key, aMsg.getMetadata().get(key));
+			}			
+			json.put(Message.MESSAGE_METADATA, metadata);
 			
 		} catch (JSONException e) {			
 			e.printStackTrace();
@@ -92,6 +98,16 @@ public class MessageUtils {
 	    				while(wKeys.hasNext()) {
 	    					String key = wKeys.next();
 	    					wMsg.addHeader(key, wParsedMsg.getJSONObject(Message.MESSAGE_HEADERS).get(key));
+	    				}
+	    			}
+	    			
+	    			// metadata 
+	    			Iterator<String> wKeys2;
+	    			if (wParsedMsg.getJSONObject(Message.MESSAGE_METADATA) != null) {
+	    				wKeys2 = wParsedMsg.getJSONObject(Message.MESSAGE_METADATA).keys();
+	    				while(wKeys2.hasNext()) {
+	    					String key = wKeys2.next();
+	    					wMsg.addMetadata(key, wParsedMsg.getJSONObject(Message.MESSAGE_METADATA).get(key));
 	    				}
 	    			}
 					

@@ -298,9 +298,9 @@ class HeraldServlet(object):
                 extra = {'host': host, 'raw': True}     
             else:       
                 # Store sender information
-                if herald.transports.http.MESSAGE_HEADER_PORT in received_msg.headers:                    
+                try:                 
                     port = int(received_msg.get_header(herald.transports.http.MESSAGE_HEADER_PORT))                    
-                else:
+                except (KeyError, ValueError, TypeError):
                     port = 80
                 path = None
                 if herald.transports.http.MESSAGE_HEADER_PATH in received_msg.headers:
