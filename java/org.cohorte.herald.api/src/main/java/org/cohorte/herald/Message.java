@@ -35,7 +35,6 @@ public class Message {
     public static final String MESSAGE_HEADER_TIMESTAMP = "timestamp";
 	public static final String MESSAGE_HEADER_SENDER_UID = "sender-uid";
 	public static final String MESSAGE_HEADER_REPLIES_TO = "replies-to";
-	public static final String MESSAGE_HEADER_ACCESS = "access";
 	public static final String MESSAGE_SUBJECT = "subject";
 	public static final String MESSAGE_CONTENT = "content";
 	public static final String MESSAGE_METADATA = "metadata";
@@ -94,6 +93,7 @@ public class Message {
     	pHeaders = new HashMap<String, Object>();
         pSubject = aSubject;
         pContent = aContent;
+        pHeaders.put(MESSAGE_HERALD_VERSION, HERALD_SPECIFICATION_VERSION);
         pHeaders.put(MESSAGE_HEADER_UID, aUid.replace("-", "").toUpperCase());
         pHeaders.put(MESSAGE_HEADER_TIMESTAMP, aTimestamp);
         pMetadata = new HashMap<String, Object>();

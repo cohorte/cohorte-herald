@@ -65,7 +65,7 @@ def to_json(msg):
     result = {}
     
     # herald specification version
-    result[herald.MESSAGE_HERALD_VERSION] = herald.HERALD_SPECIFICATION_VERSION
+    #result[herald.MESSAGE_HERALD_VERSION] = herald.HERALD_SPECIFICATION_VERSION
     
     # headers
     result[herald.MESSAGE_HEADERS] = {}        
@@ -73,8 +73,9 @@ def to_json(msg):
         for key in msg.headers:
             result[herald.MESSAGE_HEADERS][key] = msg.headers.get(key) or None        
     
-    # basic infos
+    # subject
     result[herald.MESSAGE_SUBJECT] = msg.subject
+    # content
     if msg.content is not None:
         if isinstance(msg.content, str):
             # string content
@@ -105,19 +106,21 @@ def from_json(json_string):
     except TypeError as ex:
         # if json_message not string or buffer
         return None
+    herald_version = None
     # check if it is a valid Herald JSON message
-    if herald.MESSAGE_HERALD_VERSION in parsed_msg:
-        herald_version = parsed_msg[herald.MESSAGE_HERALD_VERSION]                         
-        if herald_version is None or herald_version != herald.HERALD_SPECIFICATION_VERSION:
-            _logger.error("Herald specification of the received message is not supported!")
-            return None   
+    if herald.MESSAGE_HEADERS in parsed_msg:
+        if herald.MESSAGE_HERALD_VERSION in parsed_msg[herald.MESSAGE_HEADERS]:
+            herald_version = parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HERALD_VERSION)                         
+    if herald_version is None or herald_version != herald.HERALD_SPECIFICATION_VERSION:
+        _logger.error("Herald specification of the received message is not supported!")
+        return None   
     # construct new Message object from the provided JSON object    
     msg = herald.beans.MessageReceived(uid=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_UID) or None), 
                           subject=parsed_msg[herald.MESSAGE_SUBJECT], 
                           content=None, 
                           sender_uid=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_SENDER_UID) or None), 
                           reply_to=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_REPLIES_TO) or None), 
-                          access=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_ACCESS) or None),
+                          access=None,
                           timestamp=(parsed_msg[herald.MESSAGE_HEADERS].get(herald.MESSAGE_HEADER_TIMESTAMP) or None) 
                           )                           
     # set content

@@ -526,7 +526,7 @@ class MessageReceived(Message):
         self._headers[herald.MESSAGE_HEADER_UID] = uid
         self._headers[herald.MESSAGE_HEADER_SENDER_UID] = sender_uid
         self._headers[herald.MESSAGE_HEADER_REPLIES_TO] = reply_to
-        self._headers[herald.MESSAGE_HEADER_ACCESS] = access
+        self._access = access
         self._extra = extra
         self._headers[herald.MESSAGE_HEADER_TIMESTAMP] = timestamp
 
@@ -542,7 +542,7 @@ class MessageReceived(Message):
         """
         Returns the access ID of the transport which received this message
         """
-        return self._headers[herald.MESSAGE_HEADER_ACCESS]
+        return self._access
 
     @property
     def reply_to(self):

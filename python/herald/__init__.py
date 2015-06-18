@@ -80,12 +80,6 @@ Message header containing the UID of the original message that triggered the cre
 of the response message containing this header (case of send mode).  
 """
 
-MESSAGE_HEADER_ACCESS = "access"
-"""  
-Message header containing the access on which this message was received 
-(only for MessageReceived)
-"""
-
 # ------------------------------------------------------------------------------
 # Service specifications
 

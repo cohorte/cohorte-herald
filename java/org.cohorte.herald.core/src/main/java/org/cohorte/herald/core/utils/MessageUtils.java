@@ -29,7 +29,6 @@ public class MessageUtils {
 	public static String toJSON(Message aMsg) throws MarshallException {
 		JSONObject json = new JSONObject();
 		try {						
-			json.put(Message.MESSAGE_HERALD_VERSION, Message.HERALD_SPECIFICATION_VERSION);
 			// headers
 			JSONObject headers = new JSONObject();
 			for (String key : aMsg.getHeaders().keySet()) {
@@ -67,7 +66,14 @@ public class MessageUtils {
 	    	JSONObject wParsedMsg = new JSONObject(json);	    	
 	    	{
 	    		try {
-	    			int heraldVersion = wParsedMsg.getInt(Message.MESSAGE_HERALD_VERSION);
+	    			// check if valid herald message (respects herald specification version)
+	    			int heraldVersion = -1;
+	    			JSONObject jHeader = wParsedMsg.getJSONObject(Message.MESSAGE_HEADERS); 
+	    			if (jHeader != null) {
+	    				if (jHeader.has(Message.MESSAGE_HERALD_VERSION)) {
+	    					heraldVersion = jHeader.getInt(Message.MESSAGE_HERALD_VERSION);
+	    				}
+	    			}	    			
 	    			if (heraldVersion != Message.HERALD_SPECIFICATION_VERSION) {
 	    				throw new JSONException("Herald specification of the received message is not supported!");	    				
 	    			}
@@ -81,7 +87,7 @@ public class MessageUtils {
 	    					null, 
 	    					null, 
 	    					null);
-	    			
+	    			// content
 	    			Object cont = wParsedMsg.opt(Message.MESSAGE_CONTENT);
 	    			if (cont != null) {
 	    				if (cont instanceof JSONObject || cont instanceof JSONArray) {

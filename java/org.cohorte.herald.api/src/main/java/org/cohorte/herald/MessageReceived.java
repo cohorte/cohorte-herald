@@ -25,16 +25,11 @@ package org.cohorte.herald;
 public class MessageReceived extends Message {
 
     /** The access ID of the transport which received this message */
-    //private final String pAccess;
+    private final String pAccess;
 
     /** Extra configuration for the transport in case of reply */
     private final Object pExtra;
 
-    /** UID of the message this one replies to */
-    //private final String pReplyTo;
-
-    /** UID of the sending peer */
-    //private final String pSender;
 
     /**
      * Sets up the received message bean
@@ -64,7 +59,7 @@ public class MessageReceived extends Message {
         super(aSubject, aContent, aUid, aTimestamp);
         pHeaders.put(Message.MESSAGE_HEADER_SENDER_UID, aSenderUid);
         pHeaders.put(Message.MESSAGE_HEADER_REPLIES_TO, aReplyTo);
-        pHeaders.put(Message.MESSAGE_HEADER_ACCESS, aAccessId);
+        pAccess = aAccessId;
         pExtra = aExtra;
     }
 
@@ -98,8 +93,7 @@ public class MessageReceived extends Message {
      * @return the access
      */
     public String getAccess() {
-    	Object access = pHeaders.get(Message.MESSAGE_HEADER_ACCESS);
-        return (access != null ? access.toString() : null);
+    	return pAccess;
     }
 
     /**

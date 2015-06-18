@@ -275,7 +275,7 @@ class HeraldServlet(object):
             extra = {'host': host, 'raw': True}                       
         else:
             # Herald message
-            try:
+            try:            
                 received_msg = utils.from_json(raw_content)                
             except Exception as ex:
                 _logger.exception("DoPOST ERROR:: %s", ex)
