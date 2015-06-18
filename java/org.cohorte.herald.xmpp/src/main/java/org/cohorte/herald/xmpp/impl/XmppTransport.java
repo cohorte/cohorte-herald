@@ -415,9 +415,13 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
             }
         }
 
+        // Get message information
+        final String msgUid = aMessage.getThread();
+        final String replyTo = aMessage.getParentThread();
+        
         // Parse content
-        final MessageReceived rcv_msg;
-    	Object content;
+        MessageReceived rcv_msg = null;
+    	Object content;    	
     	
         try {
         	//content = pSerializer.fromJSON(aMessage.getBody());
@@ -432,24 +436,25 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
             pLogger.log(LogService.LOG_ERROR, "Error parsing message content: "
                     + ex, ex);
             content = aMessage.getBody();
+            rcv_msg = new MessageReceived(msgUid, subject, content, null, null, null, null);
         }
-
-        // Get message information
-        final String msgUid = aMessage.getThread();
-        final String replyTo = aMessage.getParentThread();
-
+       
         // Prepare the extra information
         final XmppExtra extra = new XmppExtra(senderJid, msgUid);
-
+        
+        rcv_msg.addHeader(Message.MESSAGE_HEADER_UID, msgUid);
+        rcv_msg.addHeader(Message.MESSAGE_HEADER_SENDER_UID, senderUid);
+        rcv_msg.addHeader(Message.MESSAGE_HEADER_REPLIES_TO, replyTo);
+        rcv_msg.setContent(content);
+        rcv_msg.setAccess(IXmppConstants.ACCESS_ID);
+        rcv_msg.setExtra(extra);
+        
         // Call back the core service
-        final MessageReceived msgReceived = new MessageReceived(msgUid,
-                subject, content, senderUid, replyTo, IXmppConstants.ACCESS_ID,
-                extra);
 
         if (subject.startsWith(IDiscoveryConstants.SUBJECT_DISCOVERY_PREFIX)) {
             // Handle discovery message
             try {
-                pContact.handleDiscoveryMessage(pHerald, msgReceived);
+                pContact.handleDiscoveryMessage(pHerald, rcv_msg);
 
             } catch (final HeraldException ex) {
                 // Error replying to a discovered peer
@@ -457,7 +462,7 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
                         "Error replying to a discovered peer: " + ex, ex);
             }
         } else {
-            pHerald.handleMessage(msgReceived);
+            pHerald.handleMessage(rcv_msg);
         }
     }
 

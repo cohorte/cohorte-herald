@@ -264,7 +264,9 @@ class HeraldServlet(object):
         
         # Client information
         host = utils.normalize_ip(request.get_client_address()[0])
-
+        
+        message = None
+        
         if content_type != CONTENT_TYPE_JSON:
             # Raw message
             uid = str(uuid.uuid4())
@@ -272,7 +274,12 @@ class HeraldServlet(object):
             #msg_content = raw_content
             msg_content = raw_content
             port = -1
-            extra = {'host': host, 'raw': True}                       
+            extra = {'host': host, 'raw': True}     
+            
+            # construct a new Message bean
+            message = herald.beans.MessageReceived(uid, subject, msg_content,
+                                               None, None,
+                                               ACCESS_ID, None, extra)                  
         else:
             # Herald message
             try:            
@@ -296,6 +303,12 @@ class HeraldServlet(object):
                 msg_content = raw_content
                 port = -1
                 extra = {'host': host, 'raw': True}     
+                
+                # construct a new Message bean
+                message = herald.beans.MessageReceived(uid, subject, msg_content,
+                                               None, None,
+                                               ACCESS_ID, None, extra) 
+                
             else:       
                 # Store sender information
                 try:                 
@@ -319,12 +332,13 @@ class HeraldServlet(object):
                 except ValueError:
                     # Unknown peer UID: keep it as is
                     pass
-
-        # Prepare the bean
-        message = herald.beans.MessageReceived(uid, subject, msg_content,
-                                               sender_uid, reply_to,
-                                               ACCESS_ID, timestamp, extra)
-
+            
+                # Prepare the bean
+                received_msg.add_header(herald.MESSAGE_HEADER_SENDER_UID, sender_uid)
+                received_msg.set_access(ACCESS_ID)
+                received_msg.set_extra(extra)
+                message = received_msg
+                           
         # Log before giving message to Herald
         self._probe.store(
             herald.PROBE_CHANNEL_MSG_RECV,

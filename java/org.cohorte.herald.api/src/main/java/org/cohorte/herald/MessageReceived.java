@@ -25,10 +25,10 @@ package org.cohorte.herald;
 public class MessageReceived extends Message {
 
     /** The access ID of the transport which received this message */
-    private final String pAccess;
+    private String pAccess;
 
     /** Extra configuration for the transport in case of reply */
-    private final Object pExtra;
+    private Object pExtra;
 
 
     /**
@@ -97,13 +97,29 @@ public class MessageReceived extends Message {
     }
 
     /**
+     * Sets the Access.
+     * @param aAccess
+     */
+    public void setAccess(String aAccess) {
+    	pAccess = aAccess;
+    }
+    
+    /**
      * @return the extra configuration
      */
     public Object getExtra() {
 
         return pExtra;
     }
-
+    
+    /**
+     * Sets the extra
+     * @param aExtra
+     */
+    public void setExtra(Object aExtra) {
+    	pExtra = aExtra;
+    }
+    
     /**
      * @return the replyTo
      */
@@ -121,6 +137,8 @@ public class MessageReceived extends Message {
     }
     
 	
+    
+    
     /*
      * (non-Javadoc)
      * 

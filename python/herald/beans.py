@@ -579,3 +579,15 @@ class MessageReceived(Message):
         Extra information set by the transport that received this message
         """
         return self._extra
+
+    def set_access(self, access):
+        """
+        Sets the access
+        """
+        self._access = access
+        
+    def set_extra(self, extra):
+        """
+        Sets the extra
+        """
+        self._extra = extra

@@ -607,10 +607,16 @@ class XmppTransport(object):
         # Extra parameters, for a reply
         extra = {"parent_uid": uid,
                  "sender_jid": sender_jid}
-
+                 
+        received_msg.add_header(herald.MESSAGE_HEADER_UID, uid)
+        received_msg.add_header(herald.MESSAGE_HEADER_SENDER_UID, sender_uid)
+        received_msg.add_header(herald.MESSAGE_HEADER_REPLIES_TO, reply_to)
+        received_msg.set_content(content)
+        received_msg.set_access(self._access_id)
+        received_msg.set_extra(extra)
+        
         # Call back the core service
-        message = beans.MessageReceived(uid, subject, content, sender_uid,
-                                        reply_to, self._access_id, extra=extra)
+        message = received_msg
 
         # Log before giving message to Herald
         self._probe.store(

@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.cohorte.herald.Message;
 import org.cohorte.herald.MessageReceived;
 import org.cohorte.herald.ValueError;
 import org.cohorte.herald.core.utils.MessageUtils;
@@ -187,16 +188,15 @@ public class HttpReceiverServlet extends HttpServlet {
 			            }
 			        } catch (final ValueError ex) {
 			            // Unknown peer: keep the sender UID as is
-			        }		        	
-		        }
-	        	
-	            // Prepare the received message bean
-	            final MessageReceived message = new MessageReceived(msgUid,
-	                    subject, content, senderUid, replyTo,
-	                    IHttpConstants.ACCESS_ID, timestamp, extra);
+			        }	
+			        
+			        rcv_msg.addHeader(Message.MESSAGE_HEADER_SENDER_UID, senderUid);
+			        rcv_msg.setAccess(IHttpConstants.ACCESS_ID);
+			        rcv_msg.setExtra(extra);
+		        }	        	
 	
 	            // Let Herald handle the message
-	            pReceiver.handleMessage(message);
+	            pReceiver.handleMessage(rcv_msg);
 	
 	            // Send response
 	            aResp.setStatus(HttpServletResponse.SC_OK);
