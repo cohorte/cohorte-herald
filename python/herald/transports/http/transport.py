@@ -172,7 +172,7 @@ class HttpTransport(object):
 
         return 'http://{0}:{1}/{2}'.format(host, port, path)
 
-    def __prepare_message(self, message, parent_uid=None):
+    def __prepare_message(self, message, parent_uid=None, target_peer=None, target_group=None):
         """
         Prepares a HTTP request.
 
@@ -197,7 +197,12 @@ class HttpTransport(object):
         if parent_uid:
             #headers['herald-reply-to'] = parent_uid
             message.add_header(herald.MESSAGE_HEADER_REPLIES_TO, parent_uid)
-
+        # update target peer header
+        if target_peer is not None:
+            message.add_header(herald.MESSAGE_HEADER_TARGET_PEER, target_peer.uid) 
+        # update target peer header
+        if target_group is not None:
+            message.add_header(herald.MESSAGE_HEADER_TARGET_GROUP, target_group)     
         if message.subject in herald.SUBJECTS_RAW:
             content = utils.to_str(message.content)
         else:
@@ -243,10 +248,9 @@ class HttpTransport(object):
             # No HTTP access description
             raise InvalidPeerAccess(beans.Target(peer=peer),
                                     "No '{0}' access found"
-                                    .format(self._access_id))
-
+                                    .format(self._access_id))           
         # Send the HTTP request (blocking) and raise an error if necessary
-        headers, content = self.__prepare_message(message, parent_uid)
+        headers, content = self.__prepare_message(message, parent_uid, target_peer=peer)
 
         # Log before sending
         self._probe.store(
@@ -280,7 +284,7 @@ class HttpTransport(object):
 
         """
         # Prepare the message
-        headers, content = self.__prepare_message(message)
+        headers, content = self.__prepare_message(message, target_group=group)
 
         # The list of peers having been reached
         accessed_peers = set()
@@ -305,6 +309,7 @@ class HttpTransport(object):
 
         # Send a request to each peers
         for peer in peers:
+
             # Try to read extra information
             url = self.__get_access(peer)
             if url:

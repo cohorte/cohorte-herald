@@ -74,6 +74,16 @@ MESSAGE_HEADER_SENDER_UID = "sender-uid"
 Message header containing the UID of the peer sender of the message.
 """
 
+MESSAGE_HEADER_TARGET_PEER = "target-peer"
+"""
+Message header containing the UID of the target peer .
+"""
+
+MESSAGE_HEADER_TARGET_GROUP = "target-group"
+"""
+Message header containing the UID of the target group (case of fire_group mode).
+"""
+
 MESSAGE_HEADER_REPLIES_TO = "replies-to"
 """
 Message header containing the UID of the original message that triggered the creation

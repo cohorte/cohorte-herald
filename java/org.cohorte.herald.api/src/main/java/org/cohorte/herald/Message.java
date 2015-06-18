@@ -34,6 +34,8 @@ public class Message {
     public static final String MESSAGE_HEADER_UID = "uid";
     public static final String MESSAGE_HEADER_TIMESTAMP = "timestamp";
 	public static final String MESSAGE_HEADER_SENDER_UID = "sender-uid";
+	public static final String MESSAGE_HEADER_TARGET_PEER = "target-peer";
+	public static final String MESSAGE_HEADER_TARGET_GROUP = "target-group";
 	public static final String MESSAGE_HEADER_REPLIES_TO = "replies-to";
 	public static final String MESSAGE_SUBJECT = "subject";
 	public static final String MESSAGE_CONTENT = "content";

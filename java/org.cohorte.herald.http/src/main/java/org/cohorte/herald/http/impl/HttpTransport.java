@@ -132,7 +132,7 @@ public class HttpTransport implements ITransport {
 		final URL url = getAccessUrl(aPeer, aExtra);
 
 		// Send the HTTP request (blocking)
-		final Map<String, String> headers = makeHeaders(aMessage, parentUid);
+		final Map<String, String> headers = makeHeaders(aMessage, parentUid, aPeer, null);
 		String content;
 		try {
 			content = makeContent(aMessage);
@@ -157,7 +157,7 @@ public class HttpTransport implements ITransport {
 			throws HeraldException {
 
 		// Prepare the message
-		final Map<String, String> headers = makeHeaders(aMessage, null);
+		final Map<String, String> headers = makeHeaders(aMessage, null, null, aGroup);
 		final String content;
 		try {
 			content = makeContent(aMessage);
@@ -340,7 +340,7 @@ public class HttpTransport implements ITransport {
 	 * @return The request headers as a map
 	 */
 	private Map<String, String> makeHeaders(final Message aMessage,
-			final String aParentUid) {
+			final String aParentUid, final Peer aPeer, final String aGroup) {
 
 		final Map<String, String> headers = new LinkedHashMap<>();
 
@@ -349,7 +349,10 @@ public class HttpTransport implements ITransport {
 		aMessage.addHeader(Message.MESSAGE_HEADER_SENDER_UID, pLocalUid);
 		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PORT, Integer.toString(localAccess.getPort()));
 		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PATH, localAccess.getPath());
-		
+		if (aPeer != null) 
+			aMessage.addHeader(Message.MESSAGE_HEADER_TARGET_PEER, aPeer.getUid());
+		if (aGroup != null)
+			aMessage.addHeader(Message.MESSAGE_HEADER_TARGET_GROUP, aGroup);
 		if (aParentUid != null && !aParentUid.isEmpty()) {
 			aMessage.addHeader(Message.MESSAGE_HEADER_REPLIES_TO, aParentUid);
 		}

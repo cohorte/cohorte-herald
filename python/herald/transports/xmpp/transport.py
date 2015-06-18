@@ -685,7 +685,7 @@ class XmppTransport(object):
 
         return jid
 
-    def __send_message(self, msgtype, target, message, parent_uid=None):
+    def __send_message(self, msgtype, target, message, parent_uid=None, target_peer=None, target_group=None):
         """
         Prepares and sends a message over XMPP
 
@@ -701,6 +701,10 @@ class XmppTransport(object):
             # update headers
             local_peer = self._directory.get_local_peer()
             message.add_header(herald.MESSAGE_HEADER_SENDER_UID, local_peer.uid)
+            if target_peer is not None:
+                message.add_header(herald.MESSAGE_HEADER_TARGET_PEER, target_peer.uid)
+            if target_group is not None:
+                message.add_header(herald.MESSAGE_HEADER_TARGET_GROUP, target_group)
             content = utils.to_json(message)
         
         # Prepare an XMPP message, based on the Herald message
@@ -748,7 +752,7 @@ class XmppTransport(object):
                  "transportTarget": str(jid), "repliesTo": parent_uid or ""})
 
             # Send the XMPP message
-            self.__send_message("chat", jid, message, parent_uid)
+            self.__send_message("chat", jid, message, parent_uid, target_peer=peer)
         else:
             # No XMPP access description
             raise InvalidPeerAccess(beans.Target(uid=peer.uid),
@@ -783,5 +787,5 @@ class XmppTransport(object):
              "repliesTo": ""})
 
         # Send the XMPP message
-        self.__send_message("groupchat", group_jid, message)
+        self.__send_message("groupchat", group_jid, message, target_group=group)
         return peers

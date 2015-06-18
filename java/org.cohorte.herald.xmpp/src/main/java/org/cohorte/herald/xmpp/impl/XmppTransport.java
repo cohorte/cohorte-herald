@@ -259,7 +259,9 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
             throw new InvalidPeerAccess(new Target(aPeer),
                     "No XMPP access found");
         }
-
+        // update target_peer header
+        if (aPeer != null)
+        	aMessage.addHeader(Message.MESSAGE_HEADER_TARGET_PEER, aPeer.getUid());
         // Send the XMPP message
         try {
             sendMessage(Type.CHAT, jid, aMessage, parentUid);
@@ -294,7 +296,9 @@ public class XmppTransport implements ITransport, IBotListener, IRoomListener {
             // Use the group as room name
             groupJid = getRoomJid(appId + "--" + aGroup);
         }
-
+        // update target_group header
+        if (aGroup!= null)
+        	aMessage.addHeader(Message.MESSAGE_HEADER_TARGET_GROUP, aGroup);
         // Send the XMPP message
         try {
             sendMessage(Type.GROUPCHAT, groupJid, aMessage, null);
