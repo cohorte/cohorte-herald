@@ -171,6 +171,18 @@ public class Message {
 	}
 	
 	/**
+	 * Removes a header from the message headers list
+	 * @param key
+	 */
+	public void removeHeader(String key) {
+		if (key != null) {
+			if (pHeaders.containsKey(key)) {
+				pHeaders.remove(key);
+			}
+		}
+	}
+	
+	/**
 	 * Gets the list of metadata associated to this message
 	 * @return Dictionary of metadata
 	 */
@@ -197,6 +209,18 @@ public class Message {
 	 */
 	public Object getMetadata(String key) {		
 		return pMetadata.get(key);
+	}
+	
+	/**
+	 * Removes a metadata from the message
+	 * @param key
+	 */
+	public void removeMetadata(String key) {
+		if (key != null) {
+			if (pMetadata.containsKey(key)) {
+				pMetadata.remove(key);
+			}
+		}
 	}
 	
     /*

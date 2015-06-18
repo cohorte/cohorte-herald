@@ -76,7 +76,7 @@ Message header containing the UID of the peer sender of the message.
 
 MESSAGE_HEADER_TARGET_PEER = "target-peer"
 """
-Message header containing the UID of the target peer .
+Message header containing the UID of the target peer.
 """
 
 MESSAGE_HEADER_TARGET_GROUP = "target-group"
