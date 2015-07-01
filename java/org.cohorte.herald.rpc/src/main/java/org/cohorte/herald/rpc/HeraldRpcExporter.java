@@ -55,244 +55,250 @@ import org.osgi.service.log.LogService;
 @Instantiate(name = "herald-rpc-exporter")
 public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
-    /** Supported export configurations */
-    @ServiceProperty(name = Constants.REMOTE_CONFIGS_SUPPORTED, value = "{"
-            + IHeraldRpcConstants.EXPORT_CONFIG + "}")
-    private String[] pConfigurations;
+	/** Supported export configurations */
+	@ServiceProperty(name = Constants.REMOTE_CONFIGS_SUPPORTED, value = "{"
+			+ IHeraldRpcConstants.EXPORT_CONFIG + "}")
+	private String[] pConfigurations;
 
-    /** The bundle context */
-    private final BundleContext pContext;
+	/** The bundle context */
+	private final BundleContext pContext;
 
-    /** The Herald core directory */
-    @Requires
-    private IDirectory pDirectory;
+	/** The Herald core directory */
+	@Requires
+	private IDirectory pDirectory;
 
-    /** Exported services: Name -&gt; ExportEndpoint */
-    private final Map<String, ExportEndpoint> pEndpoints = new LinkedHashMap<String, ExportEndpoint>();
+	/** Exported services: Name -&gt; ExportEndpoint */
+	private final Map<String, ExportEndpoint> pEndpoints = new LinkedHashMap<String, ExportEndpoint>();
 
-    /** Herald message filters */
-    @ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
-            + IHeraldRpcConstants.SUBJECT_REQUEST + ","
-            + IHeraldRpcConstants.SUBJECT_REPLY + "}")
-    private String[] pFilters;
+	/** Herald message filters */
+	@ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
+			+ IHeraldRpcConstants.SUBJECT_REQUEST + ","
+			+ IHeraldRpcConstants.SUBJECT_REPLY + "}")
+	private String[] pFilters;
 
-    /** The JSON-RPC bridge (Jabsorb) */
-    private JSONRPCBridge pJsonRpcBridge;
+	/** The JSON-RPC bridge (Jabsorb) */
+	private JSONRPCBridge pJsonRpcBridge;
 
-    /** Local peer UID */
-    private String pLocalUid;
+	/** Local peer UID */
+	private String pLocalUid;
 
-    /** The logger */
-    @Requires(optional = true)
-    private LogService pLogger;
+	/** The logger */
+	@Requires(optional = true)
+	private LogService pLogger;
 
-    /**
-     * Sets up the component
-     *
-     * @param aContext
-     *            The bundle context
-     */
-    public HeraldRpcExporter(final BundleContext aContext) {
+	/**
+	 * Sets up the component
+	 *
+	 * @param aContext
+	 *            The bundle context
+	 */
+	public HeraldRpcExporter(final BundleContext aContext) {
 
-        pContext = aContext;
-    }
+		pContext = aContext;
+	}
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.cohorte.remote.IServiceExporter#exportService(org.osgi.framework.
-     * ServiceReference, java.lang.String, java.lang.String)
-     */
-    @Override
-    public ExportEndpoint exportService(final ServiceReference<?> aReference,
-            final String aName, final String aFramworkUid)
-            throws BundleException, IllegalArgumentException {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.remote.IServiceExporter#exportService(org.osgi.framework.
+	 * ServiceReference, java.lang.String, java.lang.String)
+	 */
+	@Override
+	public ExportEndpoint exportService(final ServiceReference<?> aReference,
+			final String aName, final String aFramworkUid)
+			throws BundleException, IllegalArgumentException {
 
-        if (pEndpoints.containsKey(aName)) {
-            pLogger.log(LogService.LOG_ERROR,
-                    "Already use Herald-RPC endpoint name: " + aName);
-            return null;
-        }
+		if (pEndpoints.containsKey(aName)) {
+			pLogger.log(LogService.LOG_ERROR,
+					"Already use Herald-RPC endpoint name: " + aName);
+			return null;
+		}
 
-        // Get the service
-        final Object service = pContext.getService(aReference);
+		// Get the service
+		final Object service = pContext.getService(aReference);
 
-        // Prepare extra properties
-        final Map<String, Object> extraProps = new LinkedHashMap<String, Object>();
-        extraProps.put(IHeraldRpcConstants.PROP_HERALDRPC_PEER, pLocalUid);
-        extraProps.put(IHeraldRpcConstants.PROP_HERALDRPC_SUBJECT,
-                IHeraldRpcConstants.SUBJECT_REQUEST);
+		// Prepare extra properties
+		final Map<String, Object> extraProps = new LinkedHashMap<String, Object>();
+		extraProps.put(IHeraldRpcConstants.PROP_HERALDRPC_PEER, pLocalUid);
+		extraProps.put(IHeraldRpcConstants.PROP_HERALDRPC_SUBJECT,
+				IHeraldRpcConstants.SUBJECT_REQUEST);
 
-        // Prepare the endpoint bean
-        final ExportEndpoint endpoint = new ExportEndpoint(UUID.randomUUID()
-                .toString(), pLocalUid, pConfigurations, aName, aReference,
-                extraProps);
+		// Prepare the endpoint bean
+		final ExportEndpoint endpoint = new ExportEndpoint(UUID.randomUUID()
+				.toString(), pLocalUid, pConfigurations, aName, aReference,
+				extraProps);
 
-        // Register the object in the Jabsorb bridge
-        pJsonRpcBridge.registerObject(aName, service);
+		// Register the object in the Jabsorb bridge
+		pJsonRpcBridge.registerObject(aName, service);
 
-        // Store information
-        pEndpoints.put(aName, endpoint);
-        return endpoint;
-    }
+		// Store information
+		pEndpoints.put(aName, endpoint);
+		return endpoint;
+	}
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.cohorte.remote.IServiceExporter#handles(java.lang.String[])
-     */
-    @Override
-    public boolean handles(final String[] aConfigurations) {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.cohorte.remote.IServiceExporter#handles(java.lang.String[])
+	 */
+	@Override
+	public boolean handles(final String[] aConfigurations) {
 
-        if (aConfigurations == null) {
-            // null = "match all"
-            return true;
-        }
+		if (aConfigurations == null) {
+			// null = "match all"
+			return true;
+		}
 
-        // Look for a match in configurations
-        for (final String config : aConfigurations) {
-            for (final String handledConfig : pConfigurations) {
-                if (handledConfig.equals(config)) {
-                    // Got a match
-                    return true;
-                }
-            }
-        }
+		// Look for a match in configurations
+		for (final String config : aConfigurations) {
+			for (final String handledConfig : pConfigurations) {
+				if (handledConfig.equals(config)) {
+					// Got a match
+					return true;
+				}
+			}
+		}
 
-        // No match
-        return false;
-    }
+		// No match
+		return false;
+	}
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
-     * IHerald, org.cohorte.herald.MessageReceived)
-     */
-    @Override
-    public void heraldMessage(final IHerald aHerald,
-            final MessageReceived aMessage) {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
+	 * IHerald, org.cohorte.herald.MessageReceived)
+	 */
+	@Override
+	public void heraldMessage(final IHerald aHerald,
+			final MessageReceived aMessage) {
 
-        // Check content type
-        final Object rawContent = aMessage.getContent();
-        if (!(rawContent instanceof String)) {
-            // Didn't got a string
-            pLogger.log(LogService.LOG_ERROR,
-                    "Herald Jabsorb-RPC message content is not a string");
-        }
+		// Check content type
+		final Object rawContent = aMessage.getContent();
+		if (!(rawContent instanceof String)) {
+			// Didn't got a string
+			pLogger.log(LogService.LOG_ERROR,
+					"Herald Jabsorb-RPC message content is not a string");
+		}
 
-        // Convert the content of the message (request map) to a JSONObject
-        final JSONObject jsonReq;
-        try {
-            jsonReq = new JSONObject((String) rawContent);
-        } catch (final JSONException ex) {
-            pLogger.log(LogService.LOG_ERROR,
-                    "Error parsing the Jabsorb-RPC request: " + ex, ex);
-            return;
-        }
+		// Convert the content of the message (request map) to a JSONObject
+		final JSONObject jsonReq;
+		try {
+			jsonReq = new JSONObject((String) rawContent);
+		} catch (final JSONException ex) {
+			pLogger.log(LogService.LOG_ERROR,
+					"Error parsing the Jabsorb-RPC request: " + ex, ex);
+			return;
+		}
 
-        // Call the method, without context
-        final JSONRPCResult result = pJsonRpcBridge
-                .call(new Object[0], jsonReq);
+		// Call the method, without context
+		final JSONRPCResult result = pJsonRpcBridge
+				.call(new Object[0], jsonReq);
 
-        // Convert the result as a JSON string containing the JSON object
-        final String strResult = new JSONObject(result).toString();
+		// Convert the result as a JSON string containing the JSON object
+		String strResult = null;
+		try {
+			strResult = new JSONObject(result.toString()).toString();
+		} catch (JSONException e) {
+			pLogger.log(LogService.LOG_ERROR,
+					"Error constructing JSON object of RPC result: " + e);
+		}
 
-        // Send the result
-        try {
-            aHerald.reply(aMessage, strResult,
-                    IHeraldRpcConstants.SUBJECT_REPLY);
+		// Send the result
+		try {
+			aHerald.reply(aMessage, strResult,
+					IHeraldRpcConstants.SUBJECT_REPLY);
 
-        } catch (final HeraldException ex) {
-            pLogger.log(LogService.LOG_ERROR, "Error sending RPC result: " + ex);
-        }
-    }
+		} catch (final HeraldException ex) {
+			pLogger.log(LogService.LOG_ERROR, "Error sending RPC result: " + ex);
+		}
+	}
 
-    /**
-     * Component invalidated
-     */
-    @Invalidate
-    public void invalidate() {
+	/**
+	 * Component invalidated
+	 */
+	@Invalidate
+	public void invalidate() {
 
-        // Destroy end points
-        final ExportEndpoint[] endpoints = pEndpoints.values().toArray(
-                new ExportEndpoint[0]);
-        for (final ExportEndpoint endpoint : endpoints) {
-            try {
-                // Release the service, unregister the endpoint
-                unexportService(endpoint);
+		// Destroy end points
+		final ExportEndpoint[] endpoints = pEndpoints.values().toArray(
+				new ExportEndpoint[0]);
+		for (final ExportEndpoint endpoint : endpoints) {
+			try {
+				// Release the service, unregister the endpoint
+				unexportService(endpoint);
 
-            } catch (final Exception ex) {
-                // Just log the error
-                pLogger.log(LogService.LOG_WARNING,
-                        "Error unregistering service: " + ex, ex);
-            }
-        }
+			} catch (final Exception ex) {
+				// Just log the error
+				pLogger.log(LogService.LOG_WARNING,
+						"Error unregistering service: " + ex, ex);
+			}
+		}
 
-        // Clean up
-        pLocalUid = null;
-        pJsonRpcBridge = null;
-    }
+		// Clean up
+		pLocalUid = null;
+		pJsonRpcBridge = null;
+	}
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.cohorte.remote.IServiceExporter#unexportService(org.cohorte.remote
-     * .ExportEndpoint)
-     */
-    @Override
-    public void unexportService(final ExportEndpoint aEndpoint) {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.remote.IServiceExporter#unexportService(org.cohorte.remote
+	 * .ExportEndpoint)
+	 */
+	@Override
+	public void unexportService(final ExportEndpoint aEndpoint) {
 
-        // Pop the endpoint
-        if (pEndpoints.remove(aEndpoint.getName()) != null) {
-            // Destroy the endpoint
-            pJsonRpcBridge.unregisterObject(aEndpoint.getName());
+		// Pop the endpoint
+		if (pEndpoints.remove(aEndpoint.getName()) != null) {
+			// Destroy the endpoint
+			pJsonRpcBridge.unregisterObject(aEndpoint.getName());
 
-            // Release the service
-            pContext.ungetService(aEndpoint.getReference());
+			// Release the service
+			pContext.ungetService(aEndpoint.getReference());
 
-        } else {
-            // Unknown endpoint
-            pLogger.log(LogService.LOG_WARNING, "Unknown endpoint: "
-                    + aEndpoint);
-        }
-    }
+		} else {
+			// Unknown endpoint
+			pLogger.log(LogService.LOG_WARNING, "Unknown endpoint: "
+					+ aEndpoint);
+		}
+	}
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.cohorte.remote.IServiceExporter#updateExport(org.cohorte.remote.
-     * ExportEndpoint, java.lang.String, java.util.Map)
-     */
-    @Override
-    public void updateExport(final ExportEndpoint aEndpoint,
-            final String aNewName, final Map<String, Object> aOldProperties)
-            throws IllegalArgumentException {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.cohorte.remote.IServiceExporter#updateExport(org.cohorte.remote.
+	 * ExportEndpoint, java.lang.String, java.util.Map)
+	 */
+	@Override
+	public void updateExport(final ExportEndpoint aEndpoint,
+			final String aNewName, final Map<String, Object> aOldProperties)
+			throws IllegalArgumentException {
 
-        final ExportEndpoint knownEndpoint = pEndpoints.get(aNewName);
-        if (knownEndpoint != null && !knownEndpoint.equals(aEndpoint)) {
-            // Name already taken by another endpoint: reject it
-            throw new IllegalArgumentException("New name of " + aEndpoint
-                    + " is already in use: " + aNewName);
-        }
+		final ExportEndpoint knownEndpoint = pEndpoints.get(aNewName);
+		if (knownEndpoint != null && !knownEndpoint.equals(aEndpoint)) {
+			// Name already taken by another endpoint: reject it
+			throw new IllegalArgumentException("New name of " + aEndpoint
+					+ " is already in use: " + aNewName);
+		}
 
-        // Update storage
-        pEndpoints.put(aNewName, pEndpoints.remove(aEndpoint.getName()));
+		// Update storage
+		pEndpoints.put(aNewName, pEndpoints.remove(aEndpoint.getName()));
 
-        // Update the endpoint
-        aEndpoint.setName(aNewName);
-    }
+		// Update the endpoint
+		aEndpoint.setName(aNewName);
+	}
 
-    /**
-     * Component validated
-     */
-    @Validate
-    public void validate() {
+	/**
+	 * Component validated
+	 */
+	@Validate
+	public void validate() {
 
-        pLocalUid = pDirectory.getLocalUid();
-        pJsonRpcBridge = new JSONRPCBridge();
-    }
+		pLocalUid = pDirectory.getLocalUid();
+		pJsonRpcBridge = new JSONRPCBridge();
+	}
 }

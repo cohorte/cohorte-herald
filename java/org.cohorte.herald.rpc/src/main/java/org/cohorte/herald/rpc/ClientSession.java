@@ -23,6 +23,7 @@ import org.cohorte.herald.IHerald;
 import org.cohorte.herald.Message;
 import org.jabsorb.ng.client.ClientError;
 import org.jabsorb.ng.client.ISession;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -32,78 +33,82 @@ import org.json.JSONObject;
  */
 public class ClientSession implements ISession {
 
-    /** The Herald core service */
-    private IHerald pHerald;
+	/** The Herald core service */
+	private IHerald pHerald;
 
-    /** The targeted Peer UID */
-    private String pPeerUid;
+	/** The targeted Peer UID */
+	private String pPeerUid;
 
-    /** The request message subject */
-    private String pSubject;
+	/** The request message subject */
+	private String pSubject;
 
-    /**
-     * Sets up members
-     *
-     * @param aHerald
-     *            The Herald core service
-     */
-    public ClientSession(final IHerald aHerald, final String aPeerUid,
-            final String aSubject) {
+	/**
+	 * Sets up members
+	 *
+	 * @param aHerald
+	 *            The Herald core service
+	 */
+	public ClientSession(final IHerald aHerald, final String aPeerUid,
+			final String aSubject) {
 
-        pHerald = aHerald;
-        pPeerUid = aPeerUid;
-        pSubject = aSubject;
-    }
+		pHerald = aHerald;
+		pPeerUid = aPeerUid;
+		pSubject = aSubject;
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.jabsorb.ng.client.ISession#close()
-     */
-    @Override
-    public void close() {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.jabsorb.ng.client.ISession#close()
+	 */
+	@Override
+	public void close() {
 
-        // Clean up
-        pHerald = null;
-        pPeerUid = null;
-        pSubject = null;
-    }
+		// Clean up
+		pHerald = null;
+		pPeerUid = null;
+		pSubject = null;
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.jabsorb.ng.client.ISession#sendAndReceive(org.json.JSONObject)
-     */
-    @Override
-    public JSONObject sendAndReceive(final JSONObject aMessage) {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.jabsorb.ng.client.ISession#sendAndReceive(org.json.JSONObject)
+	 */
+	@Override
+	public JSONObject sendAndReceive(final JSONObject aMessage) {
 
-        Object result;
-        try {
-            // Send the request as a string
-            result = pHerald
-                    .send(pPeerUid,
-                            new Message(pSubject, new JSONObject(aMessage)
-                                    .toString()));
+		Object result;
+		try {
+			// Send the request as a string
+			result = pHerald.send(pPeerUid, new Message(pSubject,
+					new JSONObject(aMessage.toString()).toString()));
 
-        } catch (final HeraldException ex) {
-            // Error sending the message
-            throw new ClientError("Error sending RPC request: " + ex, ex);
-        }
+		} catch (final HeraldException ex) {
+			// Error sending the message
+			throw new ClientError("Error sending RPC request: " + ex, ex);
+		} catch (JSONException e) {
+			// Error on JSON creation
+			throw new ClientError("Error sending RPC request: " + e, e);
+		}
 
-        if (result instanceof String) {
-            try {
-                return new JSONObject((String) result);
-            } catch(org.json.JSONException e) {
-                throw new ClientError("Cannot create a JSONObject from the String : " + result);
-            }
-        }
+		if (result instanceof String) {
+			try {
+				return new JSONObject((String) result);
+			} catch (org.json.JSONException e) {
+				throw new ClientError(
+						"Cannot create a JSONObject from the String : "
+								+ result);
+			}
+		}
 
-        // The reply has already been converted to a map
-        else if (!(result instanceof Map)) {
-            // Bad result
-            throw new ClientError("Bad result content: not a map > " + result.toString() + " -- type=" + result.getClass());
-        }
+		// The reply has already been converted to a map
+		else if (!(result instanceof Map)) {
+			// Bad result
+			throw new ClientError("Bad result content: not a map > "
+					+ result.toString() + " -- type=" + result.getClass());
+		}
 
-        return new JSONObject((Map<?, ?>) result);
-    }
+		return new JSONObject((Map<?, ?>) result);
+	}
 }
