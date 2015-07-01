@@ -20,12 +20,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.felix.ipojo.annotations.Bind;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.ServiceProperty;
+import org.apache.felix.ipojo.annotations.Unbind;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.cohorte.herald.HeraldException;
 import org.cohorte.herald.IConstants;
@@ -76,6 +78,9 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 			+ IHeraldRpcConstants.SUBJECT_REPLY + "}")
 	private String[] pFilters;
 
+	@Requires(id = "herald-core")
+	private IHerald pHerald;
+
 	/** The JSON-RPC bridge (Jabsorb) */
 	private JSONRPCBridge pJsonRpcBridge;
 
@@ -97,9 +102,17 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 		pContext = aContext;
 	}
 
+	/**
+	 * Called when herald is bind to this component
+	 */
+	@Bind(id = "herald-core")
+	public void bindIHerald() {
+		pHerald.addMessageListener(this, pFilters);
+	}
+
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.remote.IServiceExporter#exportService(org.osgi.framework.
 	 * ServiceReference, java.lang.String, java.lang.String)
@@ -139,7 +152,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.cohorte.remote.IServiceExporter#handles(java.lang.String[])
 	 */
 	@Override
@@ -166,7 +179,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
 	 * IHerald, org.cohorte.herald.MessageReceived)
@@ -242,9 +255,19 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 		pJsonRpcBridge = null;
 	}
 
+	/**
+	 * Called when herald is unbind
+	 */
+	@Unbind(id = "herald-core")
+	public void unbindIHerald() {
+		if (pHerald != null) {
+			pHerald.removeMessageListener(this);
+		}
+	}
+
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.remote.IServiceExporter#unexportService(org.cohorte.remote
 	 * .ExportEndpoint)
@@ -269,7 +292,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.cohorte.remote.IServiceExporter#updateExport(org.cohorte.remote.
 	 * ExportEndpoint, java.lang.String, java.util.Map)
 	 */
