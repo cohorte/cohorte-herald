@@ -4,14 +4,14 @@
 Cohorte Herald installation script
 
 :author: Thomas Calmant
-:copyright: Copyright 2014, isandlaTech
+:copyright: Copyright 2015, isandlaTech
 :license: Apache License 2.0
-:version: 0.0.4.dev
+:version: 0.0.4
 :status: Alpha
 
 ..
 
-    Copyright 2014 isandlaTech
+    Copyright 2015 isandlaTech
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ Cohorte Herald installation script
 """
 
 # Module version
-__version_info__ = (0, 0, 4, 'dev')
+__version_info__ = (0, 0, 4)
 __version__ = ".".join(str(x) for x in __version_info__)
 
 # Documentation strings format
