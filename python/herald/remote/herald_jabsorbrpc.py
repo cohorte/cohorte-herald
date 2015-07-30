@@ -220,15 +220,17 @@ class _JsonRpcMethod(object):
         self.__subject = subject
         self.__send = send_method
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         """
         Method is being called
         """
         # Forge the request
         if args:
             args = [jabsorb.to_jabsorb(arg) for arg in args]
+        elif kwargs:
+            kwargs = {key: jabsorb.to_jabsorb(value) for key, value in kwargs.items()}
 
-        request = jsonrpclib.dumps(args, self.__name, encoding='utf-8')
+        request = jsonrpclib.dumps(args or kwargs, self.__name, encoding='utf-8')
 
         # Send it
         reply_message = self.__send(self.__peer, self.__subject, request)
