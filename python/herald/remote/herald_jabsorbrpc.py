@@ -90,7 +90,11 @@ class JabsorbRpcDispatcher(herald_jsonrpc.JsonRpcDispatcher):
         """
         # Normalize parameters
         if params:
-            params = [jabsorb.from_jabsorb(param) for param in params]
+            if isinstance(params, (list, tuple)):
+                params = [jabsorb.from_jabsorb(param) for param in params]
+            else:
+                params = {key: jabsorb.from_jabsorb(value)
+                          for key, value in params.items()}
 
         # Dispatch like JSON-RPC
         return super(JabsorbRpcDispatcher, self)._simple_dispatch(name, params)
