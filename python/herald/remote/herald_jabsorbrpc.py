@@ -228,9 +228,11 @@ class _JsonRpcMethod(object):
         if args:
             args = [jabsorb.to_jabsorb(arg) for arg in args]
         elif kwargs:
-            kwargs = {key: jabsorb.to_jabsorb(value) for key, value in kwargs.items()}
+            kwargs = {key: jabsorb.to_jabsorb(value)
+                      for key, value in kwargs.items()}
 
-        request = jsonrpclib.dumps(args or kwargs, self.__name, encoding='utf-8')
+        request = jsonrpclib.dumps(args or kwargs,
+                                   self.__name, encoding='utf-8')
 
         # Send it
         reply_message = self.__send(self.__peer, self.__subject, request)
