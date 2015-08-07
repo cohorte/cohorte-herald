@@ -19,7 +19,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.cohorte.herald</groupId>
 	<artifactId>cohorte-herald</artifactId>
-	<version>0.0.4</version>
+	<version>0.0.5-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Cohorte Herald :: Root project</name>
@@ -37,8 +37,8 @@
 	<properties>
 		<pkg-version>0.0.2</pkg-version>
 		<osgi-version>5.0.0</osgi-version>
-		<ipojo-version>1.12.0</ipojo-version>
-		<cohorte-remote-version>1.2.0</cohorte-remote-version>
+		<ipojo-version>1.12.1</ipojo-version>
+		<cohorte-remote-version>1.2.1-SNAPSHOT</cohorte-remote-version>
 		<cohorte-jabsorb-version>1.1.0</cohorte-jabsorb-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>

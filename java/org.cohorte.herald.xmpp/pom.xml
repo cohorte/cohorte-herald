@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.cohorte.herald</groupId>
 		<artifactId>cohorte-herald</artifactId>
-		<version>0.0.4</version>
+		<version>0.0.5-SNAPSHOT</version>
 	</parent>
 	<artifactId>org.cohorte.herald.xmpp</artifactId>
 	<name>Cohorte Herald :: XMPP Transport</name>
