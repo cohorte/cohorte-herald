@@ -112,7 +112,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.cohorte.remote.IServiceExporter#exportService(org.osgi.framework.
 	 * ServiceReference, java.lang.String, java.lang.String)
@@ -137,10 +137,18 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 		extraProps.put(IHeraldRpcConstants.PROP_HERALDRPC_SUBJECT,
 				IHeraldRpcConstants.SUBJECT_REQUEST);
 
-		// Prepare the endpoint bean
-		final ExportEndpoint endpoint = new ExportEndpoint(UUID.randomUUID()
-				.toString(), pLocalUid, pConfigurations, aName, aReference,
-				extraProps);
+		final ExportEndpoint endpoint;
+
+		try {
+			// Prepare the endpoint bean
+			endpoint = new ExportEndpoint(UUID.randomUUID().toString(),
+					pLocalUid, pConfigurations, aName, aReference, extraProps);
+		} catch (final IllegalArgumentException e) {
+			// MOD_OG_20150807 remove stacktrace when export is rejected
+			pLogger.log(LogService.LOG_DEBUG,
+					"No exported specifications: nothing to export");
+			return null;
+		}
 
 		// Register the object in the Jabsorb bridge
 		pJsonRpcBridge.registerObject(aName, service);
@@ -152,7 +160,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.cohorte.remote.IServiceExporter#handles(java.lang.String[])
 	 */
 	@Override
@@ -179,7 +187,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
 	 * IHerald, org.cohorte.herald.MessageReceived)
@@ -214,7 +222,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 		String strResult = null;
 		try {
 			strResult = new JSONObject(result.toString()).toString();
-		} catch (JSONException e) {
+		} catch (final JSONException e) {
 			pLogger.log(LogService.LOG_ERROR,
 					"Error constructing JSON object of RPC result: " + e);
 		}
@@ -267,7 +275,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.cohorte.remote.IServiceExporter#unexportService(org.cohorte.remote
 	 * .ExportEndpoint)
@@ -292,7 +300,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.cohorte.remote.IServiceExporter#updateExport(org.cohorte.remote.
 	 * ExportEndpoint, java.lang.String, java.util.Map)
 	 */
