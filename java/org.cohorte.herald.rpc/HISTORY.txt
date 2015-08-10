@@ -1,5 +1,6 @@
 
 de 0.0.4 (release 1.1) à 0.0.5
 
+- MOD_BD_20150810 avoid handling reply messages on HeraldRPCExporter
 - MOD_OG_20150807 remove stacktrace when export is rejected
 

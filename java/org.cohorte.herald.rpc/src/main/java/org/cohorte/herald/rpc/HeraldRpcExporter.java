@@ -73,9 +73,13 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 	private final Map<String, ExportEndpoint> pEndpoints = new LinkedHashMap<String, ExportEndpoint>();
 
 	/** Herald message filters */
+	// MOD_BD_20150810 avoid handling reply messages
 	@ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
-			+ IHeraldRpcConstants.SUBJECT_REQUEST + ","
-			+ IHeraldRpcConstants.SUBJECT_REPLY + "}")
+			+ IHeraldRpcConstants.SUBJECT_REQUEST + /*
+													 * "," +
+													 * IHeraldRpcConstants.
+													 * SUBJECT_REPLY +
+													 */"}")
 	private String[] pFilters;
 
 	@Requires(id = "herald-core")
@@ -112,7 +116,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.remote.IServiceExporter#exportService(org.osgi.framework.
 	 * ServiceReference, java.lang.String, java.lang.String)
@@ -160,7 +164,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.cohorte.remote.IServiceExporter#handles(java.lang.String[])
 	 */
 	@Override
@@ -187,7 +191,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
 	 * IHerald, org.cohorte.herald.MessageReceived)
@@ -275,7 +279,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.remote.IServiceExporter#unexportService(org.cohorte.remote
 	 * .ExportEndpoint)
@@ -300,7 +304,7 @@ public class HeraldRpcExporter implements IServiceExporter, IMessageListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.cohorte.remote.IServiceExporter#updateExport(org.cohorte.remote.
 	 * ExportEndpoint, java.lang.String, java.util.Map)
 	 */
