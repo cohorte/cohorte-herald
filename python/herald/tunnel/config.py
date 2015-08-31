@@ -116,7 +116,7 @@ class FileConfiguration(object):
         """
         String representation
         """
-        return "{0}: {1}".fromat(self.kind, self.filename)
+        return "{0}: {1}".format(self.kind, self.filename)
 
     def to_map(self):
         """
