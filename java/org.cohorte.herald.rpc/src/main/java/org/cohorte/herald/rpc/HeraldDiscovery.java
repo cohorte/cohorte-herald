@@ -16,11 +16,16 @@
 
 package org.cohorte.herald.rpc;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -53,378 +58,445 @@ import org.osgi.service.log.LogService;
  */
 @Component
 @Provides(specifications = { IMessageListener.class, IDirectoryListener.class,
-        IExportEndpointListener.class })
+		IExportEndpointListener.class })
 @Instantiate(name = "herald-rpc-discovery")
 public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
-        IExportEndpointListener {
+IExportEndpointListener {
 
-    /** Prefix to discovery subjects */
-    private static final String SUBJECT_PREFIX = "herald/rpc/discovery";
+	/** Default name of group to whom a discovery message is sent */
+	private static final String DEFAULT_TARGET_GROUP = "all";
 
-    /** The Herald core directory */
-    @Requires
-    private IDirectory pDirectory;
+	/** Property indicating the name of group to whom a message is sent */
+	private static final String PROP_TARGET_GROUP = "herald.rpc.target.group";
 
-    /** The remote services dispatcher */
-    @Requires
-    private IExportsDispatcher pDispatcher;
+	/** Prefix to discovery subjects */
+	private static final String SUBJECT_PREFIX = "herald/rpc/discovery";
 
-    /** Herald message filters */
-    @ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
-            + SUBJECT_PREFIX + "/*}")
-    private String[] pFilters;
+	/** The Herald core directory */
+	@Requires
+	private IDirectory pDirectory;
 
-    /** The herald core service */
-    @Requires
-    private IHerald pHerald;
+	/** The remote services dispatcher */
+	@Requires
+	private IExportsDispatcher pDispatcher;
 
-    /** The logger */
-    @Requires(optional = true)
-    private LogService pLogger;
+	/** Herald message filters */
+	@ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
+			+ SUBJECT_PREFIX + "/*}")
+	private String[] pFilters;
 
-    /** Imported services registry */
-    @Requires
-    private IImportsRegistry pRegistry;
+	/** The herald core service */
+	@Requires
+	private IHerald pHerald;
 
-    /**
-     * Converts an ExportEndpoint bean to a map
-     *
-     * @param aEndpoint
-     *            The bean to convert
-     * @return The map describing the bean
-     */
-    private Map<String, Object> dumpEndpoint(final ExportEndpoint aEndpoint) {
+	/** The logger */
+	@Requires(optional = true)
+	private LogService pLogger;
 
-        final Map<String, Object> dump = new LinkedHashMap<>();
+	/** Imported services registry */
+	@Requires
+	private IImportsRegistry pRegistry;
 
-        // Copy some values as is
-        dump.put("uid", aEndpoint.getUid());
-        dump.put("configurations", aEndpoint.getConfigurations());
-        dump.put("name", aEndpoint.getName());
-        dump.put("specifications", aEndpoint.getExportedSpecs());
+	/**
+	 * Converts an ExportEndpoint bean to a map
+	 *
+	 * @param aEndpoint
+	 *            The bean to convert
+	 * @return The map describing the bean
+	 */
+	private Map<String, Object> dumpEndpoint(final ExportEndpoint aEndpoint) {
 
-        // Send import-side properties
-        dump.put("properties", aEndpoint.makeImportProperties());
-        dump.put("peer", pDirectory.getLocalUid());
-        return dump;
-    }
+		final Map<String, Object> dump = new LinkedHashMap<>();
 
-    /**
-     * Converts a list of ExportEndpoint beans to a list of dictionaries
-     *
-     * @param aEndpoints
-     *            A list of endpoints
-     * @return A list of dictionaries
-     */
-    private List<Map<String, Object>> dumpEndpoints(
-            final ExportEndpoint[] aEndpoints) {
+		// Copy some values as is
+		dump.put("uid", aEndpoint.getUid());
+		dump.put("configurations", aEndpoint.getConfigurations());
+		dump.put("name", aEndpoint.getName());
+		dump.put("specifications", aEndpoint.getExportedSpecs());
 
-        final List<Map<String, Object>> result = new LinkedList<>();
-        for (final ExportEndpoint endpoint : aEndpoints) {
-            result.add(dumpEndpoint(endpoint));
-        }
+		// Send import-side properties
+		dump.put("properties", aEndpoint.makeImportProperties());
+		dump.put("peer", pDirectory.getLocalUid());
+		return dump;
+	}
 
-        return result;
-    }
+	/**
+	 * Converts a list of ExportEndpoint beans to a list of dictionaries
+	 *
+	 * @param aEndpoints
+	 *            A list of endpoints
+	 * @return A list of dictionaries
+	 */
+	private List<Map<String, Object>> dumpEndpoints(
+			final ExportEndpoint[] aEndpoints) {
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.remote.IExportEndpointListener#endpointRemoved(org.cohorte
-     * .remote.ExportEndpoint)
-     */
-    @Override
-    public void endpointRemoved(final ExportEndpoint aEndpoint) {
+		final List<Map<String, Object>> result = new LinkedList<>();
+		for (final ExportEndpoint endpoint : aEndpoints) {
+			result.add(dumpEndpoint(endpoint));
+		}
 
-        final Map<String, String> content = new LinkedHashMap<>();
-        content.put("uid", aEndpoint.getUid());
-        sendMessage("remove", content);
-    }
+		return result;
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.remote.IExportEndpointListener#endpointsAdded(org.cohorte
-     * .remote.ExportEndpoint[])
-     */
-    @Override
-    public void endpointsAdded(final ExportEndpoint[] aEndpoints) {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.remote.IExportEndpointListener#endpointRemoved(org.cohorte
+	 * .remote.ExportEndpoint)
+	 */
+	@Override
+	public void endpointRemoved(final ExportEndpoint aEndpoint) {
 
-        sendMessage("add", dumpEndpoints(aEndpoints));
-    }
+		final Map<String, String> content = new LinkedHashMap<>();
+		content.put("uid", aEndpoint.getUid());
+		final String group = (String) aEndpoint.getProperties().get(
+				PROP_TARGET_GROUP);
+		sendMessage("remove", content, group);
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.remote.IExportEndpointListener#endpointUpdated(org.cohorte
-     * .remote.ExportEndpoint, java.util.Map)
-     */
-    @Override
-    public void endpointUpdated(final ExportEndpoint aEndpoint,
-            final Map<String, Object> aOldProperties) {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.remote.IExportEndpointListener#endpointsAdded(org.cohorte
+	 * .remote.ExportEndpoint[])
+	 */
+	@Override
+	public void endpointsAdded(final ExportEndpoint[] aEndpoints) {
+		final Map<String, Set<ExportEndpoint>> bins = new HashMap<String, Set<ExportEndpoint>>();
+		for (final ExportEndpoint ep : aEndpoints) {
+			final String group = (String) ep.getProperties().get(
+					PROP_TARGET_GROUP);
+			Set<ExportEndpoint> bin = bins.get(group);
+			if (bin == null) {
+				bin = new HashSet<ExportEndpoint>();
+				bins.put(group, bin);
+			}
+			bin.add(ep);
+		}
 
-        final Map<String, Object> content = new LinkedHashMap<>();
-        content.put("uid", aEndpoint.getUid());
-        content.put("properties", aEndpoint.makeImportProperties());
-        sendMessage("update", content);
-    }
+		for (final Entry<String, Set<ExportEndpoint>> entry : bins.entrySet()) {
+			sendMessage(
+					"add",
+					dumpEndpoints(entry.getValue().toArray(
+							new ExportEndpoint[0])), entry.getKey());
+		}
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
-     * IHerald, org.cohorte.herald.MessageReceived)
-     */
-    @SuppressWarnings("unchecked")
-    @Override
-    public void heraldMessage(final IHerald aHerald,
-            final MessageReceived aMessage) throws HeraldException {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.remote.IExportEndpointListener#endpointUpdated(org.cohorte
+	 * .remote.ExportEndpoint, java.util.Map)
+	 */
+	@Override
+	public void endpointUpdated(final ExportEndpoint aEndpoint,
+			final Map<String, Object> aOldProperties) {
 
-        // Extra the kind of message
-        final String subject = aMessage.getSubject();
-        final int kindIndex = subject.lastIndexOf("/");
-        final String kind = subject.substring(kindIndex + 1);
+		final Map<String, Object> content = new LinkedHashMap<>();
+		content.put("uid", aEndpoint.getUid());
+		content.put("properties", aEndpoint.makeImportProperties());
+		final String group = (String) aEndpoint.getProperties().get(
+				PROP_TARGET_GROUP);
+		sendMessage("update", content, group);
+	}
 
-        try {
-            switch (kind) {
-            case "contact": {
-                // Register the endpoints
-                registerEndpoints((List<Map<String, Object>>) aMessage
-                        .getContent());
+	/**
+	 * Select endpoints relevant to a peer
+	 *
+	 * @param aPeer
+	 *            the Peer bean
+	 * @param aEndpoints
+	 *            the original set of endpoints
+	 * @return relevant endpoints, that is endpoints sharing the same group as
+	 *         one of the peer's, or "all"
+	 */
+	private ExportEndpoint[] filterEndpoints(final Peer aPeer,
+			final ExportEndpoint[] aEndpoints) {
+		final Collection<String> groups = aPeer.getGroups();
+		final List<ExportEndpoint> valid = new ArrayList<ExportEndpoint>();
+		for (final ExportEndpoint ep : aEndpoints) {
+			final String target_group = (String) ep.getProperties().get(
+					PROP_TARGET_GROUP);
+			if (target_group == null || groups.contains(target_group)) {
+				valid.add(ep);
+			}
+		}
+		return valid.toArray(new ExportEndpoint[0]);
+	}
 
-                // In case of contact: reply with our dump
-                final List<Map<String, Object>> dump = dumpEndpoints(pDispatcher
-                        .getEndpoints());
-                aHerald.reply(aMessage, dump, SUBJECT_PREFIX + "/add");
-                break;
-            }
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.herald.IMessageListener#heraldMessage(org.cohorte.herald.
+	 * IHerald, org.cohorte.herald.MessageReceived)
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public void heraldMessage(final IHerald aHerald,
+			final MessageReceived aMessage) throws HeraldException {
 
-            case "add": {
-                try {
-                    // Check if the sender is known
-                    pDirectory.getPeer(aMessage.getSender());
+		// Extra the kind of message
+		final String subject = aMessage.getSubject();
+		final int kindIndex = subject.lastIndexOf("/");
+		final String kind = subject.substring(kindIndex + 1);
 
-                    // Peer is known: load the endpoints
-                    registerEndpoints((List<Map<String, Object>>) aMessage
-                            .getContent());
-                } catch (final UnknownPeer ex) {
-                    // Peer is unknown: ignore the message
-                }
-                break;
-            }
+		try {
+			switch (kind) {
+			case "contact": {
+				// Register the endpoints
+				registerEndpoints((List<Map<String, Object>>) aMessage
+						.getContent());
 
-            case "remove": {
-                // The message only contains the UID of the endpoint
-                pRegistry.remove((String) toMap(aMessage.getContent()).get(
-                        "uid"));
-                break;
-            }
+				final ExportEndpoint[] endpoints = filterEndpoints(
+						pDirectory.getPeer(aMessage.getUid()),
+						pDispatcher.getEndpoints());
 
-            case "update": {
-                // Convert message to map
-                final Map<String, Object> content = toMap(aMessage.getContent());
-                final String endpointUid = (String) content.get("uid");
-                final Map<String, Object> newProperties = (Map<String, Object>) content
-                        .get("properties");
+				// In case of contact: reply with our dump
+				final List<Map<String, Object>> dump = dumpEndpoints(endpoints);
+				aHerald.reply(aMessage, dump, SUBJECT_PREFIX + "/add");
+				break;
+			}
 
-                // Update the endpoint
-                pRegistry.update(endpointUid, newProperties);
-                break;
-            }
+			case "add": {
+				try {
+					// Check if the sender is known
+					pDirectory.getPeer(aMessage.getSender());
 
-            default:
-                // Unknown kind
-                pLogger.log(LogService.LOG_DEBUG,
-                        "Unknown kind of discovery event: " + kind);
-                break;
-            }
-        } catch (final ClassCastException ex) {
-            pLogger.log(LogService.LOG_ERROR, "Bad content of discovery '"
-                    + kind + "': " + ex, ex);
-        }
-    }
+					// Peer is known: load the endpoints
+					registerEndpoints((List<Map<String, Object>>) aMessage
+							.getContent());
+				} catch (final UnknownPeer ex) {
+					// Peer is unknown: ignore the message
+				}
+				break;
+			}
 
-    /**
-     * Loads an endpoint map generated by {@link #dumpEndpoint(ExportEndpoint)}
-     *
-     * @param aDump
-     *            The result of {@link #dumpEndpoint(ExportEndpoint)}
-     * @return The corresponding {@link ImportEndpoint} bean
-     */
-    @SuppressWarnings("unchecked")
-    private ImportEndpoint loadEndpoint(final Map<String, Object> aDump) {
+			case "remove": {
+				// The message only contains the UID of the endpoint
+				pRegistry.remove((String) toMap(aMessage.getContent()).get(
+						"uid"));
+				break;
+			}
 
-        final String uid = (String) aDump.get("uid");
-        final String name = (String) aDump.get("name");
-        final String frameworkUid = (String) aDump.get("peer");
-        final String[] configurations = toStringArray(aDump
-                .get("configurations"));
-        final String[] specs = toStringArray(aDump.get("specifications"));
-        final Map<String, Object> properties = (Map<String, Object>) aDump
-                .get("properties");
+			case "update": {
+				// Convert message to map
+				final Map<String, Object> content = toMap(aMessage.getContent());
+				final String endpointUid = (String) content.get("uid");
+				final Map<String, Object> newProperties = (Map<String, Object>) content
+						.get("properties");
 
-        return new ImportEndpoint(uid, frameworkUid, configurations, name,
-                specs, properties);
-    }
+				// Update the endpoint
+				pRegistry.update(endpointUid, newProperties);
+				break;
+			}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.herald.IDirectoryListener#peerRegistered(org.cohorte.herald
-     * .Peer)
-     */
-    @Override
-    public void peerRegistered(final Peer aPeer) {
+			default:
+				// Unknown kind
+				pLogger.log(LogService.LOG_DEBUG,
+						"Unknown kind of discovery event: " + kind);
+				break;
+			}
+		} catch (final ClassCastException ex) {
+			pLogger.log(LogService.LOG_ERROR, "Bad content of discovery '"
+					+ kind + "': " + ex, ex);
+		}
+	}
 
-        sendMessage(aPeer, "contact", dumpEndpoints(pDispatcher.getEndpoints()));
-    }
+	/**
+	 * Loads an endpoint map generated by {@link #dumpEndpoint(ExportEndpoint)}
+	 *
+	 * @param aDump
+	 *            The result of {@link #dumpEndpoint(ExportEndpoint)}
+	 * @return The corresponding {@link ImportEndpoint} bean
+	 */
+	@SuppressWarnings("unchecked")
+	private ImportEndpoint loadEndpoint(final Map<String, Object> aDump) {
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.herald.IDirectoryListener#peerUnregistered(org.cohorte.herald
-     * .Peer)
-     */
-    @Override
-    public void peerUnregistered(final Peer aPeer) {
+		final String uid = (String) aDump.get("uid");
+		final String name = (String) aDump.get("name");
+		final String frameworkUid = (String) aDump.get("peer");
+		final String[] configurations = toStringArray(aDump
+				.get("configurations"));
+		final String[] specs = toStringArray(aDump.get("specifications"));
+		final Map<String, Object> properties = (Map<String, Object>) aDump
+				.get("properties");
 
-        // A peer has gone away
-        pRegistry.lostFramework(aPeer.getUid());
-    }
+		return new ImportEndpoint(uid, frameworkUid, configurations, name,
+				specs, properties);
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.cohorte.herald.IDirectoryListener#peerUpdated(org.cohorte.herald.
-     * Peer, java.lang.String, org.cohorte.herald.Access,
-     * org.cohorte.herald.Access)
-     */
-    @Override
-    public void peerUpdated(final Peer aPeer, final String aAccessId,
-            final Access aData, final Access aPrevious) {
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.herald.IDirectoryListener#peerRegistered(org.cohorte.herald
+	 * .Peer)
+	 */
+	@Override
+	public void peerRegistered(final Peer aPeer) {
 
-        // Do nothing
-    }
+		final ExportEndpoint[] endpoints = filterEndpoints(aPeer,
+				pDispatcher.getEndpoints());
 
-    /**
-     * Registers a list of endpoints
-     *
-     * @param aMessageContent
-     *            A list of maps describing endpoints
-     */
-    private void registerEndpoints(final List<Map<String, Object>> aEndpoints) {
+		sendMessage(aPeer, "contact", dumpEndpoints(endpoints));
+	}
 
-        for (final Map<String, Object> endpointDict : aEndpoints) {
-            final ImportEndpoint endpoint = loadEndpoint(endpointDict);
-            pRegistry.add(endpoint);
-        }
-    }
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.herald.IDirectoryListener#peerUnregistered(org.cohorte.herald
+	 * .Peer)
+	 */
+	@Override
+	public void peerUnregistered(final Peer aPeer) {
 
-    /**
-     * Sends a message to the given peer
-     *
-     * @param aKind
-     *            Kind of discovery message
-     * @param aData
-     *            Content of the message
-     */
-    private void sendMessage(final Peer aPeer, final String aKind,
-            final Object aData) {
+		// A peer has gone away
+		pRegistry.lostFramework(aPeer.getUid());
+	}
 
-        try {
-            pHerald.fire(aPeer,
-                    new Message(SUBJECT_PREFIX + "/" + aKind, aData));
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.cohorte.herald.IDirectoryListener#peerUpdated(org.cohorte.herald.
+	 * Peer, java.lang.String, org.cohorte.herald.Access,
+	 * org.cohorte.herald.Access)
+	 */
+	@Override
+	public void peerUpdated(final Peer aPeer, final String aAccessId,
+			final Access aData, final Access aPrevious) {
 
-        } catch (final NoTransport ex) {
-            pLogger.log(LogService.LOG_ERROR, "Error sending message to peer: "
-                    + aPeer + ": " + ex);
-        }
-    }
+		// Do nothing
+	}
 
-    /**
-     * Sends a message to all peers
-     *
-     * @param aKind
-     *            Kind of discovery message
-     * @param aData
-     *            Content of the message
-     */
-    private void sendMessage(final String aKind, final Object aData) {
+	/**
+	 * Registers a list of endpoints
+	 *
+	 * @param aMessageContent
+	 *            A list of maps describing endpoints
+	 */
+	private void registerEndpoints(final List<Map<String, Object>> aEndpoints) {
 
-        try {
-            pHerald.fireGroup("all", new Message(SUBJECT_PREFIX + "/" + aKind,
-                    aData));
+		for (final Map<String, Object> endpointDict : aEndpoints) {
+			final ImportEndpoint endpoint = loadEndpoint(endpointDict);
+			pRegistry.add(endpoint);
+		}
+	}
 
-        } catch (final NoTransport ex) {
-            pLogger.log(LogService.LOG_ERROR,
-                    "Error sending message to other peers: " + ex);
-        }
-    }
+	/**
+	 * Sends a message to the given peer
+	 *
+	 * @param aKind
+	 *            Kind of discovery message
+	 * @param aData
+	 *            Content of the message
+	 */
+	private void sendMessage(final Peer aPeer, final String aKind,
+			final Object aData) {
 
-    /**
-     * Casts the given object to a map, if possible
-     *
-     * @param aObject
-     *            The object to cast
-     * @return The object, casted as a map
-     * @throws ClassCastException
-     *             The object is not a map
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> toMap(final Object aObject)
-            throws ClassCastException {
+		try {
+			pHerald.fire(aPeer,
+					new Message(SUBJECT_PREFIX + "/" + aKind, aData));
 
-        return (Map<String, Object>) aObject;
-    }
+		} catch (final NoTransport ex) {
+			pLogger.log(LogService.LOG_ERROR, "Error sending message to peer: "
+					+ aPeer + ": " + ex);
+		}
+	}
 
-    /**
-     * Converts the given object to an array of strings
-     *
-     * @param aData
-     *            Object to convert
-     * @return A string array, or null
-     * @throws ClassCastException
-     *             Can't convert the object
-     */
-    private String[] toStringArray(final Object aData) {
+	/**
+	 * Sends a message to a group of peers
+	 *
+	 * @param aKind
+	 *            Kind of discovery message
+	 * @param aData
+	 *            Content of the message
+	 *
+	 * @param group
+	 *            Group's name
+	 */
+	private void sendMessage(final String aKind, final Object aData,
+			final String aGroup) {
 
-        if (aData instanceof String[]) {
-            // Nothing to do
-            return (String[]) aData;
+		final String group;
+		if (aGroup == null) {
+			group = DEFAULT_TARGET_GROUP;
+		} else {
+			group = aGroup;
+		}
 
-        } else if (aData instanceof Object[]) {
-            // Simply convert the array
-            final Object[] source = (Object[]) aData;
-            final String[] result = new String[source.length];
-            for (int i = 0; i < source.length; i++) {
-                result[i] = (String) source[i];
-            }
-            return result;
+		try {
+			pHerald.fireGroup(group, new Message(SUBJECT_PREFIX + "/" + aKind,
+					aData));
 
-        } else if (aData instanceof Collection) {
-            // Cast all elements of the collection
-            final Collection<?> source = (Collection<?>) aData;
-            final String[] result = new String[source.size()];
-            int i = 0;
-            for (final Object data : source) {
-                result[i++] = (String) data;
-            }
-            return result;
+		} catch (final NoTransport ex) {
+			pLogger.log(LogService.LOG_ERROR,
+					"Error sending message to other peers: " + ex);
+		}
+	}
 
-        } else if (aData == null) {
-            // Keep null as is
-            return null;
-        } else {
-            // Unknown: let Java try to do the job
-            return (String[]) aData;
-        }
+	/**
+	 * Casts the given object to a map, if possible
+	 *
+	 * @param aObject
+	 *            The object to cast
+	 * @return The object, casted as a map
+	 * @throws ClassCastException
+	 *             The object is not a map
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> toMap(final Object aObject)
+			throws ClassCastException {
 
-    }
+		return (Map<String, Object>) aObject;
+	}
+
+	/**
+	 * Converts the given object to an array of strings
+	 *
+	 * @param aData
+	 *            Object to convert
+	 * @return A string array, or null
+	 * @throws ClassCastException
+	 *             Can't convert the object
+	 */
+	private String[] toStringArray(final Object aData) {
+
+		if (aData instanceof String[]) {
+			// Nothing to do
+			return (String[]) aData;
+
+		} else if (aData instanceof Object[]) {
+			// Simply convert the array
+			final Object[] source = (Object[]) aData;
+			final String[] result = new String[source.length];
+			for (int i = 0; i < source.length; i++) {
+				result[i] = (String) source[i];
+			}
+			return result;
+
+		} else if (aData instanceof Collection) {
+			// Cast all elements of the collection
+			final Collection<?> source = (Collection<?>) aData;
+			final String[] result = new String[source.size()];
+			int i = 0;
+			for (final Object data : source) {
+				result[i++] = (String) data;
+			}
+			return result;
+
+		} else if (aData == null) {
+			// Keep null as is
+			return null;
+		} else {
+			// Unknown: let Java try to do the job
+			return (String[]) aData;
+		}
+
+	}
 }

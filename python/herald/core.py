@@ -475,7 +475,7 @@ class Herald(object):
             try:
                 # Get the original message UID and Subject
                 uid = message.content['uid']
-                exception = NoListener(message.sender, uid,
+                exception = NoListener(beans.Target(message.sender), uid,
                                        message.content['subject'])
             except KeyError:
                 # Invalid error content...
