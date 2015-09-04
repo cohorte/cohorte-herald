@@ -490,7 +490,7 @@ class Herald(object):
 
             # ... notify post() callers
             try:
-                self.__waiting_posts.pop(uid).errback(self, exception)
+                self.__waiting_posts[uid].errback(self, exception)
             except KeyError:
                 # No error callback for this message
                 pass
