@@ -139,6 +139,8 @@ class SocketInputTCP(object):
         """
         Starts the tunnel
         """
+        self.__running = True
+
         thread = threading.Thread(target=self.read_loop,
                                   name="Herald-Tunnel-SocketTCPInput")
         thread.daemon = True

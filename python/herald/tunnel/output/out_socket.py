@@ -115,6 +115,7 @@ class SocketOutputTunnel(object):
         """
         Starts the tunnel
         """
+        self.__stop_event.clear()
         thread = threading.Thread(target=self.__read_loop,
                                   name="Herald-Tunnel-Socket-Output")
         thread.daemon = True
