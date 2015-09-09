@@ -57,11 +57,9 @@ import org.osgi.service.log.LogService;
  * @author Thomas Calmant
  */
 @Component
-@Provides(specifications = { IMessageListener.class, IDirectoryListener.class,
-		IExportEndpointListener.class })
+@Provides(specifications = { IMessageListener.class, IDirectoryListener.class, IExportEndpointListener.class })
 @Instantiate(name = "herald-rpc-discovery")
-public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
-IExportEndpointListener {
+public class HeraldDiscovery implements IMessageListener, IDirectoryListener, IExportEndpointListener {
 
 	/** Default name of group to whom a discovery message is sent */
 	private static final String DEFAULT_TARGET_GROUP = "all";
@@ -81,8 +79,7 @@ IExportEndpointListener {
 	private IExportsDispatcher pDispatcher;
 
 	/** Herald message filters */
-	@ServiceProperty(name = IConstants.PROP_FILTERS, value = "{"
-			+ SUBJECT_PREFIX + "/*}")
+	@ServiceProperty(name = IConstants.PROP_FILTERS, value = "{" + SUBJECT_PREFIX + "/*}")
 	private String[] pFilters;
 
 	/** The herald core service */
@@ -127,8 +124,7 @@ IExportEndpointListener {
 	 *            A list of endpoints
 	 * @return A list of dictionaries
 	 */
-	private List<Map<String, Object>> dumpEndpoints(
-			final ExportEndpoint[] aEndpoints) {
+	private List<Map<String, Object>> dumpEndpoints(final ExportEndpoint[] aEndpoints) {
 
 		final List<Map<String, Object>> result = new LinkedList<>();
 		for (final ExportEndpoint endpoint : aEndpoints) {
@@ -150,8 +146,7 @@ IExportEndpointListener {
 
 		final Map<String, String> content = new LinkedHashMap<>();
 		content.put("uid", aEndpoint.getUid());
-		final String group = (String) aEndpoint.getProperties().get(
-				PROP_TARGET_GROUP);
+		final String group = getTargetGroup(aEndpoint);
 		sendMessage("remove", content, group);
 	}
 
@@ -166,8 +161,7 @@ IExportEndpointListener {
 	public void endpointsAdded(final ExportEndpoint[] aEndpoints) {
 		final Map<String, Set<ExportEndpoint>> bins = new HashMap<String, Set<ExportEndpoint>>();
 		for (final ExportEndpoint ep : aEndpoints) {
-			final String group = (String) ep.getProperties().get(
-					PROP_TARGET_GROUP);
+			final String group = getTargetGroup(ep);
 			Set<ExportEndpoint> bin = bins.get(group);
 			if (bin == null) {
 				bin = new HashSet<ExportEndpoint>();
@@ -177,10 +171,7 @@ IExportEndpointListener {
 		}
 
 		for (final Entry<String, Set<ExportEndpoint>> entry : bins.entrySet()) {
-			sendMessage(
-					"add",
-					dumpEndpoints(entry.getValue().toArray(
-							new ExportEndpoint[0])), entry.getKey());
+			sendMessage("add", dumpEndpoints(entry.getValue().toArray(new ExportEndpoint[0])), entry.getKey());
 		}
 	}
 
@@ -192,14 +183,12 @@ IExportEndpointListener {
 	 * .remote.ExportEndpoint, java.util.Map)
 	 */
 	@Override
-	public void endpointUpdated(final ExportEndpoint aEndpoint,
-			final Map<String, Object> aOldProperties) {
+	public void endpointUpdated(final ExportEndpoint aEndpoint, final Map<String, Object> aOldProperties) {
 
 		final Map<String, Object> content = new LinkedHashMap<>();
 		content.put("uid", aEndpoint.getUid());
 		content.put("properties", aEndpoint.makeImportProperties());
-		final String group = (String) aEndpoint.getProperties().get(
-				PROP_TARGET_GROUP);
+		final String group = getTargetGroup(aEndpoint);
 		sendMessage("update", content, group);
 	}
 
@@ -213,18 +202,28 @@ IExportEndpointListener {
 	 * @return relevant endpoints, that is endpoints sharing the same group as
 	 *         one of the peer's, or "all"
 	 */
-	private ExportEndpoint[] filterEndpoints(final Peer aPeer,
-			final ExportEndpoint[] aEndpoints) {
+	private ExportEndpoint[] filterEndpoints(final Peer aPeer, final ExportEndpoint[] aEndpoints) {
 		final Collection<String> groups = aPeer.getGroups();
 		final List<ExportEndpoint> valid = new ArrayList<ExportEndpoint>();
 		for (final ExportEndpoint ep : aEndpoints) {
-			final String target_group = (String) ep.getProperties().get(
-					PROP_TARGET_GROUP);
+			final String target_group = getTargetGroup(ep);
 			if (target_group == null || groups.contains(target_group)) {
 				valid.add(ep);
 			}
 		}
+
 		return valid.toArray(new ExportEndpoint[0]);
+	}
+
+	/**
+	 * Returns an endpoint's target group, or {@code DEFAULT_TARGET_GROUP} if no
+	 * such property exists.
+	 *
+	 * @param ep
+	 * @return
+	 */
+	private String getTargetGroup(final ExportEndpoint ep) {
+		return (String) ep.getProperties().getOrDefault(PROP_TARGET_GROUP, DEFAULT_TARGET_GROUP);
 	}
 
 	/*
@@ -236,8 +235,7 @@ IExportEndpointListener {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public void heraldMessage(final IHerald aHerald,
-			final MessageReceived aMessage) throws HeraldException {
+	public void heraldMessage(final IHerald aHerald, final MessageReceived aMessage) throws HeraldException {
 
 		// Extra the kind of message
 		final String subject = aMessage.getSubject();
@@ -247,12 +245,12 @@ IExportEndpointListener {
 		try {
 			switch (kind) {
 			case "contact": {
-				// Register the endpoints
-				registerEndpoints((List<Map<String, Object>>) aMessage
-						.getContent());
+				pLogger.log(LogService.LOG_DEBUG, "Contact established with peer " + aMessage.getSender() + ".");
 
-				final ExportEndpoint[] endpoints = filterEndpoints(
-						pDirectory.getPeer(aMessage.getUid()),
+				// Register the endpoints
+				registerEndpoints((List<Map<String, Object>>) aMessage.getContent());
+
+				final ExportEndpoint[] endpoints = filterEndpoints(pDirectory.getPeer(aMessage.getSender()),
 						pDispatcher.getEndpoints());
 
 				// In case of contact: reply with our dump
@@ -267,8 +265,7 @@ IExportEndpointListener {
 					pDirectory.getPeer(aMessage.getSender());
 
 					// Peer is known: load the endpoints
-					registerEndpoints((List<Map<String, Object>>) aMessage
-							.getContent());
+					registerEndpoints((List<Map<String, Object>>) aMessage.getContent());
 				} catch (final UnknownPeer ex) {
 					// Peer is unknown: ignore the message
 				}
@@ -277,8 +274,7 @@ IExportEndpointListener {
 
 			case "remove": {
 				// The message only contains the UID of the endpoint
-				pRegistry.remove((String) toMap(aMessage.getContent()).get(
-						"uid"));
+				pRegistry.remove((String) toMap(aMessage.getContent()).get("uid"));
 				break;
 			}
 
@@ -286,8 +282,7 @@ IExportEndpointListener {
 				// Convert message to map
 				final Map<String, Object> content = toMap(aMessage.getContent());
 				final String endpointUid = (String) content.get("uid");
-				final Map<String, Object> newProperties = (Map<String, Object>) content
-						.get("properties");
+				final Map<String, Object> newProperties = (Map<String, Object>) content.get("properties");
 
 				// Update the endpoint
 				pRegistry.update(endpointUid, newProperties);
@@ -296,13 +291,11 @@ IExportEndpointListener {
 
 			default:
 				// Unknown kind
-				pLogger.log(LogService.LOG_DEBUG,
-						"Unknown kind of discovery event: " + kind);
+				pLogger.log(LogService.LOG_DEBUG, "Unknown kind of discovery event: " + kind);
 				break;
 			}
 		} catch (final ClassCastException ex) {
-			pLogger.log(LogService.LOG_ERROR, "Bad content of discovery '"
-					+ kind + "': " + ex, ex);
+			pLogger.log(LogService.LOG_ERROR, "Bad content of discovery '" + kind + "': " + ex, ex);
 		}
 	}
 
@@ -319,14 +312,11 @@ IExportEndpointListener {
 		final String uid = (String) aDump.get("uid");
 		final String name = (String) aDump.get("name");
 		final String frameworkUid = (String) aDump.get("peer");
-		final String[] configurations = toStringArray(aDump
-				.get("configurations"));
+		final String[] configurations = toStringArray(aDump.get("configurations"));
 		final String[] specs = toStringArray(aDump.get("specifications"));
-		final Map<String, Object> properties = (Map<String, Object>) aDump
-				.get("properties");
+		final Map<String, Object> properties = (Map<String, Object>) aDump.get("properties");
 
-		return new ImportEndpoint(uid, frameworkUid, configurations, name,
-				specs, properties);
+		return new ImportEndpoint(uid, frameworkUid, configurations, name, specs, properties);
 	}
 
 	/*
@@ -338,9 +328,8 @@ IExportEndpointListener {
 	 */
 	@Override
 	public void peerRegistered(final Peer aPeer) {
-
-		final ExportEndpoint[] endpoints = filterEndpoints(aPeer,
-				pDispatcher.getEndpoints());
+		pLogger.log(LogService.LOG_DEBUG, "Registering peer " + aPeer.getName() + "'s endpoints...");
+		final ExportEndpoint[] endpoints = filterEndpoints(aPeer, pDispatcher.getEndpoints());
 
 		sendMessage(aPeer, "contact", dumpEndpoints(endpoints));
 	}
@@ -368,8 +357,7 @@ IExportEndpointListener {
 	 * org.cohorte.herald.Access)
 	 */
 	@Override
-	public void peerUpdated(final Peer aPeer, final String aAccessId,
-			final Access aData, final Access aPrevious) {
+	public void peerUpdated(final Peer aPeer, final String aAccessId, final Access aData, final Access aPrevious) {
 
 		// Do nothing
 	}
@@ -396,16 +384,13 @@ IExportEndpointListener {
 	 * @param aData
 	 *            Content of the message
 	 */
-	private void sendMessage(final Peer aPeer, final String aKind,
-			final Object aData) {
+	private void sendMessage(final Peer aPeer, final String aKind, final Object aData) {
 
 		try {
-			pHerald.fire(aPeer,
-					new Message(SUBJECT_PREFIX + "/" + aKind, aData));
+			pHerald.fire(aPeer, new Message(SUBJECT_PREFIX + "/" + aKind, aData));
 
 		} catch (final NoTransport ex) {
-			pLogger.log(LogService.LOG_ERROR, "Error sending message to peer: "
-					+ aPeer + ": " + ex);
+			pLogger.log(LogService.LOG_ERROR, "Error sending message to peer: " + aPeer + ": " + ex);
 		}
 	}
 
@@ -420,23 +405,13 @@ IExportEndpointListener {
 	 * @param group
 	 *            Group's name
 	 */
-	private void sendMessage(final String aKind, final Object aData,
-			final String aGroup) {
-
-		final String group;
-		if (aGroup == null) {
-			group = DEFAULT_TARGET_GROUP;
-		} else {
-			group = aGroup;
-		}
+	private void sendMessage(final String aKind, final Object aData, final String aGroup) {
 
 		try {
-			pHerald.fireGroup(group, new Message(SUBJECT_PREFIX + "/" + aKind,
-					aData));
+			pHerald.fireGroup(aGroup, new Message(SUBJECT_PREFIX + "/" + aKind, aData));
 
 		} catch (final NoTransport ex) {
-			pLogger.log(LogService.LOG_ERROR,
-					"Error sending message to other peers: " + ex);
+			pLogger.log(LogService.LOG_ERROR, "Error sending message to other peers: " + ex);
 		}
 	}
 
@@ -450,8 +425,7 @@ IExportEndpointListener {
 	 *             The object is not a map
 	 */
 	@SuppressWarnings("unchecked")
-	private Map<String, Object> toMap(final Object aObject)
-			throws ClassCastException {
+	private Map<String, Object> toMap(final Object aObject) throws ClassCastException {
 
 		return (Map<String, Object>) aObject;
 	}
