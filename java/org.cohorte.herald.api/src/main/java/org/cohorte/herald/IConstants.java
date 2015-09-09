@@ -23,53 +23,56 @@ package org.cohorte.herald;
  */
 public interface IConstants {
 
-    /**
-     * Default application ID
-     */
-    String DEFAULT_APPLICATION_ID = "<herald-legacy>";
+	/**
+	 * Default application ID
+	 */
+	String DEFAULT_APPLICATION_ID = "<herald-legacy>";
 
-    /**
-     * ID of the application the local peer is part of. Peers of other
-     * applications will be ignored.
-     */
-    String FWPROP_APPLICATION_ID = "herald.application.id";
+	/**
+	 * ID of the application the local peer is part of. Peers of other
+	 * applications will be ignored.
+	 */
+	String FWPROP_APPLICATION_ID = "herald.application.id";
 
-    /**
-     * Framework property: Human-readable name of the node hosting the peer.
-     * Defaults to the node UID.
-     */
-    String FWPROP_NODE_NAME = "herald.node.name";
+	/**
+	 * Framework property: Human-readable name of the node hosting the peer.
+	 * Defaults to the node UID.
+	 */
+	String FWPROP_NODE_NAME = "herald.node.name";
 
-    /**
-     * Framework property: UID of the node hosting the peer. Defaults to the
-     * peer UID.
-     */
-    String FWPROP_NODE_UID = "herald.node.uid";
+	/**
+	 * Framework property: UID of the node hosting the peer. Defaults to the
+	 * peer UID.
+	 */
+	String FWPROP_NODE_UID = "herald.node.uid";
 
-    /**
-     * Framework property: The comma-separated list of groups the peer belongs
-     * to
-     */
-    String FWPROP_PEER_GROUPS = "herald.peer.groups";
+	/**
+	 * Framework property: The comma-separated list of groups the peer belongs
+	 * to
+	 */
+	String FWPROP_PEER_GROUPS = "herald.peer.groups";
 
-    /**
-     * Framework property: Human-readable name of the peer. Default to the peer
-     * UID.
-     */
-    String FWPROP_PEER_NAME = "herald.peer.name";
+	/**
+	 * Framework property: Human-readable name of the peer. Default to the peer
+	 * UID.
+	 */
+	String FWPROP_PEER_NAME = "herald.peer.name";
 
-    /**
-     * Framework property: UID of the peer
-     */
-    String FWPROP_PEER_UID = "herald.peer.uid";
+	/**
+	 * Framework property: UID of the peer
+	 */
+	String FWPROP_PEER_UID = "herald.peer.uid";
 
-    /**
-     * Unique name of the kind of access a transport implementation handles
-     */
-    String PROP_ACCESS_ID = "herald.access.id";
+	/**
+	 * Unique name of the kind of access a transport implementation handles
+	 */
+	String PROP_ACCESS_ID = "herald.access.id";
 
-    /**
-     * A set of filename patterns to filter messages
-     */
-    String PROP_FILTERS = "herald.filters";
+	/**
+	 * A set of filename patterns to filter messages
+	 */
+	String PROP_FILTERS = "herald.filters";
+
+	/** Property indicating the name of group to whom a message is sent */
+	String PROP_TARGET_GROUP = "herald.rpc.target.group";
 }

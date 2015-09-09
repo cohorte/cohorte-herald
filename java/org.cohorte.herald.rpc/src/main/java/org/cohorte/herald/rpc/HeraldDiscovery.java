@@ -64,9 +64,6 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener, IE
 	/** Default name of group to whom a discovery message is sent */
 	private static final String DEFAULT_TARGET_GROUP = "all";
 
-	/** Property indicating the name of group to whom a message is sent */
-	private static final String PROP_TARGET_GROUP = "herald.rpc.target.group";
-
 	/** Prefix to discovery subjects */
 	private static final String SUBJECT_PREFIX = "herald/rpc/discovery";
 
@@ -223,7 +220,7 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener, IE
 	 * @return
 	 */
 	private String getTargetGroup(final ExportEndpoint ep) {
-		return (String) ep.getProperties().getOrDefault(PROP_TARGET_GROUP, DEFAULT_TARGET_GROUP);
+		return (String) ep.getProperties().getOrDefault(IConstants.PROP_TARGET_GROUP, DEFAULT_TARGET_GROUP);
 	}
 
 	/*
