@@ -55,3 +55,13 @@ FACTORY_HERALD_JSONRPC_IMPORTER = 'herald-rpc-importer-jsonrpc-factory'
 """
 Name of the component factory for the jsonrpclib-based importer
 """
+
+PROP_TARGET_GROUP = 'herald.rpc.target.group'
+"""
+Name of group to whom a discovery message is sent.
+"""
+
+DEFAULT_TARGET_GROUP = 'all'
+"""
+Default name of group to whom a discovery message is sent.
+"""

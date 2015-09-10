@@ -475,7 +475,7 @@ class Herald(object):
             try:
                 # Get the original message UID and Subject
                 uid = message.content['uid']
-                exception = NoListener(message.sender, uid,
+                exception = NoListener(beans.Target(message.sender), uid,
                                        message.content['subject'])
             except KeyError:
                 # Invalid error content...
@@ -490,7 +490,7 @@ class Herald(object):
 
             # ... notify post() callers
             try:
-                self.__waiting_posts.pop(uid).errback(self, exception)
+                self.__waiting_posts[uid].errback(self, exception)
             except KeyError:
                 # No error callback for this message
                 pass

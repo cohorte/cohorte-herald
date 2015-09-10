@@ -47,6 +47,8 @@ import pelix.remote.beans
 # Standard library
 import logging
 
+from . import PROP_TARGET_GROUP, DEFAULT_TARGET_GROUP
+
 # ------------------------------------------------------------------------------
 
 _logger = logging.getLogger(__name__)
@@ -133,14 +135,15 @@ class HeraldDiscovery(object):
         """
         return '/'.join(('herald', 'rpc', 'discovery', kind))
 
-    def __send_message(self, kind, content):
+    def __send_message(self, kind, content, group=DEFAULT_TARGET_GROUP):
         """
         Fires a discovery message to all peers
 
         :param kind: Kind of discovery message
         :param content: Content of the message
+        :param group: Name of the group to whom the message is to be sent
         """
-        self._herald.fire_group('all', beans.Message(self.__subject(kind),
+        self._herald.fire_group(group, beans.Message(self.__subject(kind),
                                                      content))
 
     def __register_endpoints(self, peer_uid, endpoints_dicts):
@@ -157,6 +160,21 @@ class HeraldDiscovery(object):
             except KeyError as ex:
                 _logger.error("Unreadable endpoint from %s: missing %s",
                               peer_uid, ex)
+
+    @staticmethod
+    def __filter_endpoints(peer, endpoints):
+        """
+        Select endpoints relevant to a peer
+        :param peer: the Peer bean
+        :param endpoints: the original set of endpoints
+        :return: a generator of the relevant endpoints
+        """
+        # Select relevant endpoints
+        accepted_groups = set(peer.groups)
+        accepted_groups.add(None)
+        return (endpoint for endpoint in endpoints
+                if endpoint.get_properties().get(PROP_TARGET_GROUP)
+                in accepted_groups)
 
     def herald_message(self, herald_svc, message):
         """
@@ -178,8 +196,12 @@ class HeraldDiscovery(object):
             # Register the new endpoints
             self.__register_endpoints(message.sender, message.content)
 
+            endpoints = self.__filter_endpoints(
+                self._directory.get_peer(message.sender),
+                self._dispatcher.get_endpoints())
+
             # Reply with the whole list of our exported endpoints
-            endpoints = self._dump_endpoints(self._dispatcher.get_endpoints())
+            endpoints = self._dump_endpoints(endpoints)
             herald_svc.reply(message, endpoints, self.__subject("add"))
         elif kind == 'add' and message.sender in self._directory:
             # New endpoint available on a known peer
@@ -202,8 +224,12 @@ class HeraldDiscovery(object):
 
         :param peer: The new peer
         """
+        # Select relevant endpoints
+        endpoints = self.__filter_endpoints(
+            peer, self._dispatcher.get_endpoints())
+
         # Send a contact message, with our list of endpoints
-        endpoints = self._dump_endpoints(self._dispatcher.get_endpoints())
+        endpoints = self._dump_endpoints(endpoints)
         self._herald.fire(peer,
                           beans.Message(self.__subject('contact'), endpoints))
 
@@ -227,7 +253,16 @@ class HeraldDiscovery(object):
 
         :param endpoints: A list of ExportEndpoint beans
         """
-        self.__send_message('add', self._dump_endpoints(endpoints))
+        # Segregate endpoints according to their target group name.
+        bins = {}
+        for ep in endpoints:
+            target_group = ep.get_properties() \
+                .get(PROP_TARGET_GROUP, DEFAULT_TARGET_GROUP)
+            bins.setdefault(target_group, []).append(ep)
+        # Send an add message per target group
+        for target_group, eps in bins.items():
+            self.__send_message('add', self._dump_endpoints(eps),
+                                target_group)
 
     def endpoint_updated(self, endpoint, _):
         """
@@ -236,12 +271,18 @@ class HeraldDiscovery(object):
         :param endpoint: An updated ExportEndpoint bean
         :param _: Previous value of the endpoint properties
         """
-        self.__send_message('update',
-                            {"uid": endpoint.uid,
-                             "properties": endpoint.make_import_properties()})
+        self.__send_message(
+            'update',
+            {"uid": endpoint.uid,
+             "properties": endpoint.make_import_properties()},
+            endpoint.get_properties().get(
+                PROP_TARGET_GROUP, DEFAULT_TARGET_GROUP))
 
     def endpoint_removed(self, endpoint):
         """
         An endpoint has been removed
         """
-        self.__send_message('remove', {"uid": endpoint.uid})
+        self.__send_message(
+            'remove', {"uid": endpoint.uid},
+            endpoint.get_properties().get(
+                PROP_TARGET_GROUP, DEFAULT_TARGET_GROUP))
