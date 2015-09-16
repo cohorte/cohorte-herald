@@ -70,10 +70,10 @@
 							org.jabsorb.ng,
 							org.jabsorb.ng.client,
 							org.jabsorb.ng.serializer,
-							org.cohorte.remote;version="1.2.0",
-							org.cohorte.remote.utilities;version="1.0.0",
-							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.utils;version=${pkg-version}
+							org.cohorte.remote,
+							org.cohorte.remote.utilities,
+							org.cohorte.herald,
+							org.cohorte.herald.utils
 						</Import-Package>
 						<Export-Package>!*</Export-Package>
 					</instructions>
