@@ -35,144 +35,136 @@ import org.osgi.service.log.LogService;
  */
 public class PeerContact {
 
-    /** Delayed notifications store */
-    private final Map<String, IDelayedNotification> pDelayedNotifs = new LinkedHashMap<String, IDelayedNotification>();
+	/** Delayed notifications store */
+	private final Map<String, IDelayedNotification> pDelayedNotifs = new LinkedHashMap<String, IDelayedNotification>();
 
-    /** The Herald Core directory */
-    private final IDirectory pDirectory;
+	/** The Herald Core directory */
+	private final IDirectory pDirectory;
 
-    /** The description loading hook */
-    private final IContactHook pHook;
+	/** The description loading hook */
+	private final IContactHook pHook;
 
-    /** The log service */
-    private final LogService pLogger;
+	/** The log service */
+	private final LogService pLogger;
 
-    /**
-     * Sets up members
-     *
-     * @param aDirectory
-     *            The Herald Core directory
-     * @param aHook
-     *            A hook to update the description of a peer before storing it
-     */
-    public PeerContact(final IDirectory aDirectory, final IContactHook aHook,
-            final LogService aLogger) {
+	/**
+	 * Sets up members
+	 *
+	 * @param aDirectory
+	 *            The Herald Core directory
+	 * @param aHook
+	 *            A hook to update the description of a peer before storing it
+	 */
+	public PeerContact(final IDirectory aDirectory, final IContactHook aHook, final LogService aLogger) {
 
-        pDirectory = aDirectory;
-        pHook = aHook;
-        pLogger = aLogger;
-    }
+		pDirectory = aDirectory;
+		pHook = aHook;
+		pLogger = aLogger;
+	}
 
-    /**
-     * Clears the pending notifications map
-     */
-    public void clear() {
+	/**
+	 * Clears the pending notifications map
+	 */
+	public void clear() {
 
-        pDelayedNotifs.clear();
-    }
+		pDelayedNotifs.clear();
+	}
 
-    /**
-     * Handles a discovery message
-     *
-     * @param aHerald
-     *            The Herald internal service
-     * @param aMessage
-     *            The received message
-     * @throws HeraldException
-     *             Error replying to the discovered peer
-     */
-    public void handleDiscoveryMessage(final IHeraldInternal aHerald,
-            final MessageReceived aMessage) throws HeraldException {
+	/**
+	 * Handles a discovery message
+	 *
+	 * @param aHerald
+	 *            The Herald internal service
+	 * @param aMessage
+	 *            The received message
+	 * @throws HeraldException
+	 *             Error replying to the discovered peer
+	 */
+	public void handleDiscoveryMessage(final IHeraldInternal aHerald, final MessageReceived aMessage)
+			throws HeraldException {
 
-        switch (aMessage.getSubject()) {
-        case IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_1: {
-            /* Step 1: Register the remote peer and reply with our dump */
-            try {
-                // Prepare the delayed notification
-                final IDelayedNotification notification = pDirectory
-                        .registerDelayed(loadDescription(aMessage));
+		switch (aMessage.getSubject()) {
+		case IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_1: {
+			/* Step 1: Register the remote peer and reply with our dump */
+			try {
+				// Prepare the delayed notification
+				final IDelayedNotification notification = pDirectory.registerDelayed(loadDescription(aMessage));
 
-                final Peer peer = notification.getPeer();
-                if (peer != null) {
-                    // Registration succeeded
-                    pDelayedNotifs.put(peer.getUid(), notification);
+				final Peer peer = notification.getPeer();
+				if (peer != null) {
+					// Registration succeeded
+					pDelayedNotifs.put(peer.getUid(), notification);
 
-                    // Reply with our description
-                    aHerald.reply(aMessage, pDirectory.getLocalPeer().dump(),
-                            IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_2);
-                }
-            } catch (final ValueError ex) {
-                pLogger.log(LogService.LOG_ERROR,
-                        "Error registering a discovered peer", ex);
-            }
-            break;
-        }
+					// Reply with our description
+					aHerald.reply(aMessage, pDirectory.getLocalPeer().dump(),
+							IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_2);
+				}
+			} catch (final ValueError ex) {
+				pLogger.log(LogService.LOG_ERROR, "Error registering a discovered peer", ex);
+			}
+			break;
+		}
 
-        case IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_2: {
-            /*
-             * Step 2: Register the dump, notify local listeners, then let the
-             * remote peer notify its listeners
-             */
-            try {
-                // Register the peer
-                final IDelayedNotification notification = pDirectory
-                        .registerDelayed(loadDescription(aMessage));
+		case IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_2: {
+			/*
+			 * Step 2: Register the dump, notify local listeners, then let the
+			 * remote peer notify its listeners
+			 */
+			try {
+				// Register the peer
+				final IDelayedNotification notification = pDirectory.registerDelayed(loadDescription(aMessage));
 
-                final Peer peer = notification.getPeer();
-                if (peer != null) {
-                    // Registration succeeded
-                    aHerald.reply(aMessage, pDirectory.getLocalPeer().dump(),
-                            IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_3);
-                }
+				final Peer peer = notification.getPeer();
+				if (peer != null) {
+					// Registration succeeded
+					aHerald.reply(aMessage, pDirectory.getLocalPeer().dump(),
+							IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_3);
+					notification.notifyListeners();
+				}
 
-            } catch (final ValueError ex) {
-                pLogger.log(LogService.LOG_ERROR,
-                        "Error registering a peer using the description it sent");
-            }
-            break;
-        }
+			} catch (final ValueError ex) {
+				pLogger.log(LogService.LOG_ERROR, "Error registering a peer using the description it sent");
+			}
+			break;
+		}
 
-        case IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_3: {
-            /* Step 3: notify local listeners about the remote peer */
-            final IDelayedNotification notification = pDelayedNotifs
-                    .remove(aMessage.getSender());
-            if (notification != null) {
-                notification.notifyListeners();
-            }
-            break;
-        }
+		case IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_3: {
+			/* Step 3: notify local listeners about the remote peer */
+			final IDelayedNotification notification = pDelayedNotifs.remove(aMessage.getSender());
+			if (notification != null) {
+				notification.notifyListeners();
+			}
+			break;
+		}
 
-        default:
-            /* Unknown subject */
-            pLogger.log(LogService.LOG_WARNING, "Unknown discovery step: "
-                    + aMessage.getSubject());
-            break;
-        }
-    }
+		default:
+			/* Unknown subject */
+			pLogger.log(LogService.LOG_WARNING, "Unknown discovery step: " + aMessage.getSubject());
+			break;
+		}
+	}
 
-    /**
-     * Calls the hook method to modify the loaded peer description before giving
-     * it to the directory
-     *
-     * @param aMessage
-     *            The received Herald message
-     * @return The updated peer description
-     */
-    private Map<String, Object> loadDescription(final MessageReceived aMessage) {
+	/**
+	 * Calls the hook method to modify the loaded peer description before giving
+	 * it to the directory
+	 *
+	 * @param aMessage
+	 *            The received Herald message
+	 * @return The updated peer description
+	 */
+	private Map<String, Object> loadDescription(final MessageReceived aMessage) {
 
-        @SuppressWarnings("unchecked")
-        final Map<String, Object> description = (Map<String, Object>) aMessage
-                .getContent();
+		@SuppressWarnings("unchecked")
+		final Map<String, Object> description = (Map<String, Object>) aMessage.getContent();
 
-        if (pHook != null) {
-            // Call the hook
-            final Map<String, Object> updatedDescription = pHook
-                    .updateDescription(aMessage, description);
-            if (updatedDescription != null) {
-                return updatedDescription;
-            }
-        }
+		if (pHook != null) {
+			// Call the hook
+			final Map<String, Object> updatedDescription = pHook.updateDescription(aMessage, description);
+			if (updatedDescription != null) {
+				return updatedDescription;
+			}
+		}
 
-        return description;
-    }
+		return description;
+	}
 }
