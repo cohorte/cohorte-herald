@@ -29,6 +29,8 @@ import java.util.Set;
 
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.PostRegistration;
+import org.apache.felix.ipojo.annotations.PostUnregistration;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.ServiceProperty;
@@ -49,6 +51,9 @@ import org.cohorte.remote.IExportEndpointListener;
 import org.cohorte.remote.IExportsDispatcher;
 import org.cohorte.remote.IImportsRegistry;
 import org.cohorte.remote.ImportEndpoint;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.log.LogService;
 
 /**
@@ -57,8 +62,7 @@ import org.osgi.service.log.LogService;
  * @author Thomas Calmant
  */
 @Component
-@Provides(specifications = { IMessageListener.class, IDirectoryListener.class,
-		IExportEndpointListener.class })
+@Provides(specifications = IMessageListener.class)
 @Instantiate(name = "herald-rpc-discovery")
 public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 		IExportEndpointListener {
@@ -68,6 +72,9 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 
 	/** Prefix to discovery subjects */
 	private static final String SUBJECT_PREFIX = "herald/rpc/discovery";
+
+	/** Bundle context */
+	private final BundleContext pContext;
 
 	/** The Herald core directory */
 	@Requires
@@ -90,9 +97,22 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 	@Requires(optional = true)
 	private LogService pLogger;
 
+	/** Service registration */
+	private ServiceRegistration<?> pRegistration;
+
 	/** Imported services registry */
 	@Requires
 	private IImportsRegistry pRegistry;
+
+	/**
+	 * Keeps track of the bundle context (called by iPOJO)
+	 *
+	 * @param aContext
+	 *            The bundle context
+	 */
+	public HeraldDiscovery(final BundleContext aContext) {
+		pContext = aContext;
+	}
 
 	/**
 	 * Converts an ExportEndpoint bean to a map
@@ -256,9 +276,17 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 		try {
 			switch (kind) {
 			case "contact": {
-				pLogger.log(LogService.LOG_DEBUG,
-						"Contact established with peer " + aMessage.getSender()
-								+ ".");
+				try {
+					final Peer peer = pDirectory.getPeer(aMessage.getSender());
+					pLogger.log(LogService.LOG_DEBUG,
+							"Got contact from " + peer.getName() + " ("
+									+ peer.getUid() + ")");
+
+				} catch (final UnknownPeer ex) {
+					pLogger.log(LogService.LOG_WARNING,
+							"Got contact from " + aMessage.getSender()
+									+ " but we don't know it.");
+				}
 
 				// Register the endpoints
 				registerEndpoints((List<Map<String, Object>>) aMessage
@@ -269,6 +297,10 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 						pDispatcher.getEndpoints());
 
 				// In case of contact: reply with our dump
+				pLogger.log(
+						LogService.LOG_DEBUG,
+						"Replying to contact from "
+								+ aMessage.getSender());
 				final List<Map<String, Object>> dump = dumpEndpoints(endpoints);
 				aHerald.reply(aMessage, dump, SUBJECT_PREFIX + "/add");
 				break;
@@ -277,13 +309,22 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 			case "add": {
 				try {
 					// Check if the sender is known
-					pDirectory.getPeer(aMessage.getSender());
+					final Peer peer = pDirectory.getPeer(aMessage.getSender());
+
+					pLogger.log(LogService.LOG_WARNING,
+							"Registering new endpoints (add) from "
+									+ peer.getName() + " (" + peer.getUid()
+									+ ")");
 
 					// Peer is known: load the endpoints
 					registerEndpoints((List<Map<String, Object>>) aMessage
 							.getContent());
 				} catch (final UnknownPeer ex) {
 					// Peer is unknown: ignore the message
+					pLogger.log(
+							LogService.LOG_WARNING,
+							"Got add from an unknown peer: "
+									+ aMessage.getSender());
 				}
 				break;
 			}
@@ -351,8 +392,8 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 	 */
 	@Override
 	public void peerRegistered(final Peer aPeer) {
-		pLogger.log(LogService.LOG_DEBUG, "Registering peer " + aPeer.getName()
-				+ "'s endpoints...");
+		pLogger.log(LogService.LOG_DEBUG, "Sending contact to registered peer "
+				+ aPeer.getName() + " (" + aPeer.getUid() + ")");
 		final ExportEndpoint[] endpoints = filterEndpoints(aPeer,
 				pDispatcher.getEndpoints());
 
@@ -370,6 +411,9 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 	public void peerUnregistered(final Peer aPeer) {
 
 		// A peer has gone away
+		pLogger.log(LogService.LOG_INFO,
+				"Unregistering endpoints from lost peer " + aPeer.getName()
+						+ " (" + aPeer.getUid() + ")");
 		pRegistry.lostFramework(aPeer.getUid());
 	}
 
@@ -386,6 +430,44 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 			final Access aData, final Access aPrevious) {
 
 		// Do nothing
+	}
+
+	/**
+	 * Called by iPOJO after the registration of the {@link IMessageListener}
+	 * service.
+	 *
+	 * By now, we're sure that Herald will give us the messages sent by other
+	 * peers
+	 *
+	 * @param aServiceReference
+	 *            The reference to the registered service
+	 */
+	@PostRegistration
+	private void postRegistration(final ServiceReference<?> aServiceReference) {
+
+		// Register the listener service
+		pRegistration = pContext.registerService(new String[] {
+				IDirectoryListener.class.getName(),
+				IExportEndpointListener.class.getName() }, this, null);
+	}
+
+	/**
+	 * Called by iPOJO after the unregistration of the {@link IMessageListener}
+	 * service. Sadly, there are no annotation in iPOJO to be notified before
+	 * the unregistration.
+	 *
+	 * Unregisters the listener services.
+	 *
+	 * @param aServiceReference
+	 *            The reference to the unregistered service
+	 */
+	@PostUnregistration
+	private void postUnregistration(final ServiceReference<?> aServiceReference) {
+
+		if (pRegistration != null) {
+			pRegistration.unregister();
+			pRegistration = null;
+		}
 	}
 
 	/**
@@ -504,6 +586,5 @@ public class HeraldDiscovery implements IMessageListener, IDirectoryListener,
 			// Unknown: let Java try to do the job
 			return (String[]) aData;
 		}
-
 	}
 }
