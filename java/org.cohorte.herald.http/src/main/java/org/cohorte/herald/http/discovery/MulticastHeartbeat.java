@@ -45,8 +45,10 @@ import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
 import org.cohorte.herald.http.impl.IHttpReceiver;
+import org.cohorte.herald.pyapi.IEvent;
+import org.cohorte.herald.pyapi.IEventFactory;
+import org.cohorte.herald.pyapi.impl.EventFactory;
 import org.cohorte.herald.transport.IDiscoveryConstants;
-import org.cohorte.herald.utils.Event;
 import org.cohorte.remote.multicast.utils.IPacketListener;
 import org.cohorte.remote.multicast.utils.MulticastHandler;
 import org.osgi.service.log.LogService;
@@ -72,11 +74,16 @@ public class MulticastHeartbeat implements IPacketListener {
 	@Requires
 	private IDirectory pDirectory;
 
+	/** The event factory service */
+	@Requires(optional = true, defaultimplementation = EventFactory.class)
+	private IEventFactory pEventFactory;
+
 	/** The heart beat thread */
 	private Thread pHeartThread;
 
 	/** The HTTP transport implementation */
-	@Requires(filter = "(" + IConstants.PROP_ACCESS_ID + "=" + IHttpConstants.ACCESS_ID + ")")
+	@Requires(filter = "(" + IConstants.PROP_ACCESS_ID + "="
+			+ IHttpConstants.ACCESS_ID + ")")
 	private ITransport pHttpTransport;
 
 	/** Local peer bean */
@@ -106,7 +113,7 @@ public class MulticastHeartbeat implements IPacketListener {
 	private IHttpReceiver pReceiver;
 
 	/** The loop-stop event */
-	private final Event pStopEvent = new Event();
+	private IEvent pStopEvent;
 
 	/** The TTL thread */
 	private Thread pTTLThread;
@@ -121,7 +128,8 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * @param aPath
 	 *            Path to the Herald HTTP servlet
 	 */
-	private void discoverPeer(final String aHostAddress, final int aPort, final String aPath) {
+	private void discoverPeer(final String aHostAddress, final int aPort,
+			final String aPath) {
 
 		// Prepare extra information like for a reply
 		final HTTPExtra extra = new HTTPExtra(aHostAddress, aPort, aPath, null);
@@ -129,11 +137,13 @@ public class MulticastHeartbeat implements IPacketListener {
 		try {
 			// Fire the message, using the HTTP transport directly
 			// Peer registration will be done after it responds
-			pHttpTransport.fire(null,
-					new Message(IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_1, pDirectory.getLocalPeer().dump()), extra);
+			pHttpTransport.fire(null, new Message(
+					IDiscoveryConstants.SUBJECT_DISCOVERY_STEP_1, pDirectory
+							.getLocalPeer().dump()), extra);
 
 		} catch (final HeraldException ex) {
-			pLogger.log(LogService.LOG_ERROR, "Error contacting peer: " + ex, ex);
+			pLogger.log(LogService.LOG_ERROR, "Error contacting peer: " + ex,
+					ex);
 		}
 	}
 
@@ -193,7 +203,8 @@ public class MulticastHeartbeat implements IPacketListener {
 	@Override
 	public boolean handleError(final Exception aException) {
 
-		pLogger.log(LogService.LOG_WARNING, "Error while receiving a UDP packet: " + aException, aException);
+		pLogger.log(LogService.LOG_WARNING,
+				"Error while receiving a UDP packet: " + aException, aException);
 
 		// Continue if the exception is not "important"
 		return !(aException instanceof SocketException || aException instanceof NullPointerException);
@@ -213,10 +224,12 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * @param aPath
 	 *            The path to the Herald servlet
 	 */
-	private void handleHeartbeat(final String aPeerUid, final String aApplicationId, final String aHostAddress,
+	private void handleHeartbeat(final String aPeerUid,
+			final String aApplicationId, final String aHostAddress,
 			final int aPort, final String aPath) {
 
-		if (pLocalPeer.getUid().equals(aPeerUid) || !pLocalPeer.getApplicationId().equals(aApplicationId)) {
+		if (pLocalPeer.getUid().equals(aPeerUid)
+				|| !pLocalPeer.getApplicationId().equals(aApplicationId)) {
 			// Ignore local and foreign heart beats
 			return;
 		}
@@ -226,7 +239,7 @@ public class MulticastHeartbeat implements IPacketListener {
 			// Update the peer LST
 			previousLST = pPeerLST.put(aPeerUid, System.currentTimeMillis());
 		}
-		
+
 		if (previousLST == null) {
 			// Peer wasn't known
 			discoverPeer(aHostAddress, aPort, aPath);
@@ -241,9 +254,11 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * @param aApplicationId
 	 *            The ID of application of the peer going away
 	 */
-	private void handleLastbeat(final String aPeerUid, final String aApplicationId) {
+	private void handleLastbeat(final String aPeerUid,
+			final String aApplicationId) {
 
-		if (pLocalPeer.getUid().equals(aPeerUid) || !pLocalPeer.getApplicationId().equals(aApplicationId)) {
+		if (pLocalPeer.getUid().equals(aPeerUid)
+				|| !pLocalPeer.getApplicationId().equals(aApplicationId)) {
 			// Ignore local and foreign heart beats
 			return;
 		}
@@ -271,7 +286,8 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * net.InetSocketAddress, byte[])
 	 */
 	@Override
-	public void handlePacket(final InetSocketAddress aSender, final byte[] aContent) {
+	public void handlePacket(final InetSocketAddress aSender,
+			final byte[] aContent) {
 
 		// Make a little endian byte array reader, to extract the packet content
 		final ByteBuffer buffer = ByteBuffer.wrap(aContent);
@@ -287,7 +303,8 @@ public class MulticastHeartbeat implements IPacketListener {
 			final String applicationId = extractString(buffer);
 
 			// Handle the packet
-			handleHeartbeat(peerUid, applicationId, aSender.getAddress().getHostAddress(), port, path);
+			handleHeartbeat(peerUid, applicationId, aSender.getAddress()
+					.getHostAddress(), port, path);
 			break;
 		}
 
@@ -300,7 +317,8 @@ public class MulticastHeartbeat implements IPacketListener {
 		}
 
 		default:
-			pLogger.log(LogService.LOG_DEBUG, "Unknown packet type=" + (int) packetType);
+			pLogger.log(LogService.LOG_DEBUG, "Unknown packet type="
+					+ (int) packetType);
 			break;
 		}
 	}
@@ -317,16 +335,19 @@ public class MulticastHeartbeat implements IPacketListener {
 
 		} catch (final UnsupportedEncodingException ex) {
 			// Should never happen
-			pLogger.log(LogService.LOG_ERROR, "Error encoding strings: " + ex, ex);
+			pLogger.log(LogService.LOG_ERROR, "Error encoding strings: " + ex,
+					ex);
 			return;
 		}
 
 		do {
 			try {
+				pLogger.log(LogService.LOG_WARNING, "SENDING HEARTBEAT...");
 				pMulticast.send(beat);
 
 			} catch (final IOException ex) {
-				pLogger.log(LogService.LOG_ERROR, "Error sending heart beat: " + ex, ex);
+				pLogger.log(LogService.LOG_ERROR, "Error sending heart beat: "
+						+ ex, ex);
 			}
 		} while (!pStopEvent.waitEvent(20000L));
 	}
@@ -355,7 +376,8 @@ public class MulticastHeartbeat implements IPacketListener {
 				final byte[] lastBeat = makeLastbeat();
 				pMulticast.send(lastBeat);
 			} catch (final IOException ex) {
-				pLogger.log(LogService.LOG_WARNING, "Error sending last beat packet: " + ex, ex);
+				pLogger.log(LogService.LOG_WARNING,
+						"Error sending last beat packet: " + ex, ex);
 			}
 
 			try {
@@ -363,7 +385,8 @@ public class MulticastHeartbeat implements IPacketListener {
 				pMulticast.stop();
 
 			} catch (final IOException ex) {
-				pLogger.log(LogService.LOG_WARNING, "Error stopping the multicast listener: " + ex, ex);
+				pLogger.log(LogService.LOG_WARNING,
+						"Error stopping the multicast listener: " + ex, ex);
 			}
 		}
 
@@ -373,6 +396,7 @@ public class MulticastHeartbeat implements IPacketListener {
 		pMulticast = null;
 		pHeartThread = null;
 		pTTLThread = null;
+		pStopEvent = null;
 	}
 
 	/**
@@ -386,6 +410,7 @@ public class MulticastHeartbeat implements IPacketListener {
 
 		do {
 			synchronized (pPeerLST) {
+				pLogger.log(LogService.LOG_WARNING, "CHECKING LST...");
 				final long loopStart = System.currentTimeMillis();
 
 				for (final Entry<String, Long> entry : pPeerLST.entrySet()) {
@@ -394,12 +419,14 @@ public class MulticastHeartbeat implements IPacketListener {
 
 					if (lastSeen == null) {
 						// No LST for this peer, ignore it
-						pLogger.log(LogService.LOG_WARNING, "Invalid LST for " + peerUid);
+						pLogger.log(LogService.LOG_WARNING, "Invalid LST for "
+								+ peerUid);
 
 					} else if (loopStart - lastSeen > PEER_TTL) {
 						// TTL reached
 						toDelete.add(peerUid);
-						pLogger.log(LogService.LOG_DEBUG, "Peer " + peerUid + " reached TTL.");
+						pLogger.log(LogService.LOG_DEBUG, "Peer " + peerUid
+								+ " reached TTL.");
 					}
 				}
 
@@ -445,10 +472,12 @@ public class MulticastHeartbeat implements IPacketListener {
 		// Convert strings
 		final byte[] uid = localUid.getBytes(IHttpConstants.CHARSET_UTF8);
 		final byte[] appId = localAppId.getBytes(IHttpConstants.CHARSET_UTF8);
-		final byte[] path = access.getPath().getBytes(IHttpConstants.CHARSET_UTF8);
+		final byte[] path = access.getPath().getBytes(
+				IHttpConstants.CHARSET_UTF8);
 
 		// Compute packet size (see method's documentation)
-		final int packetSize = 1 + 2 + 2 + uid.length + 2 + path.length + 2 + appId.length;
+		final int packetSize = 1 + 2 + 2 + uid.length + 2 + path.length + 2
+				+ appId.length;
 
 		// Setup the buffer
 		final ByteBuffer buffer = ByteBuffer.allocate(packetSize);
@@ -526,6 +555,9 @@ public class MulticastHeartbeat implements IPacketListener {
 	@Validate
 	public void validate() {
 
+		// Create an event using the factory
+		pStopEvent = pEventFactory.createEvent();
+
 		// Reset the stop event
 		pStopEvent.clear();
 
@@ -534,19 +566,22 @@ public class MulticastHeartbeat implements IPacketListener {
 
 		// Start the multicast listener
 		try {
-			pMulticast = new MulticastHandler(this, InetAddress.getByName(pMulticastGroup), pMulticastPort);
+			pMulticast = new MulticastHandler(this,
+					InetAddress.getByName(pMulticastGroup), pMulticastPort);
 			pMulticast.start();
 
 		} catch (final IOException ex) {
 			pLogger.log(LogService.LOG_ERROR,
-					"Couldn't start the multicast receiver for group=" + pMulticastGroup + ": " + ex, ex);
+					"Couldn't start the multicast receiver for group="
+							+ pMulticastGroup + ": " + ex, ex);
 			try {
 				// Clean up
 				pMulticast.stop();
 
 			} catch (final IOException e) {
 				// Ignore
-				pLogger.log(LogService.LOG_WARNING, "Couldn't clean up the multicast receiver: " + ex);
+				pLogger.log(LogService.LOG_WARNING,
+						"Couldn't clean up the multicast receiver: " + ex);
 			}
 
 			pMulticast = null;

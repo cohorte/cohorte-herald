@@ -46,6 +46,12 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+            <groupId>org.cohorte.herald</groupId>
+            <artifactId>org.cohorte.herald.pyapi</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+		<dependency>
 			<groupId>org.cohorte.jabsorb</groupId>
 			<artifactId>org.jabsorb.ng</artifactId>
 			<scope>provided</scope>
@@ -79,6 +85,8 @@
 							org.cohorte.herald;version=${pkg-version},
 							org.cohorte.herald.transport;version=${pkg-version},
 							org.cohorte.herald.utils;version=${pkg-version},
+							org.cohorte.herald.pyapi;version="1.0.0",
+							org.cohorte.herald.pyapi.impl;version="1.0.0",
 							org.cohorte.herald.core.utils,
 							org.jabsorb.ng,
 							org.json,
