@@ -341,7 +341,6 @@ public class MulticastHeartbeat implements IPacketListener {
 
 		do {
 			try {
-				pLogger.log(LogService.LOG_WARNING, "SENDING HEARTBEAT...");
 				pMulticast.send(beat);
 
 			} catch (final IOException ex) {
@@ -409,7 +408,6 @@ public class MulticastHeartbeat implements IPacketListener {
 
 		do {
 			synchronized (pPeerLST) {
-				pLogger.log(LogService.LOG_WARNING, "CHECKING LST...");
 				final long loopStart = System.currentTimeMillis();
 
 				for (final Entry<String, Long> entry : pPeerLST.entrySet()) {
