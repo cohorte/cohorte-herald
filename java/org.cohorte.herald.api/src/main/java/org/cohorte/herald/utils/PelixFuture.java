@@ -18,6 +18,9 @@ package org.cohorte.herald.utils;
 
 import java.util.concurrent.TimeoutException;
 
+import org.cohorte.herald.eventapi.EventData;
+import org.cohorte.herald.eventapi.EventException;
+
 /**
  * A class to poll the result of a method called asynchronously.
  *

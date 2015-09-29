@@ -16,6 +16,10 @@
 
 package org.cohorte.herald.utils;
 
+import org.cohorte.herald.eventapi.IEvent;
+import org.cohorte.herald.eventapi.IEventFactory;
+import org.cohorte.herald.eventapi.JavaEvent;
+
 /**
  * Same as Python's Timer class, but executes the requested method again and
  * again, until cancel() is called.
@@ -24,67 +28,101 @@ package org.cohorte.herald.utils;
  */
 public class LoopTimer extends Thread {
 
-    /** The event to wait for to get out of the loop */
-    private final Event pFinished;
+	/** The event to wait for to get out of the loop */
+	private final IEvent pFinished;
 
-    /** Time to wait between calls (in milliseconds) */
-    private final long pInterval;
+	/** Time to wait between calls (in milliseconds) */
+	private final long pInterval;
 
-    /** The object to run in the loop */
-    private final Runnable pRunnable;
+	/** The object to run in the loop */
+	private final Runnable pRunnable;
 
-    /**
-     * Sets up the timer
-     *
-     * @param aInterval
-     *            Time to wait between calls (in milliseconds)
-     * @param aRunnable
-     *            The object to run in the loop
-     * @param aName
-     *            Name of the loop thread
-     */
-    public LoopTimer(final long aInterval, final Runnable aRunnable) {
+	/**
+	 * Sets up the timer
+	 *
+	 * @param aInterval
+	 *            Time to wait between calls (in milliseconds)
+	 * @param aRunnable
+	 *            The object to run in the loop
+	 * @param aName
+	 *            Name of the loop thread
+	 */
+	public LoopTimer(final long aInterval, final Runnable aRunnable) {
 
-        this(aInterval, aRunnable, "LoopTimer");
-    }
+		this(aInterval, aRunnable, "LoopTimer");
+	}
 
-    /**
-     * Sets up the timer
-     *
-     * @param aInterval
-     *            Time to wait between calls (in milliseconds)
-     * @param aRunnable
-     *            The object to run in the loop
-     * @param aName
-     *            Name of the loop thread
-     */
-    public LoopTimer(final long aInterval, final Runnable aRunnable,
-            final String aName) {
+	/**
+	 * Sets up the timer
+	 *
+	 * @param aInterval
+	 *            Time to wait between calls (in milliseconds)
+	 * @param aRunnable
+	 *            The object to run in the loop
+	 * @param aName
+	 *            Name of the loop thread
+	 */
+	public LoopTimer(final long aInterval, final Runnable aRunnable,
+			final String aName) {
 
-        super(aName);
-        pInterval = aInterval;
-        pRunnable = aRunnable;
-        pFinished = new Event();
-    }
+		this(aInterval, aRunnable, aName, new JavaEvent());
+	}
 
-    /**
-     * Cancels/stops the loop timer
-     */
-    public void cancel() {
+	/**
+	 * Sets up the timer
+	 *
+	 * @param aInterval
+	 *            Time to wait between calls (in milliseconds)
+	 * @param aRunnable
+	 *            The object to run in the loop
+	 * @param aName
+	 *            Name of the loop thread
+	 * @param aEvent
+	 *            The event to use to get out of the loop
+	 */
+	public LoopTimer(final long aInterval, final Runnable aRunnable,
+			final String aName, final IEvent aEvent) {
 
-        pFinished.set();
-    }
+		super(aName);
+		pInterval = aInterval;
+		pRunnable = aRunnable;
+		pFinished = aEvent;
+	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Thread#run()
-     */
-    @Override
-    public void run() {
+	/**
+	 * Sets up the timer
+	 *
+	 * @param aInterval
+	 *            Time to wait between calls (in milliseconds)
+	 * @param aRunnable
+	 *            The object to run in the loop
+	 * @param aName
+	 *            Name of the loop thread
+	 */
+	public LoopTimer(final long aInterval, final Runnable aRunnable,
+			final String aName, final IEventFactory aEventFactory) {
 
-        while (!pFinished.waitEvent(pInterval)) {
-            pRunnable.run();
-        }
-    }
+		this(aInterval, aRunnable, aName, aEventFactory.createEvent());
+	}
+
+	/**
+	 * Cancels/stops the loop timer
+	 */
+	public void cancel() {
+
+		pFinished.set();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Thread#run()
+	 */
+	@Override
+	public void run() {
+
+		while (!pFinished.waitEvent(pInterval)) {
+			pRunnable.run();
+		}
+	}
 }

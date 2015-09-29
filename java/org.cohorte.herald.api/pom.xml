@@ -23,6 +23,12 @@
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.compendium</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.cohorte.herald</groupId>
+			<artifactId>org.cohorte.herald.eventapi</artifactId>
+			<version>${project.version}</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -44,7 +50,8 @@
 						<Export-Package>
 							org.cohorte.herald;version=${pkg-version},
 							org.cohorte.herald.transport;version=${pkg-version},
-							org.cohorte.herald.utils;version=${pkg-version}
+							org.cohorte.herald.utils;version=${pkg-version},
+							org.cohorte.herald.eventapi;version="1.0.0"
 						</Export-Package>
 					</instructions>
 				</configuration>
