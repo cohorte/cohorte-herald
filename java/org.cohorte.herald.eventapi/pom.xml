@@ -9,10 +9,10 @@
 		<version>0.0.5-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	<artifactId>org.cohorte.herald.pyapi</artifactId>
+	<artifactId>org.cohorte.herald.eventapi</artifactId>
 	<packaging>bundle</packaging>
 
-	<name>Cohorte Herald :: Python API</name>
+	<name>Cohorte Herald :: Event API</name>
 
 	<dependencies>
 		<dependency>
@@ -38,12 +38,8 @@
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
-						<Import-Package>
-							org.osgi.service.log
-						</Import-Package>
 						<Export-Package>
-							org.cohorte.herald.pyapi;version=${pkg-version},
-							org.cohorte.herald.pyapi.impl;version=${pkg-version}
+							org.cohorte.herald.eventapi;version=${pkg-version}
 						</Export-Package>
 					</instructions>
 				</configuration>

@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.pyapi.impl;
+package org.cohorte.herald.eventapi;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.cohorte.herald.pyapi.IEvent;
-
 /**
  * Java implementation of an event
  *
  * @author Thomas Calmant
  */
-public class Event implements IEvent {
+public class JavaEvent implements IEvent {
 
 	/** Internal condition */
 	private final Condition pCondition;
@@ -42,7 +40,7 @@ public class Event implements IEvent {
 	/**
 	 * Sets up the event
 	 */
-	public Event() {
+	public JavaEvent() {
 
 		pLock = new ReentrantLock();
 		pCondition = pLock.newCondition();

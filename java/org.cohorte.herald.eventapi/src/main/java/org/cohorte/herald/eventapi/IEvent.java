@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.pyapi;
+package org.cohorte.herald.eventapi;
 
 /**
  * A Java interface to access members of the Event Python class

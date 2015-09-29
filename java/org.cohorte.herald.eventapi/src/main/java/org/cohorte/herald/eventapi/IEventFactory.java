@@ -14,39 +14,27 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.pyapi.impl;
-
-import org.cohorte.herald.pyapi.IEvent;
-import org.cohorte.herald.pyapi.IEventFactory;
+package org.cohorte.herald.eventapi;
 
 /**
- * Java implementation of the Event factory
+ * Specification of an Event object factory
  *
  * @author Thomas Calmant
  */
-public class EventFactory implements IEventFactory {
+public interface IEventFactory {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.cohorte.herald.pyapi.IEventFactory#createEvent()
+	/**
+	 * Creates an object implementing the IEvent interface
+	 *
+	 * @return An event
 	 */
-	@Override
-	public IEvent createEvent() {
-		return new Event();
-	}
+	IEvent createEvent();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.cohorte.herald.pyapi.IEventFactory#sleep(long)
+	/**
+	 * Sleeps for the given number of milliseconds
+	 *
+	 * @param aMilliseconds
+	 *            The number of milliseconds to wait
 	 */
-	@Override
-	public void sleep(final long aMilliseconds) {
-		try {
-			Thread.sleep(aMilliseconds);
-		} catch (final InterruptedException ex) {
-			// Do nothing
-		}
-	}
+	void sleep(long aMilliseconds);
 }

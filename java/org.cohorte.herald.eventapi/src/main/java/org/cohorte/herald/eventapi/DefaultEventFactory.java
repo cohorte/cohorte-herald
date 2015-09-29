@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 isandlaTech
+ * Copyright 2015 isandlaTech
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,37 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.utils;
+package org.cohorte.herald.eventapi;
+
 
 /**
- *
+ * Java implementation of the Event factory
  *
  * @author Thomas Calmant
  */
-public class EventException extends Exception {
+public class DefaultEventFactory implements IEventFactory {
 
-    /** Serial version UID */
-    private static final long serialVersionUID = 1L;
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.cohorte.herald.pyapi.IEventFactory#createEvent()
+	 */
+	@Override
+	public IEvent createEvent() {
+		return new JavaEvent();
+	}
 
-    /**
-     * Sets up the exception
-     */
-    public EventException(final Throwable aCause) {
-
-        super("Event exception: " + aCause, aCause);
-    }
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.cohorte.herald.pyapi.IEventFactory#sleep(long)
+	 */
+	@Override
+	public void sleep(final long aMilliseconds) {
+		try {
+			Thread.sleep(aMilliseconds);
+		} catch (final InterruptedException ex) {
+			// Do nothing
+		}
+	}
 }

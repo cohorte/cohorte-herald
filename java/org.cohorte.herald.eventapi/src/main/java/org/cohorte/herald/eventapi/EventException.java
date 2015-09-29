@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 isandlaTech
+ * Copyright 2014 isandlaTech
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-package org.cohorte.herald.pyapi;
+package org.cohorte.herald.eventapi;
 
 /**
- * Specification of an Event object factory
+ * An exception occurred while waiting for an {@link EventData}
  *
  * @author Thomas Calmant
  */
-public interface IEventFactory {
+public class EventException extends Exception {
+
+	/** Serial version UID */
+	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Creates an object implementing the IEvent interface
-	 *
-	 * @return An event
+	 * Sets up the exception
 	 */
-	IEvent createEvent();
+	public EventException(final Throwable aCause) {
 
-	/**
-	 * Sleeps for the given number of milliseconds
-	 *
-	 * @param aMilliseconds
-	 *            The number of milliseconds to wait
-	 */
-	void sleep(long aMilliseconds);
+		super("Event exception: " + aCause, aCause);
+	}
 }
