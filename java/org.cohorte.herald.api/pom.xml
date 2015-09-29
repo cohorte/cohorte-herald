@@ -44,14 +44,16 @@
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
+						<Bundle-Activator>org.cohorte.herald.internal.Activator</Bundle-Activator>
 						<Import-Package>
-							org.osgi.service.log
+						    org.osgi.framework,
+							org.osgi.service.log,
+							org.cohorte.herald.eventapi
 						</Import-Package>
 						<Export-Package>
 							org.cohorte.herald;version=${pkg-version},
 							org.cohorte.herald.transport;version=${pkg-version},
-							org.cohorte.herald.utils;version=${pkg-version},
-							org.cohorte.herald.eventapi;version="1.0.0"
+							org.cohorte.herald.utils;version=${pkg-version}
 						</Export-Package>
 					</instructions>
 				</configuration>
