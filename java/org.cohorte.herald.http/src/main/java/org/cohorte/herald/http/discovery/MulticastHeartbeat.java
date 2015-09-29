@@ -41,13 +41,13 @@ import org.cohorte.herald.ITransport;
 import org.cohorte.herald.Message;
 import org.cohorte.herald.Peer;
 import org.cohorte.herald.UnknownPeer;
+import org.cohorte.herald.eventapi.DefaultEventFactory;
+import org.cohorte.herald.eventapi.IEvent;
+import org.cohorte.herald.eventapi.IEventFactory;
 import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
 import org.cohorte.herald.http.impl.IHttpReceiver;
-import org.cohorte.herald.pyapi.IEvent;
-import org.cohorte.herald.pyapi.IEventFactory;
-import org.cohorte.herald.pyapi.impl.EventFactory;
 import org.cohorte.herald.transport.IDiscoveryConstants;
 import org.cohorte.remote.multicast.utils.IPacketListener;
 import org.cohorte.remote.multicast.utils.MulticastHandler;
@@ -75,7 +75,7 @@ public class MulticastHeartbeat implements IPacketListener {
 	private IDirectory pDirectory;
 
 	/** The event factory service */
-	@Requires(optional = true, defaultimplementation = EventFactory.class)
+	@Requires(optional = true, defaultimplementation = DefaultEventFactory.class)
 	private IEventFactory pEventFactory;
 
 	/** The heart beat thread */
@@ -195,7 +195,7 @@ public class MulticastHeartbeat implements IPacketListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.remote.multicast.utils.IPacketListener#handleError(java.lang
 	 * .Exception)
@@ -280,7 +280,7 @@ public class MulticastHeartbeat implements IPacketListener {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.cohorte.remote.multicast.utils.IPacketListener#handlePacket(java.
 	 * net.InetSocketAddress, byte[])

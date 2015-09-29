@@ -56,8 +56,10 @@ import org.cohorte.herald.Peer;
 import org.cohorte.herald.Target;
 import org.cohorte.herald.UnknownPeer;
 import org.cohorte.herald.ValueError;
+import org.cohorte.herald.eventapi.DefaultEventFactory;
 import org.cohorte.herald.eventapi.EventData;
 import org.cohorte.herald.eventapi.EventException;
+import org.cohorte.herald.eventapi.IEventFactory;
 import org.cohorte.herald.utils.FnMatch;
 import org.cohorte.herald.utils.LoopTimer;
 import org.osgi.framework.BundleContext;
@@ -87,6 +89,10 @@ public class Herald implements IHerald, IHeraldInternal {
 	/** The Herald core directory */
 	@Requires
 	private IDirectory pDirectory;
+
+	/** The event factory */
+	@Requires(optional = true, defaultimplementation = DefaultEventFactory.class)
+	private IEventFactory pEventFactory;
 
 	/** The garbage collection timer */
 	private LoopTimer pGarbageTimer;
@@ -1237,7 +1243,7 @@ public class Herald implements IHerald, IHeraldInternal {
 
 				garbageCollect();
 			}
-		}, "Herald-GC");
+		}, "Herald-GC", pEventFactory);
 		pGarbageTimer.start();
 	}
 }
