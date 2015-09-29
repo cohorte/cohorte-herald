@@ -50,7 +50,7 @@ public class JavaEvent implements IEvent {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.cohorte.herald.pyapi.IEvent#clear()
+	 * @see org.cohorte.herald.eventapi.IEvent#clear()
 	 */
 	@Override
 	public void clear() {
@@ -62,7 +62,7 @@ public class JavaEvent implements IEvent {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.cohorte.herald.pyapi.IEvent#isSet()
+	 * @see org.cohorte.herald.eventapi.IEvent#isSet()
 	 */
 	@Override
 	public boolean isSet() {
@@ -72,7 +72,7 @@ public class JavaEvent implements IEvent {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.cohorte.herald.pyapi.IEvent#set()
+	 * @see org.cohorte.herald.eventapi.IEvent#set()
 	 */
 	@Override
 	public void set() {
@@ -91,7 +91,7 @@ public class JavaEvent implements IEvent {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.cohorte.herald.pyapi.IEvent#waitEvent()
+	 * @see org.cohorte.herald.eventapi.IEvent#waitEvent()
 	 */
 	@Override
 	public boolean waitEvent() {
@@ -101,7 +101,7 @@ public class JavaEvent implements IEvent {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.cohorte.herald.pyapi.IEvent#waitEvent(long)
+	 * @see org.cohorte.herald.eventapi.IEvent#waitEvent(long)
 	 */
 	@Override
 	public boolean waitEvent(final long aTimeout) {

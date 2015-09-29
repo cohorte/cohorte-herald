@@ -16,7 +16,6 @@
 
 package org.cohorte.herald.eventapi;
 
-
 /**
  * Java implementation of the Event factory
  *
@@ -27,7 +26,7 @@ public class DefaultEventFactory implements IEventFactory {
 	/*
 	 * (non-Javadoc)
 	 *
-	 * @see org.cohorte.herald.pyapi.IEventFactory#createEvent()
+	 * @see org.cohorte.herald.eventapi.IEventFactory#createEvent()
 	 */
 	@Override
 	public IEvent createEvent() {
@@ -37,7 +36,7 @@ public class DefaultEventFactory implements IEventFactory {
 	/*
 	 * (non-Javadoc)
 	 *
-	 * @see org.cohorte.herald.pyapi.IEventFactory#sleep(long)
+	 * @see org.cohorte.herald.eventapi.IEventFactory#sleep(long)
 	 */
 	@Override
 	public void sleep(final long aMilliseconds) {
