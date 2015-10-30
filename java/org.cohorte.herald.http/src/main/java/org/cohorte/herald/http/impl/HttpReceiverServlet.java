@@ -134,38 +134,38 @@ public class HttpReceiverServlet extends HttpServlet {
 	        try {
 	            
 	        	final MessageReceived rcv_msg;
-	        	final Object content;
+	        	//final Object content;
 	        	if(!strData.isEmpty())
 	        	{	
 	        		rcv_msg = MessageUtils.fromJSON(strData);
-	        		if (rcv_msg != null) 
-	        			content = rcv_msg.getContent();
-	        		else {
-	        			content = null;	        			
+	        		if (rcv_msg != null) {
+	        			// content = rcv_msg.getContent();
+	        		//else {
+	        			//content = null;	        			
 	        		}
 	        	} else {
 	        		rcv_msg = null;
-	        		content = null;
+	        		//content = null;
 	        	}	        	        	
 	        	
 	        	// Extract headers
-		        String subject = null;
+		        //String subject = null;
 		        String msgUid = null;
-		        String replyTo = null;
+		        //String replyTo = null;
 		        String senderUid = null;
 		        String senderPath = null;
-		        Long timestamp = null;
+		        //Long timestamp = null;
 		
 		        HTTPExtra extra = null; 
 		        
 		        if (rcv_msg != null) {
-		        	subject = rcv_msg.getSubject();
+		        	//subject = rcv_msg.getSubject();
 			        msgUid = rcv_msg.getUid();
-			        replyTo = rcv_msg.getReplyTo();
+			        //replyTo = rcv_msg.getReplyTo();
 			        senderUid = rcv_msg.getSender();
 			        Object wPath = rcv_msg.getHeader(IHttpConstants.MESSAGE_HEADER_PATH);
 			        senderPath = (wPath != null) ? wPath.toString() : null;
-			        timestamp = rcv_msg.getTimestamp();		        
+			        //timestamp = rcv_msg.getTimestamp();		        
 			
 			        // Get sender port
 			        int port;
