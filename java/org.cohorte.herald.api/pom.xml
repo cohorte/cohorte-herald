@@ -51,9 +51,9 @@
 							org.cohorte.herald.eventapi
 						</Import-Package>
 						<Export-Package>
-							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.transport;version=${pkg-version},
-							org.cohorte.herald.utils;version=${pkg-version}
+							org.cohorte.herald,
+							org.cohorte.herald.transport,
+							org.cohorte.herald.utils
 						</Export-Package>
 					</instructions>
 				</configuration>

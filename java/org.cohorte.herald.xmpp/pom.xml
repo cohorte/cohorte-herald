@@ -95,9 +95,9 @@
 							org.osgi.service.http;version="1.2.1",
 							org.jabsorb.ng,
 							org.jabsorb.ng.serializer,
-							org.cohorte.herald;version=${pkg-version},
-							org.cohorte.herald.transport;version=${pkg-version},
-							org.cohorte.herald.utils;version=${pkg-version},
+							org.cohorte.herald,
+							org.cohorte.herald.transport,
+							org.cohorte.herald.utils,
 							org.cohorte.herald.core.utils,
 							javax.*
 						</Import-Package>
