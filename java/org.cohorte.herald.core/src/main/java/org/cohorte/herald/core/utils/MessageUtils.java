@@ -61,7 +61,8 @@ public class MessageUtils {
 		return json.toString();
 	}
 	
-	 public static MessageReceived fromJSON(String json) throws UnmarshallException {
+	@SuppressWarnings("unchecked")
+	public static MessageReceived fromJSON(String json) throws UnmarshallException {
 		 try {
 	    	JSONObject wParsedMsg = new JSONObject(json);	    	
 	    	{
