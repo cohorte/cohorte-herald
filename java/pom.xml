@@ -34,7 +34,7 @@
 		<pkg-version>0.0.2</pkg-version>
 		<osgi-version>5.0.0</osgi-version>
 		<ipojo-version>1.12.1</ipojo-version>
-		<cohorte-remote-version>1.2.1-SNAPSHOT</cohorte-remote-version>
+		<cohorte-remote-version>1.2.1</cohorte-remote-version>
 		<cohorte-jabsorb-version>1.1.0</cohorte-jabsorb-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
