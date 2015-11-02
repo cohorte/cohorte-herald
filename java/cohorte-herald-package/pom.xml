@@ -20,6 +20,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.cohorte.herald</groupId>
+			<artifactId>org.cohorte.herald.eventapi</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.cohorte.herald</groupId>
 			<artifactId>org.cohorte.herald.core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
