@@ -47,7 +47,8 @@
 						<Bundle-Activator>org.cohorte.herald.internal.Activator</Bundle-Activator>
 						<Import-Package>
 						    org.osgi.framework,
-							org.osgi.service.log
+							org.osgi.service.log,
+							org.cohorte.herald.eventapi
 						</Import-Package>
 						<Export-Package>
 							org.cohorte.herald,

@@ -160,8 +160,12 @@ public class EventData<T> {
 	 *             Contains the exception that forced the event up (if any)
 	 */
 	public boolean waitEvent(final Long aTimeout) throws EventException {
-
-		final boolean result = pEvent.waitEvent(aTimeout);
+		final boolean result;
+		if (aTimeout == null || aTimeout < 0) {
+			result = pEvent.waitEvent(-1);
+		} else {
+			result = pEvent.waitEvent(aTimeout);
+		}
 		if (pException != null) {
 			throw pException;
 		}
