@@ -22,8 +22,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
-			<artifactId>org.apache.felix.ipojo</artifactId>
-			<version>${ipojo-version}</version>
+			<artifactId>org.apache.felix.ipojo</artifactId>			
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
@@ -95,10 +94,10 @@
 							org.osgi.service.http;version="1.2.1",
 							org.jabsorb.ng,
 							org.jabsorb.ng.serializer,
-							org.cohorte.herald,
-							org.cohorte.herald.transport,
-							org.cohorte.herald.utils,
-							org.cohorte.herald.core.utils,
+							org.cohorte.herald;version="${project.version}",
+							org.cohorte.herald.transport;version="${project.version}",
+							org.cohorte.herald.utils;version="${project.version}",
+							org.cohorte.herald.core.utils;version="${project.version}",
 							javax.*
 						</Import-Package>
 						<Export-Package>!*</Export-Package>

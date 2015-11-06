@@ -27,7 +27,6 @@
 			<groupId>org.cohorte.herald</groupId>
 			<artifactId>org.cohorte.herald.eventapi</artifactId>
 			<version>${project.version}</version>
-			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
@@ -48,12 +47,12 @@
 						<Import-Package>
 						    org.osgi.framework,
 							org.osgi.service.log,
-							org.cohorte.herald.eventapi
+							org.cohorte.herald.eventapi;version="${project.version}"
 						</Import-Package>
 						<Export-Package>
-							org.cohorte.herald,
-							org.cohorte.herald.transport,
-							org.cohorte.herald.utils
+							org.cohorte.herald;version="${project.version}",
+							org.cohorte.herald.transport;version="${project.version}",
+							org.cohorte.herald.utils;version="${project.version}"
 						</Export-Package>
 					</instructions>
 				</configuration>

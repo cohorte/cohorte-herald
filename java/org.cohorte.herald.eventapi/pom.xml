@@ -14,16 +14,6 @@
 
 	<name>Cohorte Herald :: Event API</name>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.osgi</groupId>
-			<artifactId>org.osgi.core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.osgi</groupId>
-			<artifactId>org.osgi.compendium</artifactId>
-		</dependency>
-	</dependencies>
 
 	<build>
 		<plugins>
@@ -39,7 +29,7 @@
 						<Bundle-Vendor>isandlaTech.com</Bundle-Vendor>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
 						<Export-Package>
-							org.cohorte.herald.eventapi
+							org.cohorte.herald.eventapi;version="${project.version}"
 						</Export-Package>
 					</instructions>
 				</configuration>

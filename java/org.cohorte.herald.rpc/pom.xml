@@ -20,7 +20,6 @@
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.ipojo</artifactId>
-			<version>${ipojo-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>

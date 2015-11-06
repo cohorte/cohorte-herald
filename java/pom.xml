@@ -41,7 +41,12 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<!-- iPOJO annotations definition -->
+			<!-- iPOJO  -->
+			<dependency>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>org.apache.felix.ipojo</artifactId>
+				<version>${ipojo-version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.ipojo.annotations</artifactId>
