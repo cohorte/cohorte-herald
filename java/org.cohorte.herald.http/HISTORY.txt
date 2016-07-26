@@ -1,0 +1,5 @@
+
+
+
+- MOD_OG_20160726
+ - add protection against NullPointerException during the reading the content of the response of a peer (@see HttpTransport.sendRequest())

@@ -101,7 +101,7 @@ public class HttpTransport implements ITransport {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
 	 * org.cohorte.herald.Message)
 	 */
@@ -114,7 +114,7 @@ public class HttpTransport implements ITransport {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.cohorte.herald.ITransport#fire(org.cohorte.herald.Peer,
 	 * org.cohorte.herald.Message, java.lang.Object)
 	 */
@@ -132,7 +132,8 @@ public class HttpTransport implements ITransport {
 		final URL url = getAccessUrl(aPeer, aExtra);
 
 		// Send the HTTP request (blocking)
-		final Map<String, String> headers = makeHeaders(aMessage, parentUid, aPeer, null);
+		final Map<String, String> headers = makeHeaders(aMessage, parentUid,
+				aPeer, null);
 		String content;
 		try {
 			content = makeContent(aMessage);
@@ -147,7 +148,7 @@ public class HttpTransport implements ITransport {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.cohorte.herald.ITransport#fireGroup(java.lang.String,
 	 * java.util.Collection, org.cohorte.herald.Message)
 	 */
@@ -157,7 +158,8 @@ public class HttpTransport implements ITransport {
 			throws HeraldException {
 
 		// Prepare the message
-		final Map<String, String> headers = makeHeaders(aMessage, null, null, aGroup);
+		final Map<String, String> headers = makeHeaders(aMessage, null, null,
+				aGroup);
 		final String content;
 		try {
 			content = makeContent(aMessage);
@@ -176,7 +178,7 @@ public class HttpTransport implements ITransport {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see
 			 * org.cohorte.herald.utils.PelixFuture.Callback#run(java.lang.Object
 			 * , java.lang.Throwable, java.lang.Object)
@@ -327,7 +329,7 @@ public class HttpTransport implements ITransport {
 	 *             Error converting the object
 	 */
 	private String makeContent(final Message aMsg) throws MarshallException {
-		return MessageUtils.toJSON(aMsg);		
+		return MessageUtils.toJSON(aMsg);
 	}
 
 	/**
@@ -347,16 +349,21 @@ public class HttpTransport implements ITransport {
 		final HTTPAccess localAccess = pReceiver.getAccessInfo();
 
 		aMessage.addHeader(Message.MESSAGE_HEADER_SENDER_UID, pLocalUid);
-		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PORT, Integer.toString(localAccess.getPort()));
-		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PATH, localAccess.getPath());
-		if (aPeer != null) 
-			aMessage.addHeader(Message.MESSAGE_HEADER_TARGET_PEER, aPeer.getUid());
-		if (aGroup != null)
+		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PORT,
+				Integer.toString(localAccess.getPort()));
+		aMessage.addHeader(IHttpConstants.MESSAGE_HEADER_PATH,
+				localAccess.getPath());
+		if (aPeer != null) {
+			aMessage.addHeader(Message.MESSAGE_HEADER_TARGET_PEER,
+					aPeer.getUid());
+		}
+		if (aGroup != null) {
 			aMessage.addHeader(Message.MESSAGE_HEADER_TARGET_GROUP, aGroup);
+		}
 		if (aParentUid != null && !aParentUid.isEmpty()) {
 			aMessage.addHeader(Message.MESSAGE_HEADER_REPLIES_TO, aParentUid);
 		}
-		
+
 		return headers;
 	}
 
@@ -438,26 +445,40 @@ public class HttpTransport implements ITransport {
 
 		} finally {
 			if (httpConnection != null) {
+
 				// Read the whole response if needed
-				InputStream inStream;
+				InputStream inStream = null;
 				try {
 					inStream = httpConnection.getInputStream();
-				} catch (IOException ex) {
+				}
+				// MOD_OG_20160726 manage all the exception : IOException and
+				// UnknownServiceException
+				catch (final Exception ex) {
+					// always nice but return null sometime
 					inStream = httpConnection.getErrorStream();
 				}
 
-				try {
-					while (inStream.read() > 0) {
-						// Don't care about the answer content
-					}
-				} catch (IOException ex) {
-					// Log it ?
-				} finally {
+				// MOD_OG_20160726 if the stream exist !
+				if (inStream != null) {
 					try {
-						// Close the stream
-						inStream.close();
-					} catch (IOException e) {
-						// Log it ?
+						while (inStream.read() > 0) {
+							// Don't care about the answer content
+						}
+					} catch (final IOException ex) {
+						// MOD_OG_20160726
+						pLogger.log(LogService.LOG_DEBUG,
+								"Error reading the answer of the peer ["
+										+ aPeer + "]: " + ex, ex);
+					} finally {
+						try {
+							// Close the stream
+							inStream.close();
+						} catch (final IOException e) {
+							// MOD_OG_20160726
+							pLogger.log(LogService.LOG_DEBUG,
+									"Error closing the inputstream of the response of the peer ["
+											+ aPeer + "]: " + e, e);
+						}
 					}
 				}
 			}
