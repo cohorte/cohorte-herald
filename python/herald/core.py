@@ -505,6 +505,11 @@ class Herald(object):
         if kind == 'bye':
             # A peer is going away
             self._directory.unregister(message.content)
+        elif kind == 'dump':
+            # request directory dump            
+            directory_dump = self._directory.dump()
+            if directory_dump is not None:
+                self.reply(message, directory_dump)
 
     def peer_unregistered(self, peer):
         """
