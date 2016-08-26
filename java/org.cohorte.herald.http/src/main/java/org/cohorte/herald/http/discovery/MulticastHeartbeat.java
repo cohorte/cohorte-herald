@@ -104,6 +104,10 @@ public class MulticastHeartbeat implements IPacketListener {
 	@Property(name = "multicast.port", value = "42000")
 	private int pMulticastPort;
 
+	/** discover local peers (if false, should use local discovery) */
+	@Property(name = "discover.local.peers", value = "true")
+	private boolean pDiscoverLocalPeers;
+	
 	/** Peer UID -&gt; Last seen time (LST) */
 	private final Map<String, Long> pPeerLST = new HashMap<String, Long>();
 
@@ -223,12 +227,18 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * @param aPath
 	 *            The path to the Herald servlet
 	 */
-	private void handleHeartbeat(final String aPeerUid,
+	private void handleHeartbeat(final String aPeerUid, final String aNodeUid,
 			final String aApplicationId, final String aHostAddress,
 			final int aPort, final String aPath) {
 
+		// ignore heartbeats from local (same node) peers if option is activated
+		if (pDiscoverLocalPeers == false) {
+			if (pLocalPeer.getNodeUid().equalsIgnoreCase(aNodeUid)) {
+				return;
+			}
+		}
 		if (pLocalPeer.getUid().equals(aPeerUid)
-				|| !pLocalPeer.getApplicationId().equals(aApplicationId)) {
+				|| !pLocalPeer.getApplicationId().equals(aApplicationId)) {			
 			// Ignore local and foreign heart beats
 			return;
 		}
@@ -299,10 +309,11 @@ public class MulticastHeartbeat implements IPacketListener {
 			final int port = getUnsignedShort(buffer);
 			final String path = extractString(buffer);
 			final String peerUid = extractString(buffer);
+			final String nodeUid = extractString(buffer);
 			final String applicationId = extractString(buffer);
 
 			// Handle the packet
-			handleHeartbeat(peerUid, applicationId, aSender.getAddress()
+			handleHeartbeat(peerUid, nodeUid, applicationId, aSender.getAddress()
 					.getHostAddress(), port, path);
 			break;
 		}
@@ -464,17 +475,19 @@ public class MulticastHeartbeat implements IPacketListener {
 		// Get local information
 		final HTTPAccess access = pReceiver.getAccessInfo();
 		final String localUid = pLocalPeer.getUid();
+		final String localNodeUid = pLocalPeer.getNodeUid();
 		final String localAppId = pLocalPeer.getApplicationId();
 
 		// Convert strings
 		final byte[] uid = localUid.getBytes(IHttpConstants.CHARSET_UTF8);
+		final byte[] nodeUid = localNodeUid.getBytes(IHttpConstants.CHARSET_UTF8);
 		final byte[] appId = localAppId.getBytes(IHttpConstants.CHARSET_UTF8);
 		final byte[] path = access.getPath().getBytes(
 				IHttpConstants.CHARSET_UTF8);
 
 		// Compute packet size (see method's documentation)
-		final int packetSize = 1 + 2 + 2 + uid.length + 2 + path.length + 2
-				+ appId.length;
+		final int packetSize = 1 + 2 + 2 + uid.length + 2 + nodeUid.length 
+				+ 2 + path.length + 2 + appId.length;
 
 		// Setup the buffer
 		final ByteBuffer buffer = ByteBuffer.allocate(packetSize);
@@ -493,6 +506,10 @@ public class MulticastHeartbeat implements IPacketListener {
 		// Peer UID
 		buffer.putShort((short) uid.length);
 		buffer.put(uid);
+		
+		// Node UID
+		buffer.putShort((short) nodeUid.length);
+		buffer.put(nodeUid);
 
 		// Application ID
 		buffer.putShort((short) appId.length);
@@ -508,6 +525,8 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * <li>Kind of beat (1 byte)</li>
 	 * <li>Peer UID length (2 bytes)</li>
 	 * <li>Peer UID (variable, UTF-8)</li>
+	 * <li>Node UID length (2 bytes)</li>
+	 * <li>Node UID (variable, UTF-8)</li>
 	 * <li>Application ID length (2 bytes)</li>
 	 * <li>Application ID (variable, UTF-8)</li>
 	 * </ul>
