@@ -53,7 +53,7 @@ import org.osgi.service.log.LogService;
 public class MulticastHandler {
 
     /** Reception buffer size */
-    private static final int BUFFER_SIZE = 1500;
+    private static final int BUFFER_SIZE = 1900;
 
     /** The bundle name */
     private static final String BUNDLE_NAME = "org.cohorte.remote.multicast";
