@@ -60,6 +60,11 @@ public class MulticastStarter {
     private static final String DEFAULT_PORT = "42000";
 
     /**
+     * Default value for discover or not local peers 
+     */
+    private static final String DEFAULT_DISCOVER_LOCAL_PEERS = "false";
+    
+    /**
      * Multicast group component property
      */
     private static final String PROP_GROUP = "multicast.group";
@@ -69,6 +74,11 @@ public class MulticastStarter {
      */
     private static final String PROP_PORT = "multicast.port";
 
+    /**
+     * Discover or not local peers (of the same node)
+     */
+    private static final String PROP_DISCOVER_LOCAL_PEERS = "discover.local.peers";
+    
     /**
      * Multicast group system property
      */
@@ -83,6 +93,11 @@ public class MulticastStarter {
      * Multicast port system property
      */
     private static final String SYSPROP_PORT = "herald.multicast.port";
+    
+    /**
+     * Discover local peers system property
+     */
+    private static final String SYSPROP_DISCOVER_LOCAL_PEERS = "herald.discover.local.peers";
 
     /** The bundle context, to access framework properties */
     private final BundleContext pContext;
@@ -162,7 +177,8 @@ public class MulticastStarter {
                 getProperty(SYSPROP_NAME, DEFAULT_NAME));
         props.put(PROP_GROUP, getProperty(SYSPROP_GROUP, DEFAULT_GROUP));
         props.put(PROP_PORT, getProperty(SYSPROP_PORT, DEFAULT_PORT));
-
+        props.put(PROP_DISCOVER_LOCAL_PEERS, 
+        		getProperty(SYSPROP_DISCOVER_LOCAL_PEERS, DEFAULT_DISCOVER_LOCAL_PEERS));
         try {
             // Create the instance
             pInstance = pMulticastFactory.createComponentInstance(props);
