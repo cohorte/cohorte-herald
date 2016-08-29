@@ -89,7 +89,11 @@
 							org.jabsorb.ng,
 							org.json,
 						</Import-Package>
-						<Export-Package>!*</Export-Package>
+						<Export-Package>
+							org.cohorte.herald.http;version="${project.version}",
+							org.cohorte.herald.http.impl;version="${project.version}",
+							!*
+						</Export-Package>
 					</instructions>
 				</configuration>
 			</plugin>
