@@ -60,6 +60,10 @@ import time
 
 # ------------------------------------------------------------------------------
 
+# Version of packet format
+# 3: used in Cohorte starting from version 1.2
+PACKET_FORMAT_VERSION = 3
+
 # Heart beat packet type
 PACKET_TYPE_HEARTBEAT = 1
 
@@ -303,7 +307,7 @@ def make_heartbeat(port, path, peer_uid, node_uid, app_id):
     :return: The heart beat packet content (byte array)
     """
     # Type and port...
-    packet = struct.pack("<BH", PACKET_TYPE_HEARTBEAT, port)
+    packet = struct.pack("<BBH", PACKET_FORMAT_VERSION, PACKET_TYPE_HEARTBEAT, port)
     for string in (path, peer_uid, node_uid, app_id):
         # Strings...
         string_bytes = to_bytes(string)
@@ -328,7 +332,7 @@ def make_lastbeat(peer_uid, app_id):
     :param app_id: Application ID
     :return: The last beat packet content (byte array)
     """
-    packet = struct.pack("<B", PACKET_TYPE_LASTBEAT)
+    packet = struct.pack("<BB", PACKET_FORMAT_VERSION, PACKET_TYPE_LASTBEAT)
     for string in (peer_uid, app_id):
         string_bytes = to_bytes(string)
         packet += struct.pack("<H", len(string_bytes))
@@ -404,38 +408,46 @@ class MulticastReceiver(object):
         :param sender: Sender (address, port) tuple
         :param data: Raw packet data
         """
-        # Kind of beat
+        # Format of packet
         parsed, data = self._unpack("<B", data)
-        kind = parsed[0]
-        if kind == PACKET_TYPE_HEARTBEAT:
-            # Extract content
-            parsed, data = self._unpack("<H", data)
-            port = parsed[0]
-            path, data = self._unpack_string(data)
-            uid, data = self._unpack_string(data)
-            node_uid, data = self._unpack_string(data)
-            try:
+        format = parsed[0]
+        if format == PACKET_FORMAT_VERSION:
+            # Kind of beat
+            parsed, data = self._unpack("<B", data)
+            kind = parsed[0]
+            if kind == PACKET_TYPE_HEARTBEAT:
+                # Extract content
+                parsed, data = self._unpack("<H", data)
+                port = parsed[0]
+                path, data = self._unpack_string(data)
+                uid, data = self._unpack_string(data)
+                node_uid, data = self._unpack_string(data)
+                try:
+                    app_id, data = self._unpack_string(data)
+                except struct.error:
+                    # Compatibility with previous version
+                    app_id = herald.DEFAULT_APPLICATION_ID
+
+            elif kind == PACKET_TYPE_LASTBEAT:
+                # Peer is going away
+                uid, data = self._unpack_string(data)
                 app_id, data = self._unpack_string(data)
-            except struct.error:
-                # Compatibility with previous version
-                app_id = herald.DEFAULT_APPLICATION_ID
+                port = -1
+                path = None
+                node_uid = None
 
-        elif kind == PACKET_TYPE_LASTBEAT:
-            # Peer is going away
-            uid, data = self._unpack_string(data)
-            app_id, data = self._unpack_string(data)
-            port = -1
-            path = None
-            node_uid = None
+            else:
+                _logger.warning("Unknown kind of packet: %d", kind)
+                return
 
-        else:
-            _logger.warning("Unknown kind of packet: %d", kind)
-            return
+            try:
+                self._callback(kind, uid, node_uid, app_id, sender[0], port, path)
+            except Exception as ex:
+                _logger.exception("Error handling heart beat: %s", ex)
 
-        try:
-            self._callback(kind, uid, node_uid, app_id, sender[0], port, path)
-        except Exception as ex:
-            _logger.exception("Error handling heart beat: %s", ex)
+        #else:
+            #_logger.warning("Unsupported packet format version: %d", format)
+
 
     def _unpack(self, fmt, data):
         """
