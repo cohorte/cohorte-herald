@@ -82,6 +82,11 @@ PROP_MULTICAST_PORT = "multicast.port"
 Name of the multicast port configuration property
 """
 
+PROP_DISCOVER_LOCAL_PEERS = "discover.local.peers"
+"""
+Are the local peers (from the same node) discovered?
+"""
+
 # ------------------------------------------------------------------------------
 
 MESSAGE_HEADER_PORT = "herald-http-tansport-port"

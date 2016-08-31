@@ -60,6 +60,11 @@ import org.osgi.service.log.LogService;
 @Component(name = IHttpConstants.FACTORY_DISCOVERY_MULTICAST)
 public class MulticastHeartbeat implements IPacketListener {
 
+	/** Version of packet format 
+	 * 3: used in Cohorte starting from version 1.2
+	 */
+	private static final byte PACKET_FORMAT_VERSION = 3;
+	
 	/** UDP Packet: Peer heart beat */
 	private static final byte PACKET_TYPE_HEARTBEAT = 1;
 
@@ -104,6 +109,10 @@ public class MulticastHeartbeat implements IPacketListener {
 	@Property(name = "multicast.port", value = "42000")
 	private int pMulticastPort;
 
+	/** discover local peers (if false, should use local discovery) */
+	@Property(name = "discover.local.peers", value = "true")
+	private boolean pDiscoverLocalPeers;
+	
 	/** Peer UID -&gt; Last seen time (LST) */
 	private final Map<String, Long> pPeerLST = new HashMap<String, Long>();
 
@@ -223,12 +232,18 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * @param aPath
 	 *            The path to the Herald servlet
 	 */
-	private void handleHeartbeat(final String aPeerUid,
+	private void handleHeartbeat(final String aPeerUid, final String aNodeUid,
 			final String aApplicationId, final String aHostAddress,
 			final int aPort, final String aPath) {
 
+		// ignore heartbeats from local (same node) peers if option is activated
+		if (pDiscoverLocalPeers == false) {
+			if (pLocalPeer.getNodeUid().equalsIgnoreCase(aNodeUid)) {
+				return;
+			}
+		}
 		if (pLocalPeer.getUid().equals(aPeerUid)
-				|| !pLocalPeer.getApplicationId().equals(aApplicationId)) {
+				|| !pLocalPeer.getApplicationId().equals(aApplicationId)) {			
 			// Ignore local and foreign heart beats
 			return;
 		}
@@ -292,34 +307,49 @@ public class MulticastHeartbeat implements IPacketListener {
 		final ByteBuffer buffer = ByteBuffer.wrap(aContent);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 
-		final byte packetType = buffer.get();
-		switch (packetType) {
-		case PACKET_TYPE_HEARTBEAT: {
-			// Extract content
-			final int port = getUnsignedShort(buffer);
-			final String path = extractString(buffer);
-			final String peerUid = extractString(buffer);
-			final String applicationId = extractString(buffer);
+		final byte packetFormatVersion = buffer.get();
+		
+		switch (packetFormatVersion) {
+		
+		case PACKET_FORMAT_VERSION: {
+			final byte packetType = buffer.get();
+			switch (packetType) {
+			case PACKET_TYPE_HEARTBEAT: {
+				// Extract content
+				final int port = getUnsignedShort(buffer);
+				final String path = extractString(buffer);
+				final String peerUid = extractString(buffer);
+				final String nodeUid = extractString(buffer);
+				final String applicationId = extractString(buffer);
 
-			// Handle the packet
-			handleHeartbeat(peerUid, applicationId, aSender.getAddress()
-					.getHostAddress(), port, path);
+				// Handle the packet
+				handleHeartbeat(peerUid, nodeUid, applicationId, aSender.getAddress()
+						.getHostAddress(), port, path);
+				break;
+			}
+
+			case PACKET_TYPE_LASTBEAT: {
+				// Handle the last beat of a peer
+				final String peerUid = extractString(buffer);
+				final String applicationId = extractString(buffer);
+				handleLastbeat(peerUid, applicationId);
+				break;
+			}
+
+			default:
+				pLogger.log(LogService.LOG_DEBUG, "Unknown packet type="
+						+ (int) packetType);
+				break;
+			}
 			break;
 		}
-
-		case PACKET_TYPE_LASTBEAT: {
-			// Handle the last beat of a peer
-			final String peerUid = extractString(buffer);
-			final String applicationId = extractString(buffer);
-			handleLastbeat(peerUid, applicationId);
+		
+		default: {
+			//pLogger.log(LogService.LOG_DEBUG, "Non supported packet format version="
+			//		+ (int) packetFormatVersion);
 			break;
 		}
-
-		default:
-			pLogger.log(LogService.LOG_DEBUG, "Unknown packet type="
-					+ (int) packetType);
-			break;
-		}
+		}		
 	}
 
 	/**
@@ -445,6 +475,7 @@ public class MulticastHeartbeat implements IPacketListener {
 	 *
 	 * Format : Little endian
 	 * <ul>
+	 * <li>Packet Format version (1 byte)</li>
 	 * <li>Kind of beat (1 byte)</li>
 	 * <li>Herald HTTP server port (2 bytes)</li>
 	 * <li>Herald HTTP servlet path length (2 bytes)</li>
@@ -464,22 +495,27 @@ public class MulticastHeartbeat implements IPacketListener {
 		// Get local information
 		final HTTPAccess access = pReceiver.getAccessInfo();
 		final String localUid = pLocalPeer.getUid();
+		final String localNodeUid = pLocalPeer.getNodeUid();
 		final String localAppId = pLocalPeer.getApplicationId();
 
 		// Convert strings
 		final byte[] uid = localUid.getBytes(IHttpConstants.CHARSET_UTF8);
+		final byte[] nodeUid = localNodeUid.getBytes(IHttpConstants.CHARSET_UTF8);
 		final byte[] appId = localAppId.getBytes(IHttpConstants.CHARSET_UTF8);
 		final byte[] path = access.getPath().getBytes(
 				IHttpConstants.CHARSET_UTF8);
 
 		// Compute packet size (see method's documentation)
-		final int packetSize = 1 + 2 + 2 + uid.length + 2 + path.length + 2
-				+ appId.length;
+		final int packetSize = 1 + 1 + 2 + 2 + uid.length + 2 + nodeUid.length 
+				+ 2 + path.length + 2 + appId.length;
 
 		// Setup the buffer
 		final ByteBuffer buffer = ByteBuffer.allocate(packetSize);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 
+		// Format Version (1 byte)
+		buffer.put(PACKET_FORMAT_VERSION);
+				
 		// Kind (1 byte)
 		buffer.put(PACKET_TYPE_HEARTBEAT);
 
@@ -493,6 +529,10 @@ public class MulticastHeartbeat implements IPacketListener {
 		// Peer UID
 		buffer.putShort((short) uid.length);
 		buffer.put(uid);
+		
+		// Node UID
+		buffer.putShort((short) nodeUid.length);
+		buffer.put(nodeUid);
 
 		// Application ID
 		buffer.putShort((short) appId.length);
@@ -508,6 +548,8 @@ public class MulticastHeartbeat implements IPacketListener {
 	 * <li>Kind of beat (1 byte)</li>
 	 * <li>Peer UID length (2 bytes)</li>
 	 * <li>Peer UID (variable, UTF-8)</li>
+	 * <li>Node UID length (2 bytes)</li>
+	 * <li>Node UID (variable, UTF-8)</li>
 	 * <li>Application ID length (2 bytes)</li>
 	 * <li>Application ID (variable, UTF-8)</li>
 	 * </ul>
@@ -527,12 +569,15 @@ public class MulticastHeartbeat implements IPacketListener {
 		final byte[] appId = localAppId.getBytes(IHttpConstants.CHARSET_UTF8);
 
 		// Compute packet size (see method's documentation)
-		final int packetSize = 1 + 2 + uid.length + 2 + appId.length;
+		final int packetSize = 1 + 1 + 2 + uid.length + 2 + appId.length;
 
 		// Setup the buffer
 		final ByteBuffer buffer = ByteBuffer.allocate(packetSize);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 
+		// Format Version (1 byte)
+		buffer.put(PACKET_FORMAT_VERSION);
+				
 		// Kind (1 byte)
 		buffer.put(PACKET_TYPE_LASTBEAT);
 

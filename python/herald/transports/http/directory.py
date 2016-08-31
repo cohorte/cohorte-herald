@@ -44,6 +44,7 @@ import herald
 
 # Standard library
 import logging
+from pelix.utilities import to_str
 from pelix.ipopo.decorators import ComponentFactory, Requires, Provides, \
     Property, Validate, Invalidate, Instantiate
 
@@ -105,7 +106,9 @@ class HTTPDirectory(object):
         :param data: The peer access data, previously loaded with load_access()
         """
         if peer.uid != self._directory.local_uid:
-            self._uid_address[peer.uid] = data.address
+            peer_address = to_str(data.access[0])
+            if peer_address not in ("::", "0.0.0.0"):
+                self._uid_address[peer.uid] = data.address
 
     def peer_access_unset(self, peer, data):
         """
