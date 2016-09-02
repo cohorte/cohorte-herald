@@ -1,3 +1,10 @@
+Changes form the 0.0.5 to 1.0.0
+-------------------------------
+
+** Enhancements
+    * Multicast discovery : adding "format version" and "node uid" to the heartbeat paquet
+    * Multicast discovery : new configuration option to avoid discovering local peers (of same node)
+
 Changes form the 0.0.4 to 0.0.5
 -------------------------------
 
@@ -6,13 +13,13 @@ Changes form the 0.0.4 to 0.0.5
     * Added the Python EventAPI bridge project
 
 ** Enhancements
-	* Better message handling in HeraldDiscovery (RPC) [commit/522855f05d15a7c01634771c930c3d488a023c2a]
+    * Better message handling in HeraldDiscovery (RPC) [commit/522855f05d15a7c01634771c930c3d488a023c2a]
 
 ** Bug Fix	
-	* Solve the "TTL reached" issue [isandlaTech/cohorte-herald/pull/26]
-	* Minor fix to the 3-phase handshake in Java [isandlaTech/cohorte-herald/pull/24]
-	* When an error occurs during post, don't pop associated event [isandlaTech/cohorte-herald@6b08455]
-	* Avoid handling reply messages on HeraldRPCExporter
+    * Solve the "TTL reached" issue [isandlaTech/cohorte-herald/pull/26]
+    * Minor fix to the 3-phase handshake in Java [isandlaTech/cohorte-herald/pull/24]
+    * When an error occurs during post, don't pop associated event [isandlaTech/cohorte-herald@6b08455]
+    * Avoid handling reply messages on HeraldRPCExporter
 
 Changes form the 0.0.3 to 0.0.4
 -------------------------------

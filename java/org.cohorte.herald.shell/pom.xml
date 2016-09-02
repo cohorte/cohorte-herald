@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.cohorte.herald</groupId>
 		<artifactId>cohorte-herald</artifactId>
-		<version>0.0.5</version>
+		<version>1.0.0</version>
 	</parent>
 	<artifactId>org.cohorte.herald.shell</artifactId>
 	<packaging>bundle</packaging>
