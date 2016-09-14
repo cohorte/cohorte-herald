@@ -25,7 +25,6 @@ import org.apache.felix.ipojo.InstanceManager;
 import org.apache.felix.ipojo.MissingHandlerException;
 import org.apache.felix.ipojo.UnacceptableConfiguration;
 import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
@@ -37,9 +36,11 @@ import org.osgi.service.log.LogService;
  * Multicast broadcaster component instantiation helper
  *
  * @author Thomas Calmant
+ * 
+ * MOD_BD_20160914 remove @Instanciate as this component is now only created when using http transport, 
+ * 					not when we have local discovery.
  */
-@Component
-@Instantiate(name = "herald-http-discovery-multicast-starter")
+@Component(name= "herald-http-discovery-multicast-starter-factory")
 public class MulticastStarter {
 
     /**
