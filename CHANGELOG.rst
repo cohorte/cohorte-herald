@@ -5,6 +5,9 @@ Changes form the 0.0.5 to 1.0.0
     * Multicast discovery : adding "format version" and "node uid" to the heartbeat paquet
     * Multicast discovery : new configuration option to avoid discovering local peers (of same node)
 
+** Bug Fix
+    * Using a Http Service Availability Checker component to determin the right Http Service port[#82]
+
 Changes form the 0.0.4 to 0.0.5
 -------------------------------
 

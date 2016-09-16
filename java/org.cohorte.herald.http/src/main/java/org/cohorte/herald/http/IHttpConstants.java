@@ -50,4 +50,9 @@ public interface IHttpConstants {
     /** Message header : path **/
     String MESSAGE_HEADER_PATH = "herald-http-tansport-path";
 
+    /** Name of the component that checks the availability of http service (fully started) */
+    String FACTORY_HTTPSERVICE_AVAILABILIY_CHECKER = "cohorte-http-service-availability-checker-factory";    
+    
+    /** Name of the http service availability checker component instance */
+    String INSTANC_HTTPSERVICE_AVAILABILIY_CHECKER = "cohorte-http-service-availability-checker";
 }

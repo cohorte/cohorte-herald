@@ -1,4 +1,6 @@
-
+- MOD_BD_20160915 (issue isandlatech/cohorte-platforms/issues/82)
+ - using HttpServiceAvailabilityChecker service component to check if Http Service is really started and port is affected.
+   the port assigned to service property "org.osgi.service.http.port" is wrong. The good one returned by this service if located on "osgi.http.service.endpoints" service property of HttpService.
 
 
 - MOD_OG_20160726

@@ -45,6 +45,7 @@ import org.cohorte.herald.ValueError;
 import org.cohorte.herald.http.HTTPAccess;
 import org.cohorte.herald.http.HTTPExtra;
 import org.cohorte.herald.http.IHttpConstants;
+import org.cohorte.herald.http.IHttpServiceAvailabilityChecker;
 import org.cohorte.herald.transport.IContactHook;
 import org.cohorte.herald.transport.IDiscoveryConstants;
 import org.cohorte.herald.transport.PeerContact;
@@ -71,6 +72,9 @@ public class HttpReceiver implements IHttpReceiver, IContactHook {
     /** HTTPService dependency ID */
     private static final String IPOJO_ID_HTTP = "http.service";
 
+    /** Http Service Availability Checker dependency ID */
+    private static final String BIND_ID_HTTPSERVICE_AVAILABILITY_CHECKER = "http.availability.checker.service";
+    
     /** The peer contact utility */
     private PeerContact pContact;
 
@@ -108,6 +112,9 @@ public class HttpReceiver implements IHttpReceiver, IContactHook {
     @ServiceProperty(name = "servlet.path", value = IHttpConstants.SERVLET_PATH)
     private String pServletPath;
 
+    @Requires(id = BIND_ID_HTTPSERVICE_AVAILABILITY_CHECKER)
+    private IHttpServiceAvailabilityChecker pHttpServiceAvailabilityChecker;
+    
     /**
      * HTTP service ready
      *
@@ -115,11 +122,13 @@ public class HttpReceiver implements IHttpReceiver, IContactHook {
      *            The bound service
      * @param aServiceProperties
      *            The HTTP service properties
+     * @deprecated
      */
     @Bind(id = IPOJO_ID_HTTP)
     private void bindHttpService(final HttpService aHttpService,
             final Map<?, ?> aServiceProperties) {
-
+    	// MOD_BD_20160915 using HttpServiceAvailabilityChecker component to retrieve the right port
+    	/* 
         final Object rawPort = aServiceProperties.get(HTTP_SERVICE_PORT);
 
         if (rawPort instanceof Number) {
@@ -139,8 +148,23 @@ public class HttpReceiver implements IHttpReceiver, IContactHook {
 
         pLogger.log(LogService.LOG_INFO, "HTTP Receiver bound to port="
                 + pHttpPort);
+        */
     }
 
+    /**
+     * Http Service Availability Checker ready
+     * 
+     * @param aHttpServiceAvailablityChecker
+     * 				The bound service
+     */
+    @Bind(id = BIND_ID_HTTPSERVICE_AVAILABILITY_CHECKER)
+    private void bindHttpServiceAvailabilityChecker(final IHttpServiceAvailabilityChecker aHttpServiceAvailablityChecker) {
+    	// update port
+    	pHttpPort = aHttpServiceAvailablityChecker.getPort();
+    	pLogger.log(LogService.LOG_INFO, "HTTP Receiver bound to port="
+                + pHttpPort);
+    }
+    
     /**
      * Checks if the peer UID matches cached information (see
      * {@link IHttpDirectory#checkAccess(String, String, int)}
