@@ -6,7 +6,7 @@ Herald sample client, for debugging purpose
 :author: Thomas Calmant
 :copyright: Copyright 2014, isandlaTech
 :license: Apache License 2.0
-:version: 1.0.0
+:version: 1.0.1
 :status: Alpha
 
 ..
