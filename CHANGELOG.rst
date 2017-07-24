@@ -1,3 +1,9 @@
+Changes form the 1.0.0 to 1.0.1
+-------------------------------
+
+** Bug Fix
+    * Avoid infinite timer loop when no endpoint is found on Http Service properties [#isandlatech/cohorte-platforms/issues/82]
+
 Changes form the 0.0.5 to 1.0.0
 -------------------------------
 

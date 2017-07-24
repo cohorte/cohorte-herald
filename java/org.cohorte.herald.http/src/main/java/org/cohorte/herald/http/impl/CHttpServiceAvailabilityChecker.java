@@ -19,9 +19,12 @@ package org.cohorte.herald.http.impl;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.felix.ipojo.annotations.Bind;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Invalidate;
@@ -53,11 +56,23 @@ public class CHttpServiceAvailabilityChecker implements IHttpServiceAvailability
 	// TODO check on framework osgi api
     private static final String HTTP_SERVICE_ENDPOINTS = "osgi.http.service.endpoints";
     
+    /** HTTP service port property */
+    private static final String HTTP_SERVICE_PORT = "org.osgi.service.http.port";
+    
+    /** HTTPService dependency ID */
+    private static final String IPOJO_ID_HTTP = "http.service";
+    
+    /** Max hops before taking provided http service port as http port */
+    private static final int MAX_CHECK_HOPS = 10;
+    
 	/** HTTP service port */
     private int pHttpPort;
     
+    /** HTTP service port */
+    private int pHttpDefaultPort;
+    
 	/** HTTP service, injected by iPOJO */
-    @Requires
+    @Requires(id = IPOJO_ID_HTTP, filter = "(" + HTTP_SERVICE_PORT + "=*)")
     private HttpService pHttpService;    
     
 	/** Service controller */
@@ -73,6 +88,9 @@ public class CHttpServiceAvailabilityChecker implements IHttpServiceAvailability
     
     /** Timer used to check if endpoint's port is set */
     private Timer pTimer;
+    
+    private AtomicInteger pHops = new AtomicInteger(0);
+        
     
     /**
      * Constructor.
@@ -91,6 +109,42 @@ public class CHttpServiceAvailabilityChecker implements IHttpServiceAvailability
 		return pHttpPort;
 	}
     
+    /**
+     * HTTP service ready
+     * 
+     * MOD_BD_20170724
+     * 
+     * @param aHttpService
+     *            The bound service
+     * @param aServiceProperties
+     *            The HTTP service properties
+     */
+    @Bind(id = IPOJO_ID_HTTP)
+    private void bindHttpService(final HttpService aHttpService,
+            final Map<?, ?> aServiceProperties) {
+
+        final Object rawPort = aServiceProperties.get(HTTP_SERVICE_PORT);
+
+        if (rawPort instanceof Number) {
+            // Get the integer
+        	pHttpDefaultPort = ((Number) rawPort).intValue();
+
+        } else if (rawPort instanceof CharSequence) {
+            // Parse the string
+        	pHttpDefaultPort = Integer.parseInt(rawPort.toString());
+
+        } else {
+            // Unknown port type
+            pLogger.log(LogService.LOG_WARNING, "Couldn't read access port="
+                    + rawPort);
+            pHttpDefaultPort = -1;
+        }
+
+        pLogger.log(LogService.LOG_INFO, String.format("Default Http port provided by Http Service [%s]",
+        				pHttpDefaultPort));
+        
+    }
+	
 	@Validate
 	public void validate() {		
 		// set service listener to check if endpoint port is changed
@@ -125,9 +179,27 @@ public class CHttpServiceAvailabilityChecker implements IHttpServiceAvailability
 				checkRegisteredHttpService();
 				if (pHttpPort > 0) {							
 					this.cancel();
+				} else {
+					// MOD_BD_20170724
+					if (pHops.incrementAndGet() > MAX_CHECK_HOPS) {
+						setDefaultHttpServicePort();
+					}
 				}
 			}
+			
 		}, 1000, 1000);						
+	}
+	
+	/**
+	 * MOD_BD_20170724
+	 */
+	private void setDefaultHttpServicePort() {
+		pLogger.log(LogService.LOG_INFO, String.format("Setting Default Http Port from HttpService property [%s]. Value=[%s]", 
+				HTTP_SERVICE_PORT, pHttpDefaultPort));
+		pHttpPort = pHttpDefaultPort;
+		if (pHttpPort > 0) {
+			pController = true;
+		}
 	}
 	
 	@Invalidate
