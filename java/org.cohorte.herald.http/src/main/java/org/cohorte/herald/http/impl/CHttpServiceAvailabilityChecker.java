@@ -54,7 +54,7 @@ public class CHttpServiceAvailabilityChecker implements IHttpServiceAvailability
 
 	/** name of servie property holding valid Http Service endpoints */
 	// TODO check on framework osgi api
-    private static final String HTTP_SERVICE_ENDPOINTS = "osgi.http.service.endpoints";
+    private static final String HTTP_SERVICE_ENDPOINTS = "osgi.http.endpoint";
     
     /** HTTP service port property */
     private static final String HTTP_SERVICE_PORT = "org.osgi.service.http.port";
