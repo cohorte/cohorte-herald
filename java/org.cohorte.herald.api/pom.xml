@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.cohorte.herald</groupId>
 		<artifactId>cohorte-herald</artifactId>
-		<version>1.0.1-SNAPSHOT</version>
+		<version>1.0.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>org.cohorte.herald.api</artifactId>
@@ -50,9 +50,9 @@
 							org.cohorte.herald.eventapi;version="${project.version}"
 						</Import-Package>
 						<Export-Package>
-							org.cohorte.herald;version="${project.version}",
-							org.cohorte.herald.transport;version="${project.version}",
-							org.cohorte.herald.utils;version="${project.version}"
+							org.cohorte.herald",
+							org.cohorte.herald.transport",
+							org.cohorte.herald.utils"
 						</Export-Package>
 					</instructions>
 				</configuration>
