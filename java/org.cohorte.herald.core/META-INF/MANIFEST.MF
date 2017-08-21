@@ -1,0 +1,187 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1502269924583
+Build-Jdk: 1.8.0_20
+Built-By: bdebbabi
+Bundle-ManifestVersion: 2
+Bundle-Name: Cohorte Herald :: Core
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-SymbolicName: org.cohorte.herald.core
+Bundle-Vendor: isandlaTech.com
+Bundle-Version: 1.0.1
+Created-By: Apache Maven Bundle Plugin & iPOJO 1.12.1
+Export-Package: org.cohorte.herald.core.utils;uses:="org.cohorte.heral
+ d"
+Import-Package: org.apache.felix.ipojo, org.apache.felix.ipojo.archite
+ cture, org.cohorte.herald, org.cohorte.herald.eventapi, org.cohorte.h
+ erald.utils, org.jabsorb.ng, org.jabsorb.ng.callback, org.jabsorb.ng.
+ client, org.jabsorb.ng.localarg, org.jabsorb.ng.logging, org.jabsorb.
+ ng.reflect, org.jabsorb.ng.serializer, org.json, org.osgi.framework, 
+ org.osgi.service.cm, org.osgi.service.log
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Tool: Bnd-2.3.0.201405100607
+iPOJO-Components: instance { $name="herald-directory" $component="org.
+ cohorte.herald.core.Directory" }instance { $name="herald-core" $compo
+ nent="org.cohorte.herald.core.Herald" }component { $public="false" $n
+ ame="org.cohorte.herald.core.Directory" $classname="org.cohorte.heral
+ d.core.Directory" provides { $specifications="{org.cohorte.herald.IDi
+ rectory}" }requires { $field="pGroupListeners" $optional="true" $id="
+ group_listeners" callback { $method="bindGroupListener" $type="bind" 
+ }}requires { $field="pListeners" $optional="true" $id="listeners" cal
+ lback { $method="bindListener" $type="bind" }}requires { $field="pLog
+ ger" $optional="true" }requires { $aggregate="true" $optional="true" 
+ $id="directories" callback { $method="bindDirectory" $type="bind" }ca
+ llback { $method="unbindDirectory" $type="unbind" }}callback { $trans
+ ition="validate" $method="validate" }manipulation { $classname="org.c
+ ohorte.herald.core.Directory" interface { $name="org.cohorte.herald.I
+ Directory" }interface { $name="org.cohorte.herald.IDirectoryInternal"
+  }field { $name="pContext" $type="org.osgi.framework.BundleContext" }
+ field { $name="pDirectories" $type="java.util.Map" }field { $name="pG
+ roupListeners" $type="org.cohorte.herald.IDirectoryGroupListener[]" }
+ field { $name="pGroups" $type="java.util.Map" }field { $name="pListen
+ ers" $type="org.cohorte.herald.IDirectoryListener[]" }field { $name="
+ pLocalPeer" $type="org.cohorte.herald.Peer" }field { $name="pLogger" 
+ $type="org.osgi.service.log.LogService" }field { $name="pNames" $type
+ ="java.util.Map" }field { $name="pPeers" $type="java.util.Map" }metho
+ d { $name="bindDirectory" $arguments="{org.cohorte.herald.ITransportD
+ irectory,org.osgi.framework.ServiceReference}" $names="{aDirectory,aR
+ eference}" }method { $name="bindGroupListener" $arguments="{org.cohor
+ te.herald.IDirectoryGroupListener}" $names="{aListener}" }method { $n
+ ame="bindListener" $arguments="{org.cohorte.herald.IDirectoryListener
+ }" $names="{aListener}" }method { $name="dump" $return="java.util.Map
+ " }method { $name="getApplicationId" $return="java.lang.String" }meth
+ od { $name="getListProperty" $return="java.lang.String[]" $arguments=
+ "{org.osgi.framework.BundleContext,java.lang.String}" $names="{aConte
+ xt,aKey}" }method { $name="getLocalPeer" $return="org.cohorte.herald.
+ Peer" }method { $name="getLocalUid" $return="java.lang.String" }metho
+ d { $name="getPeer" $return="org.cohorte.herald.Peer" $arguments="{ja
+ va.lang.String}" $names="{aUid}" }method { $name="getPeers" $return="
+ java.util.Collection" }method { $name="getPeersForGroup" $return="jav
+ a.util.Collection" $arguments="{java.lang.String}" $names="{aGroupNam
+ e}" }method { $name="getPeersForName" $return="java.util.Collection" 
+ $arguments="{java.lang.String}" $names="{aName}" }method { $name="get
+ PeersForNode" $return="java.util.Collection" $arguments="{java.lang.S
+ tring}" $names="{aNodeUid}" }method { $name="getProperty" $return="ja
+ va.lang.String" $arguments="{org.osgi.framework.BundleContext,java.la
+ ng.String}" $names="{aContext,aKey}" }method { $name="invalidate" }me
+ thod { $name="load" $arguments="{java.util.Map}" $names="{aDump}" }me
+ thod { $name="makeLocalPeer" $return="org.cohorte.herald.Peer" }metho
+ d { $name="notifyGroupSet" $arguments="{java.lang.String}" $names="{a
+ Group}" }method { $name="notifyGroupUnset" $arguments="{java.lang.Str
+ ing}" $names="{aGroup}" }method { $name="notifyPeerRegistered" $argum
+ ents="{org.cohorte.herald.Peer}" $names="{aPeer}" }method { $name="no
+ tifyPeerUnregistered" $arguments="{org.cohorte.herald.Peer}" $names="
+ {aPeer}" }method { $name="notifyPeerUpdated" $arguments="{org.cohorte
+ .herald.Peer,java.lang.String,org.cohorte.herald.Access,org.cohorte.h
+ erald.Access}" $names="{aPeer,aAccessId,aData,aPrevious}" }method { $
+ name="peerAccessSet" $arguments="{org.cohorte.herald.Peer,java.lang.S
+ tring,org.cohorte.herald.Access}" $names="{aPeer,aAccessId,aData}" }m
+ ethod { $name="peerAccessUnset" $arguments="{org.cohorte.herald.Peer,
+ java.lang.String,org.cohorte.herald.Access}" $names="{aPeer,aAccessId
+ ,aData}" }method { $name="register" $return="org.cohorte.herald.Peer"
+  $arguments="{java.util.Map}" $names="{aDescription}" }method { $name
+ ="registerDelayed" $return="org.cohorte.herald.IDelayedNotification" 
+ $arguments="{java.util.Map}" $names="{aDescription}" }method { $name=
+ "unbindDirectory" $arguments="{org.cohorte.herald.ITransportDirectory
+ ,org.osgi.framework.ServiceReference}" $names="{aDirectory,aReference
+ }" }method { $name="unregister" $return="org.cohorte.herald.Peer" $ar
+ guments="{java.lang.String}" $names="{aUid}" }method { $name="validat
+ e" }}}component { $public="false" $name="org.cohorte.herald.core.Hera
+ ld" $classname="org.cohorte.herald.core.Herald" provides { $specifica
+ tions="{org.cohorte.herald.IHeraldInternal}" }requires { $field="pDir
+ ectory" }requires { $field="pEventFactory" }requires { $field="pLogge
+ r" $optional="true" }requires { $aggregate="true" $optional="true" $i
+ d="listeners" callback { $method="bindListener" $type="bind" }callbac
+ k { $method="unbindListener" $type="unbind" }callback { $method="upda
+ teListener" $type="modified" }}requires { $aggregate="true" $optional
+ ="true" $id="transports" callback { $method="bindTransport" $type="bi
+ nd" }callback { $method="unbindTransport" $type="unbind" }}callback {
+  $transition="invalidate" $method="invalidate" }callback { $transitio
+ n="validate" $method="validate" }manipulation { $classname="org.cohor
+ te.herald.core.Herald" interface { $name="org.cohorte.herald.IHerald"
+  }interface { $name="org.cohorte.herald.IHeraldInternal" }field { $na
+ me="pContext" $type="org.osgi.framework.BundleContext" }field { $name
+ ="pDirectory" $type="org.cohorte.herald.IDirectory" }field { $name="p
+ EventFactory" $type="org.cohorte.herald.eventapi.IEventFactory" }fiel
+ d { $name="pGarbageTimer" $type="org.cohorte.herald.utils.LoopTimer" 
+ }field { $name="pGarbageToken" $type="java.lang.Object" }field { $nam
+ e="pLastGarbage" $type="long" }field { $name="pListeners" $type="java
+ .util.Map" }field { $name="pListenersFilters" $type="java.util.Map" }
+ field { $name="pLogger" $type="org.osgi.service.log.LogService" }fiel
+ d { $name="pPool" $type="java.util.concurrent.ExecutorService" }field
+  { $name="pSvcRegistration" $type="org.osgi.framework.ServiceRegistra
+ tion" }field { $name="pTransports" $type="java.util.Map" }field { $na
+ me="pTreatedMessages" $type="java.util.Map" }field { $name="pWaitingE
+ vents" $type="java.util.Map" }field { $name="pWaitingPosts" $type="ja
+ va.util.Map" }method { $name="addMessageListener" $arguments="{org.co
+ horte.herald.IMessageListener,java.lang.String[]}" $names="{aListener
+ ,filters}" }method { $name="bindListener" $arguments="{org.cohorte.he
+ rald.IMessageListener,org.osgi.framework.ServiceReference}" $names="{
+ aListener,aReference}" }method { $name="bindTransport" $arguments="{o
+ rg.cohorte.herald.ITransport,org.osgi.framework.ServiceReference}" $n
+ ames="{aTransport,aReference}" }method { $name="fire" $return="java.l
+ ang.String" $arguments="{org.cohorte.herald.Peer,org.cohorte.herald.M
+ essage}" $names="{aPeer,aMessage}" }method { $name="fire" $return="ja
+ va.lang.String" $arguments="{java.lang.String,org.cohorte.herald.Mess
+ age}" $names="{aPeerUid,aMessage}" }method { $name="fireGroup" $retur
+ n="java.util.Collection" $arguments="{java.lang.String,org.cohorte.he
+ rald.Message}" $names="{aGroupName,aMessage}" }method { $name="fireRe
+ ply" $return="java.lang.String" $arguments="{org.cohorte.herald.Messa
+ ge,org.cohorte.herald.MessageReceived}" $names="{aReplyMessage,aOrigi
+ nalMessage}" }method { $name="forget" $return="boolean" $arguments="{
+ java.lang.String}" $names="{aMessageUid}" }method { $name="garbageCol
+ lect" }method { $name="handleDirectoryMessage" $arguments="{org.cohor
+ te.herald.MessageReceived,java.lang.String}" $names="{aMessage,aKind}
+ " }method { $name="handleError" $arguments="{org.cohorte.herald.Messa
+ geReceived,java.lang.String}" $names="{aMessage,aKind}" }method { $na
+ me="handleMessage" $arguments="{org.cohorte.herald.MessageReceived}" 
+ $names="{aMessage}" }method { $name="invalidate" }method { $name="not
+ ify" $arguments="{org.cohorte.herald.MessageReceived}" $names="{aMess
+ age}" }method { $name="post" $return="java.lang.String" $arguments="{
+ org.cohorte.herald.Peer,org.cohorte.herald.Message,org.cohorte.herald
+ .IPostCallback,org.cohorte.herald.IPostErrback}" $names="{aPeer,aMess
+ age,aCallback,aErrback}" }method { $name="post" $return="java.lang.St
+ ring" $arguments="{org.cohorte.herald.Peer,org.cohorte.herald.Message
+ ,org.cohorte.herald.IPostCallback,org.cohorte.herald.IPostErrback,jav
+ a.lang.Long}" $names="{aPeer,aMessage,aCallback,aErrback,aTimeout}" }
+ method { $name="post" $return="java.lang.String" $arguments="{org.coh
+ orte.herald.Peer,org.cohorte.herald.Message,org.cohorte.herald.IPostC
+ allback,org.cohorte.herald.IPostErrback,java.lang.Long,boolean}" $nam
+ es="{aPeer,aMessage,aCallback,aErrback,aTimeout,aForgetOnFirst}" }met
+ hod { $name="post" $return="java.lang.String" $arguments="{java.lang.
+ String,org.cohorte.herald.Message,org.cohorte.herald.IPostCallback,or
+ g.cohorte.herald.IPostErrback}" $names="{aPeerUid,aMessage,aCallback,
+ aErrback}" }method { $name="post" $return="java.lang.String" $argumen
+ ts="{java.lang.String,org.cohorte.herald.Message,org.cohorte.herald.I
+ PostCallback,org.cohorte.herald.IPostErrback,java.lang.Long}" $names=
+ "{aPeerUid,aMessage,aCallback,aErrback,aTimeout}" }method { $name="po
+ st" $return="java.lang.String" $arguments="{java.lang.String,org.coho
+ rte.herald.Message,org.cohorte.herald.IPostCallback,org.cohorte.heral
+ d.IPostErrback,java.lang.Long,boolean}" $names="{aPeerUid,aMessage,aC
+ allback,aErrback,aTimeout,aForgetOnFirst}" }method { $name="postGroup
+ " $return="java.lang.String" $arguments="{java.lang.String,org.cohort
+ e.herald.Message,org.cohorte.herald.IPostCallback,org.cohorte.herald.
+ IPostErrback,java.lang.Long}" $names="{aGroupName,aMessage,aCallback,
+ aErrback,aTimeout}" }method { $name="removeMessageListener" $argument
+ s="{org.cohorte.herald.IMessageListener}" $names="{aListener}" }metho
+ d { $name="reply" $arguments="{org.cohorte.herald.MessageReceived,jav
+ a.lang.Object}" $names="{aMessage,aContent}" }method { $name="reply" 
+ $arguments="{org.cohorte.herald.MessageReceived,java.lang.Object,java
+ .lang.String}" $names="{aMessage,aContent,aSubject}" }method { $name=
+ "send" $return="java.lang.Object" $arguments="{org.cohorte.herald.Pee
+ r,org.cohorte.herald.Message}" $names="{aPeer,aMessage}" }method { $n
+ ame="send" $return="java.lang.Object" $arguments="{org.cohorte.herald
+ .Peer,org.cohorte.herald.Message,java.lang.Long}" $names="{aPeer,aMes
+ sage,aTimeout}" }method { $name="send" $return="java.lang.Object" $ar
+ guments="{java.lang.String,org.cohorte.herald.Message}" $names="{aPee
+ rUid,aMessage}" }method { $name="send" $return="java.lang.Object" $ar
+ guments="{java.lang.String,org.cohorte.herald.Message,java.lang.Long}
+ " $names="{aPeerUid,aMessage,aTimeout}" }method { $name="unbindListen
+ er" $arguments="{org.cohorte.herald.IMessageListener,org.osgi.framewo
+ rk.ServiceReference}" $names="{aListener,aReference}" }method { $name
+ ="unbindTransport" $arguments="{org.cohorte.herald.ITransport,org.osg
+ i.framework.ServiceReference}" $names="{aTransport,aReference}" }meth
+ od { $name="updateListener" $arguments="{org.cohorte.herald.IMessageL
+ istener,org.osgi.framework.ServiceReference}" $names="{aListener,aRef
+ erence}" }method { $name="validate" }inner { $name="1" method { $name
+ ="run" }}inner { $name="2" method { $name="run" }}}}
+

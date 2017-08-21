@@ -1,0 +1,223 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1502274673397
+Build-Jdk: 1.8.0_20
+Built-By: bdebbabi
+Bundle-ManifestVersion: 2
+Bundle-Name: Cohorte Herald :: HTTP Transport
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-SymbolicName: org.cohorte.herald.http
+Bundle-Vendor: isandlaTech.com
+Bundle-Version: 1.0.1
+Created-By: Apache Maven Bundle Plugin & iPOJO 1.12.1
+Export-Package: org.cohorte.herald.http;uses:="org.cohorte.herald",org
+ .cohorte.herald.http.impl; uses:="javax.servlet,  javax.servlet.http,
+   org.cohorte.herald,  org.cohorte.herald.http,  org.cohorte.herald.t
+ ransport,  org.jabsorb.ng.serializer,  org.osgi.framework"
+Import-Package: javax.servlet, javax.servlet.http, org.apache.felix.ip
+ ojo, org.apache.felix.ipojo.architecture, org.cohorte.herald, org.coh
+ orte.herald.core.utils, org.cohorte.herald.eventapi, org.cohorte.hera
+ ld.transport, org.cohorte.herald.utils, org.jabsorb.ng, org.jabsorb.n
+ g.serializer, org.json, org.osgi.framework, org.osgi.service.cm, org.
+ osgi.service.http, org.osgi.service.log
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Tool: Bnd-2.3.0.201405100607
+iPOJO-Components: instance { $name="cohorte-http-service-availability-
+ checker" $component="cohorte-http-service-availability-checker-factor
+ y" }instance { $name="herald-http-directory" $component="org.cohorte.
+ herald.http.impl.HttpDirectory" }instance { $name="herald-http-receiv
+ er" $component="org.cohorte.herald.http.impl.HttpReceiver" }instance 
+ { $name="herald-http-transport" $component="org.cohorte.herald.http.i
+ mpl.HttpTransport" }component { $name="herald-http-discovery-multicas
+ t-factory" $classname="org.cohorte.herald.http.discovery.MulticastHea
+ rtbeat" requires { $field="pDirectory" }requires { $field="pEventFact
+ ory" }requires { $field="pHttpTransport" $filter="(herald.access.id=h
+ ttp)" }requires { $field="pLogger" $optional="true" }requires { $fiel
+ d="pReceiver" }properties { property { $name="multicast.group" $field
+ ="pMulticastGroup" $value="239.0.0.1" }property { $name="multicast.po
+ rt" $field="pMulticastPort" $value="42000" }property { $name="discove
+ r.local.peers" $field="pDiscoverLocalPeers" $value="true" }}callback 
+ { $transition="invalidate" $method="invalidate" }callback { $transiti
+ on="validate" $method="validate" }manipulation { $classname="org.coho
+ rte.herald.http.discovery.MulticastHeartbeat" interface { $name="org.
+ cohorte.remote.multicast.utils.IPacketListener" }field { $name="pDire
+ ctory" $type="org.cohorte.herald.IDirectory" }field { $name="pDiscove
+ rLocalPeers" $type="boolean" }field { $name="pEventFactory" $type="or
+ g.cohorte.herald.eventapi.IEventFactory" }field { $name="pHeartThread
+ " $type="java.lang.Thread" }field { $name="pHttpTransport" $type="org
+ .cohorte.herald.ITransport" }field { $name="pLocalPeer" $type="org.co
+ horte.herald.Peer" }field { $name="pLogger" $type="org.osgi.service.l
+ og.LogService" }field { $name="pMulticast" $type="org.cohorte.remote.
+ multicast.utils.MulticastHandler" }field { $name="pMulticastGroup" $t
+ ype="java.lang.String" }field { $name="pMulticastPort" $type="int" }f
+ ield { $name="pPeerLST" $type="java.util.Map" }field { $name="pReceiv
+ er" $type="org.cohorte.herald.http.impl.IHttpReceiver" }field { $name
+ ="pStopEvent" $type="org.cohorte.herald.eventapi.IEvent" }field { $na
+ me="pTTLThread" $type="java.lang.Thread" }method { $name="discoverPee
+ r" $arguments="{java.lang.String,int,java.lang.String}" $names="{aHos
+ tAddress,aPort,aPath}" }method { $name="extractString" $return="java.
+ lang.String" $arguments="{java.nio.ByteBuffer}" $names="{aBuffer}" }m
+ ethod { $name="getUnsignedShort" $return="int" $arguments="{java.nio.
+ ByteBuffer}" $names="{aBuffer}" }method { $name="handleError" $return
+ ="boolean" $arguments="{java.lang.Exception}" $names="{aException}" }
+ method { $name="handleHeartbeat" $arguments="{java.lang.String,java.l
+ ang.String,java.lang.String,java.lang.String,int,java.lang.String}" $
+ names="{aPeerUid,aNodeUid,aApplicationId,aHostAddress,aPort,aPath}" }
+ method { $name="handleLastbeat" $arguments="{java.lang.String,java.la
+ ng.String}" $names="{aPeerUid,aApplicationId}" }method { $name="handl
+ ePacket" $arguments="{java.net.InetSocketAddress,byte[]}" $names="{aS
+ ender,aContent}" }method { $name="heartLoop" }method { $name="invalid
+ ate" }method { $name="lstLoop" }method { $name="makeHeartbeat" $retur
+ n="byte[]" }method { $name="makeLastbeat" $return="byte[]" }method { 
+ $name="validate" }inner { $name="1" method { $name="run" }}inner { $n
+ ame="2" method { $name="run" }}}}component { $name="herald-http-disco
+ very-multicast-starter-factory" $classname="org.cohorte.herald.http.d
+ iscovery.MulticastStarter" requires { $field="pLogger" $optional="tru
+ e" }requires { $field="pMulticastFactory" $filter="(factory.name=hera
+ ld-http-discovery-multicast-factory)" }callback { $transition="invali
+ date" $method="invalidate" }callback { $transition="validate" $method
+ ="validate" }manipulation { $classname="org.cohorte.herald.http.disco
+ very.MulticastStarter" field { $name="pContext" $type="org.osgi.frame
+ work.BundleContext" }field { $name="pInstance" $type="org.apache.feli
+ x.ipojo.ComponentInstance" }field { $name="pLogger" $type="org.osgi.s
+ ervice.log.LogService" }field { $name="pMulticastFactory" $type="org.
+ apache.felix.ipojo.Factory" }method { $name="getProperty" $return="ja
+ va.lang.String" $arguments="{java.lang.String,java.lang.String}" $nam
+ es="{aKey,aDefault}" }method { $name="invalidate" }method { $name="st
+ artComponent" }method { $name="stopComponent" }method { $name="valida
+ te" }}}component { $name="cohorte-http-service-availability-checker-f
+ actory" $classname="org.cohorte.herald.http.impl.CHttpServiceAvailabi
+ lityChecker" provides { $specifications="{org.cohorte.herald.http.IHt
+ tpServiceAvailabilityChecker}" controller { $field="pController" $val
+ ue="false" }}requires { $field="pHttpService" $filter="(org.osgi.serv
+ ice.http.port=*)" $id="http.service" callback { $method="bindHttpServ
+ ice" $type="bind" }}requires { $field="pLogger" $optional="true" }cal
+ lback { $transition="validate" $method="validate" }callback { $transi
+ tion="invalidate" $method="invalidate" }manipulation { $classname="or
+ g.cohorte.herald.http.impl.CHttpServiceAvailabilityChecker" interface
+  { $name="org.cohorte.herald.http.IHttpServiceAvailabilityChecker" }f
+ ield { $name="pBundleContext" $type="org.osgi.framework.BundleContext
+ " }field { $name="pController" $type="boolean" }field { $name="pHops"
+  $type="java.util.concurrent.atomic.AtomicInteger" }field { $name="pH
+ ttpDefaultPort" $type="int" }field { $name="pHttpPort" $type="int" }f
+ ield { $name="pHttpService" $type="org.osgi.service.http.HttpService"
+  }field { $name="pLogger" $type="org.osgi.service.log.LogService" }fi
+ eld { $name="pTimer" $type="java.util.Timer" }method { $name="getPort
+ " $return="int" }method { $name="bindHttpService" $arguments="{org.os
+ gi.service.http.HttpService,java.util.Map}" $names="{aHttpService,aSe
+ rviceProperties}" }method { $name="validate" }method { $name="setDefa
+ ultHttpServicePort" }method { $name="invalidate" }method { $name="che
+ ckRegisteredHttpService" }method { $name="checkEndpoints" $return="bo
+ olean" $arguments="{java.lang.Object}" $names="{aEndpoints}" }method 
+ { $name="getPort" $return="int" $arguments="{java.lang.String}" $name
+ s="{aEndpoint}" }inner { $name="1" method { $name="serviceChanged" $a
+ rguments="{org.osgi.framework.ServiceEvent}" $names="{}" }}inner { $n
+ ame="2" method { $name="run" }}}}component { $name="org.cohorte.heral
+ d.http.impl.HttpDirectory" $classname="org.cohorte.herald.http.impl.H
+ ttpDirectory" provides { $specifications="{org.cohorte.herald.ITransp
+ ortDirectory,org.cohorte.herald.http.impl.IHttpDirectory}" property {
+  $name="herald.access.id" $field="pAccessId" $value="http" }}requires
+  { $field="pDirectory" }callback { $transition="invalidate" $method="
+ invalidate" }callback { $transition="validate" $method="validate" }ma
+ nipulation { $classname="org.cohorte.herald.http.impl.HttpDirectory" 
+ interface { $name="org.cohorte.herald.ITransportDirectory" }interface
+  { $name="org.cohorte.herald.http.impl.IHttpDirectory" }field { $name
+ ="pAccessId" $type="java.lang.String" }field { $name="pDirectory" $ty
+ pe="org.cohorte.herald.IDirectory" }field { $name="pUidAddress" $type
+ ="java.util.Map" }method { $name="checkAccess" $return="boolean" $arg
+ uments="{java.lang.String,java.lang.String,int}" $names="{aPeerUid,aH
+ ost,aPort}" }method { $name="invalidate" }method { $name="loadAccess"
+  $return="org.cohorte.herald.Access" $arguments="{java.lang.Object}" 
+ $names="{aData}" }method { $name="peerAccessSet" $arguments="{org.coh
+ orte.herald.Peer,org.cohorte.herald.Access}" $names="{aPeer,aData}" }
+ method { $name="peerAccessUnset" $arguments="{org.cohorte.herald.Peer
+ ,org.cohorte.herald.Access}" $names="{aPeer,aData}" }method { $name="
+ validate" }}}component { $name="org.cohorte.herald.http.impl.HttpRece
+ iver" $classname="org.cohorte.herald.http.impl.HttpReceiver" provides
+  { $specifications="{org.cohorte.herald.http.impl.IHttpReceiver}" con
+ troller { $field="pController" $value="false" }property { $name="serv
+ let.path" $field="pServletPath" $value="/herald" }}requires { $field=
+ "pDirectory" }requires { $field="pHerald" }requires { $field="pHttpDi
+ rectory" }requires { $field="pHttpService" $filter="(org.osgi.service
+ .http.port=*)" $id="http.service" callback { $method="bindHttpService
+ " $type="bind" }callback { $method="unbindHttpService" $type="unbind"
+  }}requires { $field="pLogger" $optional="true" }requires { $field="p
+ HttpServiceAvailabilityChecker" $id="http.availability.checker.servic
+ e" callback { $method="bindHttpServiceAvailabilityChecker" $type="bin
+ d" }}callback { $transition="invalidate" $method="invalidate" }callba
+ ck { $transition="validate" $method="validate" }manipulation { $class
+ name="org.cohorte.herald.http.impl.HttpReceiver" interface { $name="o
+ rg.cohorte.herald.http.impl.IHttpReceiver" }interface { $name="org.co
+ horte.herald.transport.IContactHook" }field { $name="pContact" $type=
+ "org.cohorte.herald.transport.PeerContact" }field { $name="pControlle
+ r" $type="boolean" }field { $name="pDirectory" $type="org.cohorte.her
+ ald.IDirectory" }field { $name="pHerald" $type="org.cohorte.herald.IH
+ eraldInternal" }field { $name="pHttpDirectory" $type="org.cohorte.her
+ ald.http.impl.IHttpDirectory" }field { $name="pHttpPort" $type="int" 
+ }field { $name="pHttpService" $type="org.osgi.service.http.HttpServic
+ e" }field { $name="pHttpServiceAvailabilityChecker" $type="org.cohort
+ e.herald.http.IHttpServiceAvailabilityChecker" }field { $name="pLogge
+ r" $type="org.osgi.service.log.LogService" }field { $name="pSerialize
+ r" $type="org.jabsorb.ng.JSONSerializer" }field { $name="pServletPath
+ " $type="java.lang.String" }method { $name="bindHttpService" $argumen
+ ts="{org.osgi.service.http.HttpService,java.util.Map}" $names="{aHttp
+ Service,aServiceProperties}" }method { $name="bindHttpServiceAvailabi
+ lityChecker" $arguments="{org.cohorte.herald.http.IHttpServiceAvailab
+ ilityChecker}" $names="{aHttpServiceAvailablityChecker}" }method { $n
+ ame="checkAccess" $return="boolean" $arguments="{java.lang.String,jav
+ a.lang.String,int}" $names="{aPeerUid,aHost,aPort}" }method { $name="
+ deserialize" $return="java.lang.Object" $arguments="{java.lang.String
+ }" $names="{aJsonString}" }method { $name="getAccessInfo" $return="or
+ g.cohorte.herald.http.HTTPAccess" }method { $name="getLocalPeer" $ret
+ urn="org.cohorte.herald.Peer" }method { $name="grabPeer" $return="jav
+ a.util.Map" $arguments="{java.lang.String,int,java.lang.String}" $nam
+ es="{aHostAddress,aPort,aPath}" }method { $name="handleMessage" $argu
+ ments="{org.cohorte.herald.MessageReceived}" $names="{aMessage}" }met
+ hod { $name="inputStreamToBytes" $return="byte[]" $arguments="{java.i
+ o.InputStream}" $names="{aInputStream}" }method { $name="invalidate" 
+ }method { $name="log" $arguments="{int,java.lang.String}" $names="{aL
+ ogLevel,aMessage}" }method { $name="log" $arguments="{int,java.lang.S
+ tring,java.lang.Throwable}" $names="{aLogLevel,aMessage,aThrowable}" 
+ }method { $name="serialize" $return="java.lang.String" $arguments="{j
+ ava.lang.Object}" $names="{aData}" }method { $name="unbindHttpService
+ " }method { $name="updateDescription" $return="java.util.Map" $argume
+ nts="{org.cohorte.herald.MessageReceived,java.util.Map}" $names="{aMe
+ ssage,aDescription}" }method { $name="validate" }method { $name="getL
+ ogger" $return="org.osgi.service.log.LogService" }}}component { $name
+ ="org.cohorte.herald.http.impl.HttpTransport" $classname="org.cohorte
+ .herald.http.impl.HttpTransport" provides { $specifications="{org.coh
+ orte.herald.ITransport}" property { $name="herald.access.id" $field="
+ pAccessId" $value="http" }controller { $field="pController" }}require
+ s { $field="pDirectory" }requires { $field="pLogger" $optional="true"
+  }requires { $field="pReceiver" }callback { $transition="invalidate" 
+ $method="invalidate" }callback { $transition="validate" $method="vali
+ date" }manipulation { $classname="org.cohorte.herald.http.impl.HttpTr
+ ansport" interface { $name="org.cohorte.herald.ITransport" }field { $
+ name="pAccessId" $type="java.lang.String" }field { $name="pController
+ " $type="boolean" }field { $name="pDirectory" $type="org.cohorte.hera
+ ld.IDirectory" }field { $name="pExecutor" $type="java.util.concurrent
+ .ExecutorService" }field { $name="pLocalUid" $type="java.lang.String"
+  }field { $name="pLogger" $type="org.osgi.service.log.LogService" }fi
+ eld { $name="pReceiver" $type="org.cohorte.herald.http.impl.IHttpRece
+ iver" }field { $name="pSerializer" $type="org.jabsorb.ng.JSONSerializ
+ er" }method { $name="fire" $arguments="{org.cohorte.herald.Peer,org.c
+ ohorte.herald.Message}" $names="{aPeer,aMessage}" }method { $name="fi
+ re" $arguments="{org.cohorte.herald.Peer,org.cohorte.herald.Message,j
+ ava.lang.Object}" $names="{aPeer,aMessage,aExtra}" }method { $name="f
+ ireGroup" $return="java.util.Collection" $arguments="{java.lang.Strin
+ g,java.util.Collection,org.cohorte.herald.Message}" $names="{aGroup,a
+ Peers,aMessage}" }method { $name="getAccessUrl" $return="java.net.URL
+ " $arguments="{org.cohorte.herald.Peer,java.lang.Object}" $names="{aP
+ eer,aExtra}" }method { $name="invalidate" }method { $name="makeConten
+ t" $return="java.lang.String" $arguments="{org.cohorte.herald.Message
+ }" $names="{aMsg}" }method { $name="makeHeaders" $return="java.util.M
+ ap" $arguments="{org.cohorte.herald.Message,java.lang.String,org.coho
+ rte.herald.Peer,java.lang.String}" $names="{aMessage,aParentUid,aPeer
+ ,aGroup}" }method { $name="sendRequest" $arguments="{org.cohorte.hera
+ ld.Peer,java.net.URL,java.util.Map,java.lang.String}" $names="{aPeer,
+ aUrl,aHeaders,aContent}" }method { $name="validate" }inner { $name="1
+ " method { $name="run" $arguments="{java.lang.Object,java.lang.Throwa
+ ble,org.cohorte.herald.Peer}" $names="{}" }method { $name="run" $argu
+ ments="{java.lang.Object,java.lang.Throwable,java.lang.Object}" $name
+ s="{}" }}inner { $name="2" method { $name="run" $return="java.lang.Ob
+ ject" }}}}
+

@@ -1,0 +1,105 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1502275102425
+Build-Jdk: 1.8.0_20
+Built-By: bdebbabi
+Bundle-ClassPath: lib/babbler-0.4.0-beta.1-SNAPSHOT.jar
+Bundle-ManifestVersion: 2
+Bundle-Name: Cohorte Herald :: XMPP Transport
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-SymbolicName: org.cohorte.herald.xmpp
+Bundle-Vendor: isandlaTech.com
+Bundle-Version: 1.0.1
+Created-By: Apache Maven Bundle Plugin & iPOJO 1.12.1
+Embed-Dependency: xmpp-*;inline=true
+Import-Package: javax.crypto, javax.crypto.spec, javax.naming, javax.n
+ aming.directory, javax.net, javax.net.ssl, javax.security.auth.callba
+ ck, javax.security.auth.login, javax.security.sasl, javax.xml.bind, j
+ avax.xml.bind.annotation, javax.xml.bind.annotation.adapters, javax.x
+ ml.namespace, javax.xml.parsers, javax.xml.stream, javax.xml.stream.e
+ vents, javax.xml.transform, javax.xml.transform.dom, javax.xml.transf
+ orm.stream, org.apache.felix.ipojo, org.apache.felix.ipojo.architectu
+ re, org.cohorte.herald, org.cohorte.herald.core.utils, org.cohorte.he
+ rald.transport, org.cohorte.herald.utils, org.jabsorb.ng, org.jabsorb
+ .ng.serializer, org.osgi.framework, org.osgi.service.cm, org.osgi.ser
+ vice.http, org.osgi.service.log
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Tool: Bnd-2.3.0.201405100607
+iPOJO-Components: instance { $name="herald-xmpp-directory" $component=
+ "org.cohorte.herald.xmpp.impl.XmppDirectory" }component { $name="org.
+ cohorte.herald.xmpp.impl.XmppDirectory" $classname="org.cohorte.heral
+ d.xmpp.impl.XmppDirectory" provides { $specifications="{org.cohorte.h
+ erald.ITransportDirectory,org.cohorte.herald.xmpp.IXmppDirectory}" pr
+ operty { $name="herald.access.id" $field="pAccessId" $value="xmpp" }}
+ requires { $field="pDirectory" }callback { $transition="invalidate" $
+ method="invalidate" }callback { $transition="validate" $method="valid
+ ate" }manipulation { $classname="org.cohorte.herald.xmpp.impl.XmppDir
+ ectory" interface { $name="org.cohorte.herald.ITransportDirectory" }i
+ nterface { $name="org.cohorte.herald.xmpp.IXmppDirectory" }field { $n
+ ame="pAccessId" $type="java.lang.String" }field { $name="pDirectory" 
+ $type="org.cohorte.herald.IDirectory" }field { $name="pGroups" $type=
+ "java.util.Map" }field { $name="pJidPeer" $type="java.util.Map" }meth
+ od { $name="fromJID" $return="org.cohorte.herald.Peer" $arguments="{r
+ ocks.xmpp.core.Jid}" $names="{aJid}" }method { $name="invalidate" }me
+ thod { $name="loadAccess" $return="org.cohorte.herald.Access" $argume
+ nts="{java.lang.Object}" $names="{aData}" }method { $name="peerAccess
+ Set" $arguments="{org.cohorte.herald.Peer,org.cohorte.herald.Access}"
+  $names="{aPeer,aData}" }method { $name="peerAccessUnset" $arguments=
+ "{org.cohorte.herald.Peer,org.cohorte.herald.Access}" $names="{aPeer,
+ aData}" }method { $name="validate" }}}component { $name="herald-xmpp-
+ transport-factory" $classname="org.cohorte.herald.xmpp.impl.XmppTrans
+ port" provides { $specifications="{org.cohorte.herald.ITransport}" pr
+ operty { $name="herald.access.id" $field="pAccessId" $value="xmpp" }c
+ ontroller { $field="pController" }}requires { $field="pDirectory" }re
+ quires { $field="pHerald" }requires { $field="pLogger" }requires { $f
+ ield="pXmppDirectory" }properties { property { $name="xmpp.server" $f
+ ield="pHost" $value="localhost" }property { $name="xmpp.port" $field=
+ "pPort" $value="5222" }}callback { $transition="invalidate" $method="
+ invalidate" }callback { $transition="validate" $method="validate" }ma
+ nipulation { $classname="org.cohorte.herald.xmpp.impl.XmppTransport" 
+ interface { $name="org.cohorte.herald.ITransport" }interface { $name=
+ "org.cohorte.herald.xmpp.impl.IBotListener" }interface { $name="org.c
+ ohorte.herald.xmpp.impl.IRoomListener" }field { $name="pAccessId" $ty
+ pe="java.lang.String" }field { $name="pBot" $type="org.cohorte.herald
+ .xmpp.impl.Bot" }field { $name="pContact" $type="org.cohorte.herald.t
+ ransport.PeerContact" }field { $name="pController" $type="boolean" }f
+ ield { $name="pCountdowns" $type="java.util.Set" }field { $name="pDir
+ ectory" $type="org.cohorte.herald.IDirectory" }field { $name="pHerald
+ " $type="org.cohorte.herald.IHeraldInternal" }field { $name="pHost" $
+ type="java.lang.String" }field { $name="pLogger" $type="org.osgi.serv
+ ice.log.LogService" }field { $name="pMucDomain" $type="java.lang.Stri
+ ng" }field { $name="pPort" $type="int" }field { $name="pSerializer" $
+ type="org.jabsorb.ng.JSONSerializer" }field { $name="pXmppDirectory" 
+ $type="org.cohorte.herald.xmpp.IXmppDirectory" }method { $name="creat
+ eRooms" $arguments="{java.util.Collection,java.lang.String}" $names="
+ {aRooms,aNickname}" }method { $name="findFirstMucDomain" $return="jav
+ a.lang.String" }method { $name="fire" $arguments="{org.cohorte.herald
+ .Peer,org.cohorte.herald.Message}" $names="{aPeer,aMessage}" }method 
+ { $name="fire" $arguments="{org.cohorte.herald.Peer,org.cohorte.heral
+ d.Message,java.lang.Object}" $names="{aPeer,aMessage,aExtra}" }method
+  { $name="fireGroup" $return="java.util.Collection" $arguments="{java
+ .lang.String,java.util.Collection,org.cohorte.herald.Message}" $names
+ ="{aGroup,aPeers,aMessage}" }method { $name="getJid" $return="rocks.x
+ mpp.core.Jid" $arguments="{org.cohorte.herald.Peer,org.cohorte.herald
+ .xmpp.XmppExtra}" $names="{aPeer,aExtra}" }method { $name="getRoomJid
+ " $return="rocks.xmpp.core.Jid" $arguments="{java.lang.String}" $name
+ s="{aRoomName}" }method { $name="invalidate" }method { $name="onMessa
+ ge" $arguments="{rocks.xmpp.core.stanza.model.client.Message}" $names
+ ="{aMessage}" }method { $name="onRoomCreated" $arguments="{rocks.xmpp
+ .core.Jid,java.lang.String}" $names="{aRoomJid,aNick}" }method { $nam
+ e="onRoomError" $arguments="{rocks.xmpp.core.Jid,java.lang.String,jav
+ a.lang.String,java.lang.String}" $names="{aRoomJid,aNick,aCondition,a
+ Description}" }method { $name="onRoomIn" $arguments="{rocks.xmpp.core
+ .Jid,rocks.xmpp.extensions.muc.Occupant}" $names="{aRoomJid,aOccupant
+ }" }method { $name="onRoomOut" $arguments="{rocks.xmpp.core.Jid,rocks
+ .xmpp.extensions.muc.Occupant}" $names="{aRoomJid,aOccupant}" }method
+  { $name="onRoomsReady" $arguments="{java.util.Set,java.util.Set}" $n
+ ames="{aSucceeded,aErrors}" }method { $name="onSessionEnd" $arguments
+ ="{rocks.xmpp.core.session.XmppSession}" $names="{aSession}" }method 
+ { $name="onSessionStart" $arguments="{rocks.xmpp.core.session.XmppSes
+ sion}" $names="{aSession}" }method { $name="sendMessage" $arguments="
+ {rocks.xmpp.core.stanza.model.AbstractMessage$Type,rocks.xmpp.core.Ji
+ d,org.cohorte.herald.Message,java.lang.String}" $names="{aType,aJid,a
+ Message,aParentUid}" }method { $name="validate" }inner { $name="1" me
+ thod { $name="onMarksDone" $arguments="{java.util.Set,java.util.Set}"
+  $names="{}" }}}}
+

@@ -1,0 +1,129 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1502275102721
+Build-Jdk: 1.8.0_20
+Built-By: bdebbabi
+Bundle-ManifestVersion: 2
+Bundle-Name: Cohorte Herald :: Jabsorb-RPC
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-SymbolicName: org.cohorte.herald.rpc
+Bundle-Vendor: isandlaTech.com
+Bundle-Version: 1.0.1
+Created-By: Apache Maven Bundle Plugin & iPOJO 1.12.1
+Import-Package: org.apache.felix.ipojo, org.apache.felix.ipojo.archite
+ cture, org.cohorte.herald, org.cohorte.herald.utils, org.cohorte.remo
+ te, org.cohorte.remote.utilities, org.jabsorb.ng, org.jabsorb.ng.clie
+ nt, org.jabsorb.ng.serializer, org.json, org.osgi.framework, org.osgi
+ .service.cm, org.osgi.service.log
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Tool: Bnd-2.3.0.201405100607
+iPOJO-Components: instance { $name="herald-rpc-discovery" $component="
+ org.cohorte.herald.rpc.HeraldDiscovery" }instance { $name="herald-rpc
+ -exporter" $component="org.cohorte.herald.rpc.HeraldRpcExporter" }ins
+ tance { $name="herald-rpc-importer" $component="org.cohorte.herald.rp
+ c.HeraldRpcImporter" }component { $name="org.cohorte.herald.rpc.Heral
+ dDiscovery" $classname="org.cohorte.herald.rpc.HeraldDiscovery" provi
+ des { $specifications="{org.cohorte.herald.IMessageListener}" $post-r
+ egistration="postRegistration" $post-unregistration="postUnregistrati
+ on" property { $name="herald.filters" $field="pFilters" $value="{hera
+ ld/rpc/discovery/*}" }}requires { $field="pDirectory" }requires { $fi
+ eld="pDispatcher" }requires { $field="pHerald" }requires { $field="pL
+ ogger" $optional="true" }requires { $field="pRegistry" }manipulation 
+ { $classname="org.cohorte.herald.rpc.HeraldDiscovery" interface { $na
+ me="org.cohorte.herald.IMessageListener" }interface { $name="org.coho
+ rte.herald.IDirectoryListener" }interface { $name="org.cohorte.remote
+ .IExportEndpointListener" }field { $name="pContext" $type="org.osgi.f
+ ramework.BundleContext" }field { $name="pDirectory" $type="org.cohort
+ e.herald.IDirectory" }field { $name="pDispatcher" $type="org.cohorte.
+ remote.IExportsDispatcher" }field { $name="pFilters" $type="java.lang
+ .String[]" }field { $name="pHerald" $type="org.cohorte.herald.IHerald
+ " }field { $name="pLogger" $type="org.osgi.service.log.LogService" }f
+ ield { $name="pRegistration" $type="org.osgi.framework.ServiceRegistr
+ ation" }field { $name="pRegistry" $type="org.cohorte.remote.IImportsR
+ egistry" }method { $name="dumpEndpoint" $return="java.util.Map" $argu
+ ments="{org.cohorte.remote.ExportEndpoint}" $names="{aEndpoint}" }met
+ hod { $name="dumpEndpoints" $return="java.util.List" $arguments="{org
+ .cohorte.remote.ExportEndpoint[]}" $names="{aEndpoints}" }method { $n
+ ame="endpointRemoved" $arguments="{org.cohorte.remote.ExportEndpoint}
+ " $names="{aEndpoint}" }method { $name="endpointsAdded" $arguments="{
+ org.cohorte.remote.ExportEndpoint[]}" $names="{aEndpoints}" }method {
+  $name="endpointUpdated" $arguments="{org.cohorte.remote.ExportEndpoi
+ nt,java.util.Map}" $names="{aEndpoint,aOldProperties}" }method { $nam
+ e="filterEndpoints" $return="org.cohorte.remote.ExportEndpoint[]" $ar
+ guments="{org.cohorte.herald.Peer,org.cohorte.remote.ExportEndpoint[]
+ }" $names="{aPeer,aEndpoints}" }method { $name="getTargetGroup" $retu
+ rn="java.lang.String" $arguments="{org.cohorte.remote.ExportEndpoint}
+ " $names="{ep}" }method { $name="heraldMessage" $arguments="{org.coho
+ rte.herald.IHerald,org.cohorte.herald.MessageReceived}" $names="{aHer
+ ald,aMessage}" }method { $name="loadEndpoint" $return="org.cohorte.re
+ mote.ImportEndpoint" $arguments="{java.util.Map}" $names="{aDump}" }m
+ ethod { $name="peerRegistered" $arguments="{org.cohorte.herald.Peer}"
+  $names="{aPeer}" }method { $name="peerUnregistered" $arguments="{org
+ .cohorte.herald.Peer}" $names="{aPeer}" }method { $name="peerUpdated"
+  $arguments="{org.cohorte.herald.Peer,java.lang.String,org.cohorte.he
+ rald.Access,org.cohorte.herald.Access}" $names="{aPeer,aAccessId,aDat
+ a,aPrevious}" }method { $name="postRegistration" $arguments="{org.osg
+ i.framework.ServiceReference}" $names="{aServiceReference}" }method {
+  $name="postUnregistration" $arguments="{org.osgi.framework.ServiceRe
+ ference}" $names="{aServiceReference}" }method { $name="registerEndpo
+ ints" $arguments="{java.util.List}" $names="{aEndpoints}" }method { $
+ name="sendMessage" $arguments="{org.cohorte.herald.Peer,java.lang.Str
+ ing,java.lang.Object}" $names="{aPeer,aKind,aData}" }method { $name="
+ sendMessage" $arguments="{java.lang.String,java.lang.Object,java.lang
+ .String}" $names="{aKind,aData,aGroup}" }method { $name="toMap" $retu
+ rn="java.util.Map" $arguments="{java.lang.Object}" $names="{aObject}"
+  }method { $name="toStringArray" $return="java.lang.String[]" $argume
+ nts="{java.lang.Object}" $names="{aData}" }}}component { $name="org.c
+ ohorte.herald.rpc.HeraldRpcExporter" $classname="org.cohorte.herald.r
+ pc.HeraldRpcExporter" provides { $specifications="{org.cohorte.remote
+ .IServiceExporter,org.cohorte.herald.IMessageListener}" property { $n
+ ame="remote.configs.supported" $field="pConfigurations" $value="{hera
+ ld-jabsorbrpc}" }property { $name="herald.filters" $field="pFilters" 
+ $value="{herald/rpc/jabsorbrpc}" }}requires { $field="pDirectory" }re
+ quires { $field="pHerald" $id="herald-core" callback { $method="bindI
+ Herald" $type="bind" }callback { $method="unbindIHerald" $type="unbin
+ d" }}requires { $field="pLogger" $optional="true" }callback { $transi
+ tion="invalidate" $method="invalidate" }callback { $transition="valid
+ ate" $method="validate" }manipulation { $classname="org.cohorte.heral
+ d.rpc.HeraldRpcExporter" interface { $name="org.cohorte.remote.IServi
+ ceExporter" }interface { $name="org.cohorte.herald.IMessageListener" 
+ }field { $name="pConfigurations" $type="java.lang.String[]" }field { 
+ $name="pContext" $type="org.osgi.framework.BundleContext" }field { $n
+ ame="pDirectory" $type="org.cohorte.herald.IDirectory" }field { $name
+ ="pEndpoints" $type="java.util.Map" }field { $name="pFilters" $type="
+ java.lang.String[]" }field { $name="pHerald" $type="org.cohorte.heral
+ d.IHerald" }field { $name="pJsonRpcBridge" $type="org.jabsorb.ng.JSON
+ RPCBridge" }field { $name="pLocalUid" $type="java.lang.String" }field
+  { $name="pLogger" $type="org.osgi.service.log.LogService" }method { 
+ $name="bindIHerald" }method { $name="exportService" $return="org.coho
+ rte.remote.ExportEndpoint" $arguments="{org.osgi.framework.ServiceRef
+ erence,java.lang.String,java.lang.String}" $names="{aReference,aName,
+ aFramworkUid}" }method { $name="handles" $return="boolean" $arguments
+ ="{java.lang.String[]}" $names="{aConfigurations}" }method { $name="h
+ eraldMessage" $arguments="{org.cohorte.herald.IHerald,org.cohorte.her
+ ald.MessageReceived}" $names="{aHerald,aMessage}" }method { $name="in
+ validate" }method { $name="unbindIHerald" }method { $name="unexportSe
+ rvice" $arguments="{org.cohorte.remote.ExportEndpoint}" $names="{aEnd
+ point}" }method { $name="updateExport" $arguments="{org.cohorte.remot
+ e.ExportEndpoint,java.lang.String,java.util.Map}" $names="{aEndpoint,
+ aNewName,aOldProperties}" }method { $name="validate" }}}component { $
+ name="org.cohorte.herald.rpc.HeraldRpcImporter" $classname="org.cohor
+ te.herald.rpc.HeraldRpcImporter" provides { $specifications="{org.coh
+ orte.remote.IImportEndpointListener}" property { $name="remote.config
+ s.supported" $field="pConfigurations" $value="{herald-jabsorbrpc}" }}
+ requires { $field="pHerald" }requires { $field="pLogger" $optional="t
+ rue" }manipulation { $classname="org.cohorte.herald.rpc.HeraldRpcImpo
+ rter" interface { $name="org.cohorte.remote.IImportEndpointListener" 
+ }field { $name="pClients" $type="java.util.Map" }field { $name="pConf
+ igurations" $type="java.lang.String[]" }field { $name="pContext" $typ
+ e="org.osgi.framework.BundleContext" }field { $name="pHerald" $type="
+ org.cohorte.herald.IHerald" }field { $name="pLogger" $type="org.osgi.
+ service.log.LogService" }field { $name="pProxies" $type="java.util.Ma
+ p" }field { $name="pRegistrations" $type="java.util.Map" }method { $n
+ ame="endpointAdded" $arguments="{org.cohorte.remote.ImportEndpoint}" 
+ $names="{aEndpoint}" }method { $name="endpointRemoved" $arguments="{o
+ rg.cohorte.remote.ImportEndpoint}" $names="{aEndpoint}" }method { $na
+ me="endpointUpdated" $arguments="{org.cohorte.remote.ImportEndpoint,j
+ ava.util.Map}" $names="{aEndpoint,aOldProperties}" }method { $name="l
+ oadInterfaces" $return="java.lang.Class[]" $arguments="{java.lang.Str
+ ing[]}" $names="{aSpecifications}" }}}
+
