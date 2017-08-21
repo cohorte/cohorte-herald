@@ -1,8 +1,6 @@
 # Eclipse / PyCharm
 .metadata
 .settings
-.project
-.classpath
 .pydevproject
 RemoteSystemsTempFiles/
 .idea

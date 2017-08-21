@@ -7,7 +7,7 @@
 		<groupId>org.cohorte.herald</groupId>
 		<artifactId>cohorte-herald</artifactId>
 		<version>1.0.1</version>
-		<relativePath>../pom.xml</relativePath>
+		<relativePath>../Build/maven/build-bundles/pom.xml</relativePath>
 	</parent>
 	<artifactId>cohorte-herald-package</artifactId>
 	<packaging>pom</packaging>
@@ -16,11 +16,6 @@
 		<dependency>
 			<groupId>org.cohorte.herald</groupId>
 			<artifactId>org.cohorte.herald.api</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.cohorte.herald</groupId>
-			<artifactId>org.cohorte.herald.eventapi</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
