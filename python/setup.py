@@ -26,13 +26,6 @@ Cohorte Herald installation script
     limitations under the License.
 """
 
-# Module version
-__version_info__ = (1, 0, 1)
-__version__ = ".".join(str(x) for x in __version_info__)
-
-# Documentation strings format
-__docformat__ = "restructuredtext en"
-
 # ------------------------------------------------------------------------------
 
 import os
@@ -53,6 +46,7 @@ def read(fname):
         return fd.read()
 
 
+exec(open('herald/version.py').read())
 setup(
     name='Cohorte-Herald',
     version=__version__,
