@@ -26,12 +26,8 @@ Herald Remote Services discovery
     limitations under the License.
 """
 
-# Module version
-__version_info__ = (1, 0, 1)
-__version__ = ".".join(str(x) for x in __version_info__)
-
-# Documentation strings format
-__docformat__ = "restructuredtext en"
+# Bundle version
+from herald.version import *
 
 # ------------------------------------------------------------------------------
 

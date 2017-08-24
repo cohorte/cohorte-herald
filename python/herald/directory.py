@@ -26,14 +26,10 @@ Herald Core directory
     limitations under the License.
 """
 
-# Module version
-import pelix.ipopo.decorators
 
-__version_info__ = (1, 0, 1)
-__version__ = ".".join(str(x) for x in __version_info__)
+# Bundle version
+from herald.version import *
 
-# Documentation strings format
-__docformat__ = "restructuredtext en"
 
 # ------------------------------------------------------------------------------
 
@@ -42,6 +38,8 @@ import herald
 import herald.beans as beans
 
 # Pelix
+import pelix.ipopo.decorators
+
 from pelix.ipopo.decorators import ComponentFactory, Requires, RequiresMap, \
     Provides, BindField, UnbindField, Validate, Invalidate, Instantiate
 from pelix.utilities import is_string
