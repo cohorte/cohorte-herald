@@ -12,16 +12,16 @@ Bundle-Version: 1.0.1
 Created-By: Apache Maven Bundle Plugin & iPOJO 1.12.1
 Embed-Dependency: xmpp-*;inline=true
 Import-Package: javax.crypto, javax.crypto.spec, javax.naming, javax.n
- aming.directory, javax.net, javax.net.ssl, javax.security.auth.callba
- ck, javax.security.auth.login, javax.security.sasl, javax.xml.bind, j
- avax.xml.bind.annotation, javax.xml.bind.annotation.adapters, javax.x
- ml.namespace, javax.xml.parsers, javax.xml.stream, javax.xml.stream.e
- vents, javax.xml.transform, javax.xml.transform.dom, javax.xml.transf
- orm.stream, org.apache.felix.ipojo, org.apache.felix.ipojo.architectu
- re, org.cohorte.herald, org.cohorte.herald.core.utils, org.cohorte.he
- rald.transport, org.cohorte.herald.utils, org.jabsorb.ng, org.jabsorb
- .ng.serializer, org.osgi.framework, org.osgi.service.cm, org.osgi.ser
- vice.http, org.osgi.service.log
+ aming.directory, javax.net, javax.security.auth.callback, javax.secur
+ ity.auth.login, javax.security.sasl, javax.xml.bind, javax.xml.bind.a
+ nnotation, javax.xml.bind.annotation.adapters, javax.xml.namespace, j
+ avax.xml.parsers, javax.xml.stream, javax.xml.stream.events, javax.xm
+ l.transform, javax.xml.transform.dom, javax.xml.transform.stream, org
+ .apache.felix.ipojo, org.apache.felix.ipojo.architecture, org.cohorte
+ .herald, org.cohorte.herald.core.utils, org.cohorte.herald.transport,
+  org.cohorte.herald.utils, org.jabsorb.ng, org.jabsorb.ng.serializer,
+  org.osgi.framework, org.osgi.service.cm, org.osgi.service.http, org.
+ osgi.service.log
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
 Tool: Bnd-2.3.0.201405100607
 iPOJO-Components: instance { $name="herald-xmpp-directory" $component=
