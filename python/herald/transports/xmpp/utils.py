@@ -27,7 +27,8 @@ Utilities to debug sleekXMPP objects
 """
 
 # Bundle version
-from herald.version import *
+import herald.version
+__version__=herald.version.__version__
 
 # ------------------------------------------------------------------------------
 

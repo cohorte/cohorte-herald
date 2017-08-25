@@ -40,7 +40,8 @@ import herald.transports.http.discovery_multicast as multicast
 # ------------------------------------------------------------------------------
 
 # Bundle version
-from herald.version import *
+import herald.version
+__version__=herald.version.__version__
 
 # ------------------------------------------------------------------------------
 

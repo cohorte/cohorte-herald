@@ -28,7 +28,8 @@ jsonrpclib-pelix, and using the Jabsorb format
 """
 
 # Bundle version
-from herald.version import *
+import herald.version
+__version__=herald.version.__version__
 
 # ------------------------------------------------------------------------------
 
