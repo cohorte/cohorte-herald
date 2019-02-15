@@ -38,13 +38,13 @@
         <repository>
             <id>cohorte-nexus</id>
             <name>Cohorte Releases Repository</name>
-            <url>http://nexus:8081/repository/cohorte-releases/</url>
+            <url>https://nrm.cohorte.tech/repository/cohorte-releases/</url>
             <layout>default</layout>
         </repository>
         <snapshotRepository>
             <id>cohorte-nexus</id>
             <name>Cohorte Snapshots Repository</name>
-            <url>http://nexus:8081/repository/cohorte-snapshots/</url>
+            <url>https://nrm.cohorte.tech/repository/cohorte-snapshots/</url>
             <uniqueVersion>true</uniqueVersion>
             <layout>default</layout>
         </snapshotRepository>
